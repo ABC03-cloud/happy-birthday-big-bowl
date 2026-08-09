@@ -20,6 +20,19 @@
             -webkit-user-select: none;
         }
 
+        /* --- iOS SAFARI & WECHAT INPUT FIX --- */
+        input, textarea {
+            -webkit-user-select: auto !important;
+            user-select: auto !important;
+            position: relative;
+            z-index: 9999 !important;
+            pointer-events: auto !important;
+        }
+
+        canvas {
+            pointer-events: none !important;
+        }
+
         body {
             font-family: 'ZCOOL KuaiLe', 'Microsoft YaHei', sans-serif;
             background: linear-gradient(135deg, #1e0936 0%, #3a1548 35%, #6a2053 70%, #d4af37 100%);
@@ -595,11 +608,10 @@
     const JSONBIN_BIN_ID = "6a77b481f5f4af5e29fcd624"; 
     const JSONBIN_API_KEY = "$2a$10$gs19IghnkwnYX5kB9olXU.9qx34bAPY6.kY4zATAD1lVgQnAB49Uy"; 
 
-    // Tip: If Catbox links are blocked by Netlify, host local MP3s in your project (e.g. "./music/song1.mp3")
     const playlist = {
         song1: "song1.mp3",
         song2: "song2.mp3",
-        song3: "synth" // Zero-dependency Web Audio synth
+        song3: "synth"
     };
 
     let currentTrack = null;
@@ -609,7 +621,7 @@
     let audioCtx = null;
     let synthInterval = null;
 
-    // --- GLOBAL AUDIO UNLOCKER FOR NETLIFY / MOBILE BROWSERS ---
+    // --- GLOBAL AUDIO UNLOCKER FOR NETLIFY / WECHAT / MOBILE BROWSERS ---
     function unlockAudio() {
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -620,7 +632,6 @@
         if (bgmAudio) {
             bgmAudio.load();
         }
-        // Remove global listeners once unlocked
         document.removeEventListener('click', unlockAudio);
         document.removeEventListener('touchstart', unlockAudio);
         document.removeEventListener('keydown', unlockAudio);
