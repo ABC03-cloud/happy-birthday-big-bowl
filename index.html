@@ -12,6 +12,7 @@
             --dark-border: #1a0826;
             --yellow-card: #ffeaa7;
             --purple-bg: #2d103b;
+            --pink-party: #ff7675;
         }
 
         * {
@@ -33,18 +34,11 @@
             pointer-events: none !important;
         }
 
-        /* --- ENHANCED COLORFUL & DYNAMIC BACKGROUND --- */
         body {
             font-family: 'ZCOOL KuaiLe', 'Microsoft YaHei', sans-serif;
-            background: 
-                radial-gradient(circle at 20% 20%, rgba(255, 215, 0, 0.35) 0%, transparent 40%),
-                radial-gradient(circle at 80% 25%, rgba(255, 71, 87, 0.4) 0%, transparent 45%),
-                radial-gradient(circle at 50% 75%, rgba(162, 155, 254, 0.35) 0%, transparent 50%),
-                radial-gradient(circle at 85% 85%, rgba(255, 159, 26, 0.4) 0%, transparent 40%),
-                radial-gradient(circle at 15% 80%, rgba(255, 0, 128, 0.3) 0%, transparent 40%),
-                linear-gradient(135deg, #18002e 0%, #4a0072 25%, #88004b 50%, #d4145a 75%, #ff6b6b 100%);
-            background-size: 150% 150%, 150% 150%, 150% 150%, 150% 150%, 150% 150%, 300% 300%;
-            animation: gradientBG 12s ease infinite alternate;
+            background: linear-gradient(135deg, #1e0936 0%, #3a1548 35%, #6a2053 70%, #d4af37 100%);
+            background-size: 300% 300%;
+            animation: gradientBG 10s ease infinite;
             color: #ffffff;
             min-height: 100vh;
             margin: 0;
@@ -56,48 +50,41 @@
             position: relative;
         }
 
-        /* FLOATING BOKEH / FESTIVE LIGHTS OVERLAY */
-        body::before {
-            content: '';
-            position: fixed;
-            inset: -20px;
-            background-image: 
-                radial-gradient(4px 4px at 100px 50px, #ffd700, rgba(0,0,0,0)),
-                radial-gradient(6px 6px at 200px 150px, #ff7675, rgba(0,0,0,0)),
-                radial-gradient(5px 5px at 300px 250px, #74b9ff, rgba(0,0,0,0)),
-                radial-gradient(8px 8px at 400px 350px, #55efc4, rgba(0,0,0,0)),
-                radial-gradient(6px 6px at 150px 450px, #ffeaa7, rgba(0,0,0,0)),
-                radial-gradient(7px 7px at 350px 550px, #a29bfe, rgba(0,0,0,0));
-            background-repeat: repeat;
-            background-size: 450px 450px;
-            opacity: 0.75;
-            animation: floatSparkles 15s linear infinite;
-            pointer-events: none;
-            z-index: 0;
-        }
-
         @keyframes gradientBG {
-            0% {
-                background-position: 0% 0%, 100% 0%, 50% 100%, 100% 100%, 0% 100%, 0% 50%;
-            }
-            50% {
-                background-position: 100% 100%, 0% 100%, 100% 0%, 0% 0%, 100% 50%, 100% 50%;
-            }
-            100% {
-                background-position: 0% 100%, 100% 100%, 0% 0%, 100% 0%, 50% 0%, 0% 50%;
-            }
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
         }
 
-        @keyframes floatSparkles {
-            0% { transform: translateY(0) rotate(0deg); }
-            100% { transform: translateY(-450px) rotate(360deg); }
+        /* --- CARTOON FLOATING BALLOONS BG --- */
+        .balloon-container {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+        }
+
+        .cartoon-balloon {
+            position: absolute;
+            bottom: -60px;
+            font-size: 32px;
+            animation: floatUp linear infinite;
+            opacity: 0.75;
+            filter: drop-shadow(2px 3px 0px rgba(0,0,0,0.3));
+        }
+
+        @keyframes floatUp {
+            0% { transform: translateY(0) rotate(0deg); opacity: 0.8; }
+            50% { transform: translateY(-50vh) rotate(15deg); }
+            100% { transform: translateY(-110vh) rotate(-15deg); opacity: 0; }
         }
 
         .landing-screen {
             position: fixed;
             inset: 0;
-            background: rgba(15, 5, 25, 0.94);
-            backdrop-filter: blur(12px);
+            background: rgba(15, 5, 25, 0.96);
+            backdrop-filter: blur(10px);
             z-index: 1000;
             display: flex;
             justify-content: center;
@@ -120,8 +107,9 @@
             width: 100%;
             max-width: 380px;
             text-align: center;
-            box-shadow: 0 0 35px rgba(255, 215, 0, 0.45), 0 8px 0 var(--dark-border);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.35), 0 8px 0 var(--dark-border);
             animation: floatCard 3s ease-in-out infinite;
+            position: relative;
         }
 
         @keyframes floatCard {
@@ -129,20 +117,41 @@
             50% { transform: translateY(-8px); }
         }
 
+        .party-sticker {
+            position: absolute;
+            top: -16px;
+            right: -10px;
+            background: #ff7675;
+            color: #fff;
+            padding: 4px 12px;
+            font-size: 13px;
+            font-weight: bold;
+            border-radius: 20px;
+            border: 3px solid var(--dark-border);
+            transform: rotate(12deg);
+            box-shadow: 2px 2px 0px var(--dark-border);
+            animation: pulseSticker 1.8s infinite;
+        }
+
+        @keyframes pulseSticker {
+            0%, 100% { transform: rotate(12deg) scale(1); }
+            50% { transform: rotate(12deg) scale(1.08); }
+        }
+
         .envelope-seal {
-            width: 75px;
-            height: 75px;
+            width: 80px;
+            height: 80px;
             background: linear-gradient(135deg, #ffd700, #ff9f1a);
-            border: 3px solid #ffffff;
+            border: 4px solid #ffffff;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             margin: 0 auto 12px;
-            font-size: 42px;
+            font-size: 44px;
             color: #5c1410;
             font-weight: bold;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+            box-shadow: 0 0 18px rgba(255, 215, 0, 0.7);
         }
 
         .envelope-title {
@@ -207,6 +216,7 @@
             flex-direction: column;
             gap: 12px;
             z-index: 10;
+            position: relative;
         }
 
         .cartoon-card {
@@ -222,6 +232,21 @@
 
         .header-card {
             background: linear-gradient(180deg, #fff3b0 0%, #ffeaa7 100%);
+            overflow: visible;
+        }
+
+        .header-sticker-left {
+            position: absolute;
+            top: -12px;
+            left: -8px;
+            background: #ff7675;
+            color: #fff;
+            font-size: 12px;
+            padding: 3px 10px;
+            border-radius: 12px;
+            border: 2px solid var(--dark-border);
+            transform: rotate(-10deg);
+            box-shadow: 2px 2px 0 var(--dark-border);
         }
 
         .bgm-card {
@@ -284,15 +309,17 @@
         }
 
         .caishen-avatar {
-            font-size: 50px;
+            font-size: 55px;
             margin-bottom: 2px;
             cursor: pointer;
             animation: bounce 1.5s infinite ease-in-out;
+            display: inline-block;
+            filter: drop-shadow(0 4px 0 rgba(0,0,0,0.15));
         }
 
         @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-6px); }
+            0%, 100% { transform: translateY(0) scale(1); }
+            50% { transform: translateY(-8px) scale(1.05); }
         }
 
         .title {
@@ -347,7 +374,7 @@
         }
 
         .game-arena {
-            height: 280px;
+            height: 290px;
             background: radial-gradient(circle, #2a1b4e 0%, #0f0721 100%);
             border: 4px solid var(--dark-border);
             border-radius: 20px;
@@ -372,14 +399,16 @@
 
         .falling-item {
             position: absolute;
-            font-size: 38px;
+            font-size: 40px;
             cursor: pointer;
             top: -50px;
             animation: fall linear forwards;
+            filter: drop-shadow(0 3px 0 rgba(0,0,0,0.4));
+            transition: transform 0.1s ease-out, opacity 0.1s ease-out;
         }
 
         @keyframes fall {
-            to { transform: translateY(340px) rotate(180deg); }
+            to { transform: translateY(350px) rotate(180deg); }
         }
 
         .game-stats {
@@ -422,6 +451,7 @@
             padding: 20px;
             box-shadow: 0 6px 0 var(--dark-border);
             animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
         }
 
         .prize-amount {
@@ -540,12 +570,16 @@
 </head>
 <body id="body-root">
 
+<!-- BACKGROUND FLOATING CARTOON BALLOONS -->
+<div class="balloon-container" id="balloon-container"></div>
+
 <!-- LANDING SCREEN -->
 <div class="landing-screen" id="landing-screen">
     <div class="envelope-card" id="envelope-card">
+        <div class="party-sticker">🎂 HAPPY BIRTHDAY!</div>
         <div class="envelope-seal">福</div>
         <div class="envelope-tag">🔐 恰好4字/词暗号解锁</div>
-        <h2 class="envelope-title">财神到 · 福气封条</h2>
+        <h2 class="envelope-title">财神到 · 福气封条 🎈</h2>
         <p class="envelope-subtitle">
             这是一份只属于 <b>【大碗 🥣】</b> 的生日绝密礼包<br>输入<b>恰好 4 个</b>词语、字母或汉字即可拆封！
         </p>
@@ -568,16 +602,17 @@
 <div class="container">
 
     <div class="cartoon-card header-card">
-        <div class="caishen-avatar" id="caishen-face" onclick="handleAvatarClick()">🧙‍♂️</div>
+        <div class="header-sticker-left">🎈 Party Time!</div>
+        <div class="caishen-avatar" id="caishen-face" onclick="handleAvatarClick()">🥳🧙‍♂️</div>
         <h1 class="title">财神到·大碗纳福抢宝 🥣✨</h1>
-        <p style="font-size: 13px; margin: 4px 0 6px; color: #4b5563;">限时10秒！抢金币和【大碗🥣/福】装满财气！（避开💣）</p>
+        <p style="font-size: 13px; margin: 4px 0 6px; color: #4b5563;">限时10秒！抢🎂生日蛋糕、🎁礼物与🥣大碗福气！（避开💣）</p>
         
-        <div class="mystery-badge">✨ 隐藏【大碗专属福气红包】待解锁 ✨</div>
+        <div class="mystery-badge">🎉 隐藏【大碗专属生日福气红包】待解锁 🎉</div>
     </div>
 
     <!-- BGM CONTROL BAR -->
     <div class="bgm-card">
-        <div class="bgm-title">🎵 HAPPY BIRTHDAY🥣🎂🥳 背景音乐点歌台</div>
+        <div class="bgm-title">🎵 HAPPY BIRTHDAY 🥣🎂🥳 背景音乐点歌台</div>
         <div class="bgm-btn-group">
             <button class="bgm-btn" id="btn-song1" onclick="playBGM('song1')">🎤 《特别的人》</button>
             <button class="bgm-btn" id="btn-song2" onclick="playBGM('song2')">☀️ 《两只老虎爱跳舞》</button>
@@ -595,13 +630,14 @@
 
     <div class="game-arena" id="arena">
         <div class="game-overlay" id="overlay">
-            <h2 style="margin: 0 0 8px; color: var(--gold); font-size: 22px;">大碗准备好了吗？</h2>
-            <p style="font-size: 13px; margin-bottom: 16px; color: #ffeaa7;">💡 提示：抢到【🥣/福/🍜】可得双倍财气(+20分)！</p>
+            <h2 style="margin: 0 0 8px; color: var(--gold); font-size: 22px;">🎂 大碗准备好了吗？</h2>
+            <p style="font-size: 13px; margin-bottom: 16px; color: #ffeaa7;">💡 提示：抢到【🎂蛋糕/🎁礼物/🥣大碗/🍜长寿面】得双倍财气(+20分)！</p>
             <button class="btn-action" onclick="startGame()">开始抢大奖 🚀</button>
         </div>
     </div>
 
     <div class="result-card" id="result-card">
+        <div class="party-sticker" style="top: -12px; right: 10px;">🎉 生日大喜！</div>
         <h3 style="margin: 0; font-size: 20px; color: var(--gold);" id="prize-title">🎉 恭喜大碗！</h3>
         <div class="prize-amount" id="prize-amount">￥988.88</div>
         <p id="prize-desc" style="font-size: 14px; line-height: 1.5; color: #ffeaa7; margin-bottom: 8px;">
@@ -641,6 +677,23 @@
 </div>
 
 <script>
+    // --- GENERATE FLOATING BACKGROUND CARTOON BALLOONS ---
+    function generateBalloons() {
+        const balloonContainer = document.getElementById('balloon-container');
+        const balloonEmojis = ['🎈', '🎁', '✨', '🎂', '🎉', '🥳', '🧁'];
+        for (let i = 0; i < 12; i++) {
+            const balloon = document.createElement('div');
+            balloon.className = 'cartoon-balloon';
+            balloon.innerText = balloonEmojis[Math.floor(Math.random() * balloonEmojis.length)];
+            balloon.style.left = `${Math.random() * 92}%`;
+            balloon.style.animationDuration = `${6 + Math.random() * 6}s`;
+            balloon.style.animationDelay = `${Math.random() * 5}s`;
+            balloon.style.fontSize = `${24 + Math.random() * 18}px`;
+            balloonContainer.appendChild(balloon);
+        }
+    }
+    generateBalloons();
+
     const JSONBIN_BIN_ID = "6a77b481f5f4af5e29fcd624"; 
     const JSONBIN_API_KEY = "$2a$10$gs19IghnkwnYX5kB9olXU.9qx34bAPY6.kY4zATAD1lVgQnAB49Uy"; 
 
@@ -801,726 +854,388 @@
     const resultCard = document.getElementById('result-card');
     const caishenFace = document.getElementById('caishen-face');
 
-    const items = ['💰', 'Here is the full updated code with an upgraded **vibrant, multi-layered festive background** featuring animated multi-color gradient waves, floating golden bokeh lights, and dynamic ambient glows:
+    // EXPANDED CARTOON BIRTHDAY ITEMS
+    const items = ['🎂', '🎁', '🎈', '🥳', '🧁', '🥣', '🍜', '💰', '🧧', '福', '💣'];
 
-```html
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>财神到·大碗生日抢宝大作战 🥣💰🎉</title>
-    <link href="[https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap](https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap)" rel="stylesheet">
-    <script src="[https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js](https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js)"></script>
-    <style>
-        :root {
-            --gold: #ffd700;
-            --dark-border: #1a0826;
-            --yellow-card: #ffeaa7;
-            --purple-bg: #2d103b;
-        }
-
-        * {
-            box-sizing: border-box;
-            user-select: none;
-            -webkit-user-select: none;
-        }
-
-        /* --- iOS SAFARI & WECHAT INPUT FIX --- */
-        input, textarea {
-            -webkit-user-select: auto !important;
-            user-select: auto !important;
-            position: relative;
-            z-index: 9999 !important;
-            pointer-events: auto !important;
-        }
-
-        canvas {
-            pointer-events: none !important;
-        }
-
-        /* --- ENHANCED COLORFUL & DYNAMIC BACKGROUND --- */
-        body {
-            font-family: 'ZCOOL KuaiLe', 'Microsoft YaHei', sans-serif;
-            background: 
-                radial-gradient(circle at 20% 20%, rgba(255, 215, 0, 0.35) 0%, transparent 40%),
-                radial-gradient(circle at 80% 25%, rgba(255, 71, 87, 0.4) 0%, transparent 45%),
-                radial-gradient(circle at 50% 75%, rgba(162, 155, 254, 0.35) 0%, transparent 50%),
-                radial-gradient(circle at 85% 85%, rgba(255, 159, 26, 0.4) 0%, transparent 40%),
-                radial-gradient(circle at 15% 80%, rgba(255, 0, 128, 0.3) 0%, transparent 40%),
-                linear-gradient(135deg, #18002e 0%, #4a0072 25%, #88004b 50%, #d4145a 75%, #ff6b6b 100%);
-            background-size: 150% 150%, 150% 150%, 150% 150%, 150% 150%, 150% 150%, 300% 300%;
-            animation: gradientBG 12s ease infinite alternate;
-            color: #ffffff;
-            min-height: 100vh;
-            margin: 0;
-            padding: 16px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            overflow-x: hidden;
-            position: relative;
-        }
-
-        /* FLOATING BOKEH / FESTIVE LIGHTS OVERLAY */
-        body::before {
-            content: '';
-            position: fixed;
-            inset: -20px;
-            background-image: 
-                radial-gradient(4px 4px at 100px 50px, #ffd700, rgba(0,0,0,0)),
-                radial-gradient(6px 6px at 200px 150px, #ff7675, rgba(0,0,0,0)),
-                radial-gradient(5px 5px at 300px 250px, #74b9ff, rgba(0,0,0,0)),
-                radial-gradient(8px 8px at 400px 350px, #55efc4, rgba(0,0,0,0)),
-                radial-gradient(6px 6px at 150px 450px, #ffeaa7, rgba(0,0,0,0)),
-                radial-gradient(7px 7px at 350px 550px, #a29bfe, rgba(0,0,0,0));
-            background-repeat: repeat;
-            background-size: 450px 450px;
-            opacity: 0.75;
-            animation: floatSparkles 15s linear infinite;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        @keyframes gradientBG {
-            0% {
-                background-position: 0% 0%, 100% 0%, 50% 100%, 100% 100%, 0% 100%, 0% 50%;
-            }
-            50% {
-                background-position: 100% 100%, 0% 100%, 100% 0%, 0% 0%, 100% 50%, 100% 50%;
-            }
-            100% {
-                background-position: 0% 100%, 100% 100%, 0% 0%, 100% 0%, 50% 0%, 0% 50%;
-            }
-        }
-
-        @keyframes floatSparkles {
-            0% { transform: translateY(0) rotate(0deg); }
-            100% { transform: translateY(-450px) rotate(360deg); }
-        }
-
-        .landing-screen {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 5, 25, 0.94);
-            backdrop-filter: blur(12px);
-            z-index: 1000;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            transition: opacity 0.6s ease, visibility 0.6s ease;
-        }
-
-        .landing-screen.hidden {
-            opacity: 0;
-            visibility: hidden;
-            pointer-events: none;
-        }
-
-        .envelope-card {
-            background: linear-gradient(180deg, #421147 0%, #1c0621 100%);
-            border: 4px solid var(--gold);
-            border-radius: 24px;
-            padding: 28px 20px;
-            width: 100%;
-            max-width: 380px;
-            text-align: center;
-            box-shadow: 0 0 35px rgba(255, 215, 0, 0.45), 0 8px 0 var(--dark-border);
-            animation: floatCard 3s ease-in-out infinite;
-        }
-
-        @keyframes floatCard {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
-        }
-
-        .envelope-seal {
-            width: 75px;
-            height: 75px;
-            background: linear-gradient(135deg, #ffd700, #ff9f1a);
-            border: 3px solid #ffffff;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 0 auto 12px;
-            font-size: 42px;
-            color: #5c1410;
-            font-weight: bold;
-            box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
-        }
-
-        .envelope-title {
-            color: var(--gold);
-            font-size: 24px;
-            margin: 0 0 8px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-        }
-
-        .envelope-subtitle {
-            color: #f1f2f6;
-            font-size: 14px;
-            line-height: 1.5;
-            margin-bottom: 16px;
-            opacity: 0.95;
-        }
-
-        .envelope-tag {
-            background: #ffd700;
-            color: #2b1055;
-            padding: 4px 14px;
-            border-radius: 20px;
-            font-size: 13px;
-            font-weight: bold;
-            display: inline-block;
-            margin-bottom: 12px;
-            border: 2px solid var(--dark-border);
-        }
-
-        .password-box {
-            margin: 14px 0;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .password-input {
-            width: 100%;
-            padding: 12px 16px;
-            border-radius: 16px;
-            border: 3px solid var(--gold);
-            font-family: inherit;
-            font-size: 15px;
-            text-align: center;
-            outline: none;
-            background: rgba(255, 255, 255, 0.95);
-            color: #2b1055;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
-        }
-
-        .error-msg {
-            color: #ffd700;
-            font-size: 13px;
-            min-height: 18px;
-            margin-top: -4px;
-        }
-
-        .container {
-            width: 100%;
-            max-width: 420px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            z-index: 10;
-        }
-
-        .cartoon-card {
-            background: #ffffff;
-            border: 4px solid var(--dark-border);
-            border-radius: 20px;
-            padding: 16px;
-            box-shadow: 0 6px 0 var(--dark-border);
-            text-align: center;
-            position: relative;
-            color: #2b1055;
-        }
-
-        .header-card {
-            background: linear-gradient(180deg, #fff3b0 0%, #ffeaa7 100%);
-        }
-
-        .bgm-card {
-            background: #ffffff;
-            border: 3px solid var(--dark-border);
-            border-radius: 16px;
-            padding: 10px;
-            box-shadow: 0 4px 0 var(--dark-border);
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            align-items: center;
-        }
-
-        .bgm-title {
-            font-size: 13px;
-            font-weight: bold;
-            color: #2b1055;
-        }
-
-        .bgm-btn-group {
-            display: flex;
-            gap: 6px;
-            justify-content: center;
-            width: 100%;
-            flex-wrap: wrap;
-        }
-
-        .bgm-btn {
-            background: #6c5ce7;
-            color: #ffffff;
-            border: 2px solid var(--dark-border);
-            border-radius: 10px;
-            padding: 6px 8px;
-            font-size: 11px;
-            font-family: inherit;
-            cursor: pointer;
-            box-shadow: 0 2px 0 var(--dark-border);
-            transition: all 0.15s ease;
-            flex: 1 1 40%;
-            min-width: 80px;
-        }
-
-        .bgm-btn:active {
-            transform: translateY(2px);
-            box-shadow: 0 0 0 var(--dark-border);
-        }
-
-        .bgm-btn.active {
-            background: var(--gold);
-            color: #2b1055;
-            font-weight: bold;
-        }
-
-        .audio-status-msg {
-            font-size: 11px;
-            color: #e63946;
-            font-weight: bold;
-            display: none;
-        }
-
-        .caishen-avatar {
-            font-size: 50px;
-            margin-bottom: 2px;
-            cursor: pointer;
-            animation: bounce 1.5s infinite ease-in-out;
-        }
-
-        @keyframes bounce {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-6px); }
-        }
-
-        .title {
-            font-size: 23px;
-            margin: 0;
-            color: #2b1055;
-            letter-spacing: 1px;
-        }
-
-        .mystery-badge {
-            background: linear-gradient(135deg, #6c5ce7, #a29bfe);
-            color: #ffffff;
-            border: 2px dashed #ffffff;
-            border-radius: 12px;
-            padding: 8px;
-            font-size: 14px;
-            font-weight: bold;
-            margin-top: 8px;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.15);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.03); }
-        }
-
-        .prize-tier-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 6px;
-            margin: 12px 0;
-        }
-
-        .tier-box {
-            background: rgba(255, 255, 255, 0.15);
-            border: 2px solid rgba(255, 255, 255, 0.4);
-            border-radius: 12px;
-            padding: 6px 2px;
-            font-size: 12px;
-            font-weight: bold;
-            color: #fff;
-            transition: all 0.3s;
-        }
-
-        .tier-box.won {
-            background: var(--gold) !important;
-            color: #2b1055 !important;
-            border-color: #fff !important;
-            transform: scale(1.08);
-            box-shadow: 0 0 12px var(--gold);
-        }
-
-        .game-arena {
-            height: 280px;
-            background: radial-gradient(circle, #2a1b4e 0%, #0f0721 100%);
-            border: 4px solid var(--dark-border);
-            border-radius: 20px;
-            position: relative;
-            overflow: hidden;
-            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
-        }
-
-        .game-overlay {
-            position: absolute;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.82);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 20;
-            color: #fff;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .falling-item {
-            position: absolute;
-            font-size: 38px;
-            cursor: pointer;
-            top: -50px;
-            animation: fall linear forwards;
-        }
-
-        @keyframes fall {
-            to { transform: translateY(340px) rotate(180deg); }
-        }
-
-        .game-stats {
-            display: flex;
-            justify-content: space-between;
-            background: #fff;
-            border: 3px solid var(--dark-border);
-            border-radius: 12px;
-            padding: 8px 16px;
-            font-weight: bold;
-            font-size: 16px;
-            color: #2b1055;
-        }
-
-        .btn-action {
-            background: linear-gradient(180deg, #ffd700 0%, #ff9f1a 100%);
-            border: 3px solid var(--dark-border);
-            color: var(--dark-border);
-            padding: 10px 24px;
-            border-radius: 16px;
-            font-family: inherit;
-            font-weight: bold;
-            font-size: 18px;
-            cursor: pointer;
-            box-shadow: 0 4px 0 var(--dark-border);
-            transition: transform 0.1s;
-        }
-
-        .btn-action:active {
-            transform: translateY(3px);
-            box-shadow: 0 1px 0 var(--dark-border);
-        }
-
-        .result-card {
-            display: none;
-            background: linear-gradient(180deg, #421147 0%, #1c0621 100%);
-            color: #fff;
-            border: 4px solid var(--gold);
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 6px 0 var(--dark-border);
-            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .prize-amount {
-            font-size: 38px;
-            color: var(--gold);
-            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-            margin: 8px 0;
-            font-weight: bold;
-        }
-
-        .admin-modal {
-            position: fixed;
-            inset: 0;
-            background: rgba(10, 5, 20, 0.95);
-            backdrop-filter: blur(8px);
-            z-index: 2000;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-
-        .admin-modal.show {
-            display: flex;
-        }
-
-        .admin-card {
-            background: #2b1055;
-            border: 3px solid var(--gold);
-            border-radius: 20px;
-            padding: 20px;
-            width: 100%;
-            max-width: 400px;
-            max-height: 85vh;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
-            color: #fff;
-        }
-
-        .admin-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border-bottom: 2px solid rgba(255, 215, 0, 0.3);
-            padding-bottom: 8px;
-        }
-
-        .admin-title {
-            margin: 0;
-            color: var(--gold);
-            font-size: 20px;
-        }
-
-        .admin-summary {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            padding: 10px;
-            font-size: 14px;
-            text-align: center;
-        }
-
-        .history-list {
-            overflow-y: auto;
-            max-height: 300px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            padding-right: 4px;
-        }
-
-        .history-item {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 215, 0, 0.2);
-            border-radius: 10px;
-            padding: 8px 12px;
-            font-size: 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .history-item-time {
-            color: #a29bfe;
-            font-size: 11px;
-        }
-
-        .history-item-prize {
-            color: var(--gold);
-            font-weight: bold;
-            font-size: 13px;
-        }
-
-        .btn-clear {
-            background: #e63946;
-            color: white;
-            border: none;
-            padding: 8px 12px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: bold;
-            font-size: 12px;
-        }
-
-        .shake {
-            animation: shakeAnim 0.3s ease-in-out;
-        }
-
-        @keyframes shakeAnim {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-8px); }
-            40%, 80% { transform: translateX(8px); }
-        }
-    </style>
-</head>
-<body id="body-root">
-
-<!-- LANDING SCREEN -->
-<div class="landing-screen" id="landing-screen">
-    <div class="envelope-card" id="envelope-card">
-        <div class="envelope-seal">福</div>
-        <div class="envelope-tag">🔐 恰好4字/词暗号解锁</div>
-        <h2 class="envelope-title">财神到 · 福气封条</h2>
-        <p class="envelope-subtitle">
-            这是一份只属于 <b>【大碗 🥣】</b> 的生日绝密礼包<br>输入<b>恰好 4 个</b>词语、字母或汉字即可拆封！
-        </p>
-
-        <div class="password-box">
-            <input 
-                type="text" 
-                id="pwd-input" 
-                class="password-input" 
-                placeholder="请输入恰好 4 个词/字 (如: 大碗福气)" 
-                onkeyup="if(event.key === 'Enter') verifyPassword()"
-            />
-            <div class="error-msg" id="error-msg"></div>
-        </div>
-
-        <button class="btn-action" onclick="verifyPassword()" style="width: 100%;">纳福解锁 🔓</button>
-    </div>
-</div>
-
-<div class="container">
-
-    <div class="cartoon-card header-card">
-        <div class="caishen-avatar" id="caishen-face" onclick="handleAvatarClick()">🧙‍♂️</div>
-        <h1 class="title">财神到·大碗纳福抢宝 🥣✨</h1>
-        <p style="font-size: 13px; margin: 4px 0 6px; color: #4b5563;">限时10秒！抢金币和【大碗🥣/福】装满财气！（避开💣）</p>
-        
-        <div class="mystery-badge">✨ 隐藏【大碗专属福气红包】待解锁 ✨</div>
-    </div>
-
-    <!-- BGM CONTROL BAR -->
-    <div class="bgm-card">
-        <div class="bgm-title">🎵 HAPPY BIRTHDAY🥣🎂🥳 背景音乐点歌台</div>
-        <div class="bgm-btn-group">
-            <button class="bgm-btn" id="btn-song1" onclick="playBGM('song1')">🎤 《特别的人》</button>
-            <button class="bgm-btn" id="btn-song2" onclick="playBGM('song2')">☀️ 《两只老虎爱跳舞》</button>
-            <button class="bgm-btn" id="btn-song3" onclick="playBGM('song3')">🎂 《生日快乐歌》(八音盒)</button>
-            <button class="bgm-btn" id="btn-pause" onclick="pauseBGM()" style="background: #e63946; flex: 1 1 100%;">⏸️ 暂停播放</button>
-        </div>
-        <div class="audio-status-msg" id="audio-status"></div>
-        <audio id="bgm-audio" loop></audio>
-    </div>
-
-    <div class="game-stats">
-        <div>⏳ 倒计时: <span id="timer" style="color: #6c5ce7;">10</span>秒</div>
-        <div>🥣 碗里财富: <span id="score" style="color: #059669;">0</span></div>
-    </div>
-
-    <div class="game-arena" id="arena">
-        <div class="game-overlay" id="overlay">
-            <h2 style="margin: 0 0 8px; color: var(--gold); font-size: 22px;">大碗准备好了吗？</h2>
-            <p style="font-size: 13px; margin-bottom: 16px; color: #ffeaa7;">💡 提示：抢到【🥣/福/🍜】可得双倍财气(+20分)！</p>
-            <button class="btn-action" onclick="startGame()">开始抢大奖 🚀</button>
-        </div>
-    </div>
-
-    <div class="result-card" id="result-card">
-        <h3 style="margin: 0; font-size: 20px; color: var(--gold);" id="prize-title">🎉 恭喜大碗！</h3>
-        <div class="prize-amount" id="prize-amount">￥988.88</div>
-        <p id="prize-desc" style="font-size: 14px; line-height: 1.5; color: #ffeaa7; margin-bottom: 8px;">
-            祝大碗生日快乐！新的一年福气满满、盆满钵满！
-        </p>
-
-        <div class="prize-tier-grid">
-            <div class="tier-box" id="tier-small">🥉 纳福奖<br>¥ 388.88</div>
-            <div class="tier-box" id="tier-mid">🥈 聚财奖<br>¥ 688.88</div>
-            <div class="tier-box" id="tier-grand">🥇 金碗福气大奖<br>¥ 988.88</div>
-        </div>
-
-        <button class="btn-action" onclick="resetGame()" style="width: 100%;">再玩一次 🔄</button>
-    </div>
-
-</div>
-
-<!-- ADMIN MODAL -->
-<div class="admin-modal" id="admin-modal">
-    <div class="admin-card">
-        <div class="admin-header">
-            <h3 class="admin-title">👑 专属管理员战报面板</h3>
-            <button onclick="closeAdminPanel()" style="background:none; border:none; color:#fff; font-size:20px; cursor:pointer;">✕</button>
-        </div>
-
-        <div class="admin-summary">
-            <b>🎮 累计完成次数:</b> <span id="admin-total-plays" style="color: var(--gold); font-size: 18px; font-weight: bold;">0</span> 次
-        </div>
-
-        <div class="history-list" id="history-list"></div>
-
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
-            <button class="btn-clear" onclick="clearHistory()">清空历史数据</button>
-            <button class="btn-action" onclick="closeAdminPanel()" style="padding: 6px 16px; font-size: 14px;">关闭</button>
-        </div>
-    </div>
-</div>
-
-<script>
-    const JSONBIN_BIN_ID = "6a77b481f5f4af5e29fcd624"; 
-    const JSONBIN_API_KEY = "$2a$10$gs19IghnkwnYX5kB9olXU.9qx34bAPY6.kY4zATAD1lVgQnAB49Uy"; 
-
-    const playlist = {
-        song1: "song1.mp3",
-        song2: "song2.mp3",
-        song3: "synth"
-    };
-
-    let currentTrack = null;
-    const bgmAudio = document.getElementById('bgm-audio');
-    const audioStatus = document.getElementById('audio-status');
-
-    let audioCtx = null;
-    let synthInterval = null;
-
-    // --- GLOBAL AUDIO UNLOCKER FOR NETLIFY / WECHAT / MOBILE BROWSERS ---
-    function unlockAudio() {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
-        if (bgmAudio) {
-            bgmAudio.load();
-        }
-        document.removeEventListener('click', unlockAudio);
-        document.removeEventListener('touchstart', unlockAudio);
-        document.removeEventListener('keydown', unlockAudio);
-    }
-
-    document.addEventListener('click', unlockAudio);
-    document.addEventListener('touchstart', unlockAudio);
-    document.addEventListener('keydown', unlockAudio);
-
-    // WeChat Browser auto-play support
-    document.addEventListener("WeixinJSBridgeReady", function () {
-        unlockAudio();
-    }, false);
-
-    function initAudio() {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
-    }
-
-    // Hardcoded Happy Birthday Chime Synthesizer
-    function playHappyBirthdaySynth() {
-        stopSynth();
+    function playSound(freq, duration, type = 'sine') {
         initAudio();
+        try {
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start();
+            osc.stop(audioCtx.currentTime + duration);
+        } catch (e) {}
+    }
 
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
+    // --- PASSWORD & CLOUD SYNC LOGIC ---
+    async function logPasswordAttempt(inputVal, isSuccess) {
+        let pwdHistory = JSON.parse(localStorage.getItem('dawan_pwd_history') || '[]');
+        const now = new Date();
+        const timeFormatted = now.getFullYear() + '-' + 
+            String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+            String(now.getDate()).padStart(2, '0') + ' ' + 
+            String(now.getHours()).padStart(2, '0') + ':' + 
+            String(now.getMinutes()).padStart(2, '0') + ':' + 
+            String(now.getSeconds()).padStart(2, '0');
+
+        const newRecord = {
+            attempt: pwdHistory.length + 1,
+            input: inputVal || "(Empty)",
+            timestamp: timeFormatted,
+            status: isSuccess ? "✅ 解锁成功" : "❌ 输入错误"
+        };
+
+        pwdHistory.unshift(newRecord);
+        localStorage.setItem('dawan_pwd_history', JSON.stringify(pwdHistory));
+
+        let gameHistory = JSON.parse(localStorage.getItem('dawan_game_history') || '[]');
+        if (JSONBIN_BIN_ID && JSONBIN_API_KEY) {
+            try {
+                await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': JSONBIN_API_KEY
+                    },
+                    body: JSON.stringify({ records: gameHistory, passwords: pwdHistory })
+                });
+            } catch (err) {}
+        }
+    }
+
+    function verifyPassword() {
+        initAudio();
+        const inputVal = document.getElementById('pwd-input').value.trim();
+        const errorMsg = document.getElementById('error-msg');
+        const envelopeCard = document.getElementById('envelope-card');
+
+        if (inputVal.toUpperCase() === 'ADMIN23') {
+            document.getElementById('pwd-input').value = "";
+            openAdminPanel();
+            return;
         }
 
-        const notes = [
-            { f: 261.63, d: 0.3 }, { f: 261.63, d: 0.3 }, { f: 293.66, d: 0.6 }, { f: 261.63, d: 0.6 }, { f: 349.23, d: 0.6 }, { f: 329.63, d: 1.2 },
-            { f: 261.63, d: 0.3 }, { f: 261.63, d: 0.3 }, { f: 293.66, d: 0.6 }, { f: 261.63, d: 0.6 }, { f: 392.00, d: 0.6 }, { f: 349.23, d: 1.2 },
-            { f: 261.63, d: 0.3 }, { f: 261.63, d: 0.3 }, { f: 523.25, d: 0.6 }, { f: 440.00, d: 0.6 }, { f: 349.23, d: 0.6 }, { f: 329.63, d: 0.6 }, { f: 293.66, d: 1.2 },
-            { f: 466.16, d: 0.3 }, { f: 466.16, d: 0.3 }, { f: 440.00, d: 0.6 }, { f: 349.23, d: 0.6 }, { f: 392.00, d: 0.6 }, { f: 349.23, d: 1.5 }
-        ];
+        const cleanInput = inputVal.replace(/\s+/g, '');
+        const spaceSeparatedWords = inputVal.split(/\s+/).filter(w => w.length > 0);
+        const chineseChars = inputVal.match(/[\u4e00-\u9fa5]/g) || [];
+        
+        const totalCount = Math.max(cleanInput.length, spaceSeparatedWords.length, chineseChars.length);
 
-        let step = 0;
+        if (totalCount === 4) {
+            logPasswordAttempt(inputVal, true);
+            errorMsg.innerText = "";
+            playSound(800, 0.2, 'sine');
+            playBGM('song3');
 
-        function playNextNote() {
-            if (currentTrack !== 'song3')
+            confetti({
+                particleCount: 120,
+                spread: 80,
+                origin: { y: 0.5 },
+                colors: ['#ffd700', '#ff7675', '#a29bfe', '#ffffff']
+            });
 
-```python?code_reference&code_event_index=1
-# Let's double check there are no syntax errors or unescaped strings in the HTML code.
-code = '''
-    const items = ['💰', '🧧', '🪙', '💎', '🥣', '🍜', '福', '🥣', '💣'];
-'''
-print("Validating JS string...")
+            document.getElementById('landing-screen').classList.add('hidden');
+        } else {
+            logPasswordAttempt(inputVal, false);
+            playSound(150, 0.3, 'sawtooth');
+            errorMsg.innerText = `❌ 需要恰好 4 个字/词哦！(当前已输入 ${totalCount} 个)`;
+            
+            envelopeCard.classList.add('shake');
+            setTimeout(() => envelopeCard.classList.remove('shake'), 300);
+        }
+    }
+
+    function handleAvatarClick() {
+        avatarClickCount++;
+        clearTimeout(avatarTimer);
+        if (avatarClickCount >= 5) {
+            avatarClickCount = 0;
+            openAdminPanel();
+        } else {
+            avatarTimer = setTimeout(() => { avatarClickCount = 0; }, 2000);
+        }
+    }
+
+    async function saveGameRecord(finalScore, prizeWon) {
+        let history = JSON.parse(localStorage.getItem('dawan_game_history') || '[]');
+        let pwdHistory = JSON.parse(localStorage.getItem('dawan_pwd_history') || '[]');
+        const now = new Date();
+        const timeFormatted = now.getFullYear() + '-' + 
+            String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+            String(now.getDate()).padStart(2, '0') + ' ' + 
+            String(now.getHours()).padStart(2, '0') + ':' + 
+            String(now.getMinutes()).padStart(2, '0') + ':' + 
+            String(now.getSeconds()).padStart(2, '0');
+
+        const newRecord = {
+            attempt: history.length + 1,
+            timestamp: timeFormatted,
+            score: finalScore,
+            prize: prizeWon
+        };
+
+        history.unshift(newRecord);
+        localStorage.setItem('dawan_game_history', JSON.stringify(history));
+
+        if (JSONBIN_BIN_ID && JSONBIN_API_KEY) {
+            try {
+                await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Master-Key': JSONBIN_API_KEY
+                    },
+                    body: JSON.stringify({ records: history, passwords: pwdHistory })
+                });
+            } catch (err) {}
+        }
+    }
+
+    async function openAdminPanel() {
+        const modal = document.getElementById('admin-modal');
+        const historyList = document.getElementById('history-list');
+        const totalPlaysDisplay = document.getElementById('admin-total-plays');
+
+        historyList.innerHTML = `<div style="text-align:center; color:#ffeaa7; padding:15px; font-size:13px;">⌛ 加载历史数据中...</div>`;
+        modal.classList.add('show');
+
+        let history = JSON.parse(localStorage.getItem('dawan_game_history') || '[]');
+        let pwdHistory = JSON.parse(localStorage.getItem('dawan_pwd_history') || '[]');
+
+        if (JSONBIN_BIN_ID && JSONBIN_API_KEY) {
+            try {
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+                    headers: { 'X-Master-Key': JSONBIN_API_KEY }
+                });
+                const data = await res.json();
+                if (data.record) {
+                    if (data.record.records) history = data.record.records;
+                    if (data.record.passwords) pwdHistory = data.record.passwords;
+                    localStorage.setItem('dawan_game_history', JSON.stringify(history));
+                    localStorage.setItem('dawan_pwd_history', JSON.stringify(pwdHistory));
+                }
+            } catch (err) {}
+        }
+
+        totalPlaysDisplay.innerText = history.length;
+        historyList.innerHTML = "";
+
+        // Section 1: Password Attempt Logs
+        const pwdTitle = document.createElement('div');
+        pwdTitle.style.cssText = "font-weight: bold; font-size: 14px; color: #ffd700; margin-top: 4px;";
+        pwdTitle.innerText = `🔑 暗号输入尝试记录 (共 ${pwdHistory.length} 次):`;
+        historyList.appendChild(pwdTitle);
+
+        if (pwdHistory.length === 0) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.style.cssText = "text-align:center; color:#ccc; padding:6px; font-size:12px;";
+            emptyDiv.innerText = "暂无输入记录";
+            historyList.appendChild(emptyDiv);
+        } else {
+            pwdHistory.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+                    <div>
+                        <div><b>尝试 #${item.attempt}:</b> <span style="color:#ffd700;">"${item.input}"</span></div>
+                        <div class="history-item-time">⏱️ ${item.timestamp}</div>
+                    </div>
+                    <div style="font-size: 11px;">${item.status}</div>
+                `;
+                historyList.appendChild(div);
+            });
+        }
+
+        // Section 2: Game History Logs
+        const gameTitle = document.createElement('div');
+        gameTitle.style.cssText = "font-weight: bold; font-size: 14px; color: #ffeaa7; margin-top: 12px;";
+        gameTitle.innerText = `🎮 游戏通关战报记录 (共 ${history.length} 次):`;
+        historyList.appendChild(gameTitle);
+
+        if (history.length === 0) {
+            const emptyDiv = document.createElement('div');
+            emptyDiv.style.cssText = "text-align:center; color:#ccc; padding:6px; font-size:12px;";
+            emptyDiv.innerText = "暂无游戏记录";
+            historyList.appendChild(emptyDiv);
+        } else {
+            history.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+                    <div>
+                        <div><b>第 ${item.attempt} 次挑战</b> (得分: ${item.score})</div>
+                        <div class="history-item-time">⏱️ ${item.timestamp}</div>
+                    </div>
+                    <div class="history-item-prize">${item.prize}</div>
+                `;
+                historyList.appendChild(div);
+            });
+        }
+    }
+
+    function closeAdminPanel() {
+        document.getElementById('admin-modal').classList.remove('show');
+    }
+
+    async function clearHistory() {
+        if (confirm("确定要清空所有历史记录吗？")) {
+            localStorage.removeItem('dawan_game_history');
+            localStorage.removeItem('dawan_pwd_history');
+            if (JSONBIN_BIN_ID && JSONBIN_API_KEY) {
+                try {
+                    await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+                        method: 'PUT',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Master-Key': JSONBIN_API_KEY
+                        },
+                        body: JSON.stringify({ records: [], passwords: [] })
+                    });
+                } catch (e) {}
+            }
+            openAdminPanel();
+        }
+    }
+
+    function startGame() {
+        initAudio();
+        score = 0;
+        timeLeft = 10;
+        scoreDisplay.innerText = score;
+        timerDisplay.innerText = timeLeft;
+        overlay.style.display = 'none';
+        resultCard.style.display = 'none';
+        caishenFace.innerText = '😮🎂';
+
+        document.querySelectorAll('.tier-box').forEach(el => el.classList.remove('won'));
+
+        gameInterval = setInterval(() => {
+            timeLeft--;
+            timerDisplay.innerText = timeLeft;
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }, 1000);
+
+        spawnInterval = setInterval(spawnItem, 280);
+    }
+
+    function spawnItem() {
+        if (timeLeft <= 0) return;
+
+        const item = document.createElement('div');
+        item.className = 'falling-item';
+        const selectedSymbol = items[Math.floor(Math.random() * items.length)];
+        item.innerText = selectedSymbol;
+        
+        const randomX = Math.floor(Math.random() * (arena.clientWidth - 45));
+        const duration = (Math.random() * 1.1 + 0.9).toFixed(1);
+
+        item.style.left = `${randomX}px`;
+        item.style.animationDuration = `${duration}s`;
+
+        const catchItem = (e) => {
+            e.stopPropagation();
+            
+            if (selectedSymbol === '💣') {
+                score = Math.max(0, score - 10);
+                playSound(150, 0.3, 'sawtooth');
+                document.getElementById('body-root').classList.add('shake');
+                setTimeout(() => document.getElementById('body-root').classList.remove('shake'), 300);
+            } else if (['🎂', '🎁', '🧁', '🥣', '🍜', '福'].includes(selectedSymbol)) {
+                score += 20; // Special birthday items double points!
+                playSound(950, 0.25, 'triangle');
+            } else {
+                score += 10;
+                playSound(600 + (score * 5), 0.1, 'sine');
+            }
+
+            scoreDisplay.innerText = score;
+            item.style.transform = 'scale(1.8) rotate(15deg)';
+            item.style.opacity = '0';
+            setTimeout(() => item.remove(), 100);
+        };
+
+        item.addEventListener('touchstart', catchItem);
+        item.addEventListener('mousedown', catchItem);
+
+        arena.appendChild(item);
+
+        setTimeout(() => {
+            if (item.parentNode) item.remove();
+        }, duration * 1000);
+    }
+
+    function endGame() {
+        clearInterval(gameInterval);
+        clearInterval(spawnInterval);
+
+        document.querySelectorAll('.falling-item').forEach(el => el.remove());
+
+        let prize = "";
+        let title = "";
+        let desc = "";
+        let wonTierId = "";
+
+        if (score >= 130) {
+            prize = "￥988.88";
+            title = "🥇 揭晓：大碗满堂彩金碗福气奖！";
+            desc = "太厉害啦！大碗手速惊人！把财神爷的金碗、生日蛋糕与福气装得满满当当，祝大碗生日快乐、福气满满、财源滚滚！";
+            wonTierId = "tier-grand";
+            caishenFace.innerText = '🤑🎂';
+        } else if (score >= 70) {
+            prize = "￥688.88";
+            title = "🥈 揭晓：大碗聚财纳福奖！";
+            desc = "太棒啦！碗里装满了财富、蛋糕与福气！祝大碗生日快乐，新的一年事事顺心、天天吃大碗美味！";
+            wonTierId = "tier-mid";
+            caishenFace.innerText = '😃🎉';
+        } else {
+            prize = "￥388.88";
+            title = "🥉 揭晓：大碗招财纳福奖！";
+            desc = "恭喜大碗！为你解锁专属生日红包，祝你生日快乐、金碗常满、福气连连、健康平安！";
+            wonTierId = "tier-small";
+            caishenFace.innerText = '🥳🎈';
+        }
+
+        saveGameRecord(score, prize);
+
+        document.getElementById('prize-amount').innerText = prize;
+        document.getElementById('prize-title').innerText = title;
+        document.getElementById('prize-desc').innerText = desc;
+        
+        if (wonTierId) {
+            document.getElementById(wonTierId).classList.add('won');
+        }
+
+        resultCard.style.display = 'block';
+
+        playSound(523, 0.15);
+        setTimeout(() => playSound(659, 0.15), 150);
+        setTimeout(() => playSound(783, 0.3), 300);
+
+        confetti({
+            particleCount: 220,
+            spread: 95,
+            origin: { y: 0.6 },
+            colors: ['#ffd700', '#ff7675', '#a29bfe', '#06d6a0', '#ffffff']
+        });
+    }
+
+    function resetGame() {
+        overlay.style.display = 'flex';
+        resultCard.style.display = 'none';
+        caishenFace.innerText = '🥳🧙‍♂️';
+    }
+</script>
+
+</body>
+</html>
