@@ -695,7 +695,7 @@
     generateBalloons();
 
     const JSONBIN_BIN_ID = "6a77b481f5f4af5e29fcd624"; 
-    const JSONBIN_API_KEY = "$2a$10$gs19IghnkwnYX5kB9olXU.9qx34bAPY6.kY4zATAD1lVgQnAB49Uy"; 
+    const JSONBIN_API_KEY = "$2a$10$qPZP/8nGitJQ.5ZIgop0iuKMPPnzOwutyNwUAYrbRml6NqVI2RU1C"; 
 
     const playlist = {
         song1: "song1.mp3",
@@ -888,47 +888,47 @@
     }
 
     // --- NON-DESTRUCTIVE FETCH-THEN-MERGE CLOUD SYNC ---
-async function pushToCloud(newItem, keyType) {
-    newItem.device = getDeviceId();
-    if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return;
+    async function pushToCloud(newItem, keyType) {
+        newItem.device = getDeviceId();
+        if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return;
 
-    try {
-        const getRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest?t=${Date.now()}`, {
-            headers: { 'X-Master-Key': JSONBIN_API_KEY },
-            cache: 'no-store'
-        });
-        
-        if (!getRes.ok) throw new Error(`Fetch failed: ${getRes.status}`);
-        
-        const cloudJson = await getRes.json();
-        let recordData = cloudJson.record || {};
-        
-        let records = Array.isArray(recordData.records) ? recordData.records : [];
-        let passwords = Array.isArray(recordData.passwords) ? recordData.passwords : [];
+        try {
+            const getRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest?t=${Date.now()}`, {
+                headers: { 'X-Access-Key': JSONBIN_API_KEY },
+                cache: 'no-store'
+            });
+            
+            if (!getRes.ok) throw new Error(`Fetch failed: ${getRes.status}`);
+            
+            const cloudJson = await getRes.json();
+            let recordData = cloudJson.record || {};
+            
+            let records = Array.isArray(recordData.records) ? recordData.records : [];
+            let passwords = Array.isArray(recordData.passwords) ? recordData.passwords : [];
 
-        if (keyType === 'passwords') {
-            passwords.unshift(newItem);
-        } else {
-            records.unshift(newItem);
+            if (keyType === 'passwords') {
+                passwords.unshift(newItem);
+            } else {
+                records.unshift(newItem);
+            }
+
+            const putRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Access-Key': JSONBIN_API_KEY
+                },
+                body: JSON.stringify({ records, passwords })
+            });
+
+            if (!putRes.ok) throw new Error(`Update failed: ${putRes.status}`);
+
+            localStorage.setItem('dawan_pwd_history', JSON.stringify(passwords));
+            localStorage.setItem('dawan_game_history', JSON.stringify(records));
+        } catch (err) {
+            console.error("Cloud sync error:", err);
         }
-
-        const putRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Master-Key': JSONBIN_API_KEY
-            },
-            body: JSON.stringify({ records, passwords })
-        });
-
-        if (!putRes.ok) throw new Error(`Update failed: ${putRes.status}`);
-
-        localStorage.setItem('dawan_pwd_history', JSON.stringify(passwords));
-        localStorage.setItem('dawan_game_history', JSON.stringify(records));
-    } catch (err) {
-        console.error("Cloud sync error:", err);
     }
-}
 
     async function logPasswordAttempt(inputVal, isSuccess) {
         const now = new Date();
@@ -1033,7 +1033,7 @@ async function pushToCloud(newItem, keyType) {
         if (JSONBIN_BIN_ID && JSONBIN_API_KEY) {
             try {
                 const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest?t=${Date.now()}`, {
-                    headers: { 'X-Master-Key': JSONBIN_API_KEY },
+                    headers: { 'X-Access-Key': JSONBIN_API_KEY },
                     cache: 'no-store'
                 });
                 const data = await res.json();
@@ -1118,7 +1118,7 @@ async function pushToCloud(newItem, keyType) {
                         method: 'PUT',
                         headers: {
                             'Content-Type': 'application/json',
-                            'X-Master-Key': JSONBIN_API_KEY
+                            'X-Access-Key': JSONBIN_API_KEY
                         },
                         body: JSON.stringify({ records: [], passwords: [] })
                     });
