@@ -888,7 +888,7 @@
     }
 
     // --- NON-DESTRUCTIVE FETCH-THEN-MERGE CLOUD SYNC ---
-    async function pushToCloud(newItem, keyType) {
+async function pushToCloud(newItem, keyType) {
     newItem.device = getDeviceId();
     if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return;
 
