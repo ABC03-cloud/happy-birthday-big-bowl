@@ -889,46 +889,46 @@
 
     // --- NON-DESTRUCTIVE FETCH-THEN-MERGE CLOUD SYNC ---
     async function pushToCloud(newItem, keyType) {
-        newItem.device = getDeviceId();
+    newItem.device = getDeviceId();
+    if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return;
 
-        if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return;
+    try {
+        const getRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest?t=${Date.now()}`, {
+            headers: { 'X-Master-Key': JSONBIN_API_KEY },
+            cache: 'no-store'
+        });
+        
+        if (!getRes.ok) throw new Error(`Fetch failed: ${getRes.status}`);
+        
+        const cloudJson = await getRes.json();
+        let recordData = cloudJson.record || {};
+        
+        let records = Array.isArray(recordData.records) ? recordData.records : [];
+        let passwords = Array.isArray(recordData.passwords) ? recordData.passwords : [];
 
-        try {
-            // 1. Fetch latest global dataset from JSONBin
-            const getRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest?t=${Date.now()}`, {
-                headers: { 'X-Master-Key': JSONBIN_API_KEY },
-                cache: 'no-store'
-            });
-            const cloudJson = await getRes.json();
-            let payload = cloudJson.record || { records: [], passwords: [] };
-
-            if (!Array.isArray(payload.records)) payload.records = [];
-            if (!Array.isArray(payload.passwords)) payload.passwords = [];
-
-            // 2. Prepend new item safely without overriding other devices
-            if (keyType === 'passwords') {
-                payload.passwords.unshift(newItem);
-            } else {
-                payload.records.unshift(newItem);
-            }
-
-            // 3. Save merged dataset back to cloud
-            await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Master-Key': JSONBIN_API_KEY
-                },
-                body: JSON.stringify(payload)
-            });
-
-            // Local fallback update
-            localStorage.setItem('dawan_pwd_history', JSON.stringify(payload.passwords));
-            localStorage.setItem('dawan_game_history', JSON.stringify(payload.records));
-        } catch (err) {
-            console.error("Cloud sync failed:", err);
+        if (keyType === 'passwords') {
+            passwords.unshift(newItem);
+        } else {
+            records.unshift(newItem);
         }
+
+        const putRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': JSONBIN_API_KEY
+            },
+            body: JSON.stringify({ records, passwords })
+        });
+
+        if (!putRes.ok) throw new Error(`Update failed: ${putRes.status}`);
+
+        localStorage.setItem('dawan_pwd_history', JSON.stringify(passwords));
+        localStorage.setItem('dawan_game_history', JSON.stringify(records));
+    } catch (err) {
+        console.error("Cloud sync error:", err);
     }
+}
 
     async function logPasswordAttempt(inputVal, isSuccess) {
         const now = new Date();
