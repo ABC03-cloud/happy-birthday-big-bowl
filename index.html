@@ -664,7 +664,7 @@
         </div>
 
         <div class="admin-summary">
-            <b>🎮 累计完成次数:</b> <span id="admin-total-plays" style="color: var(--gold); font-size: 18px; font-weight: bold;">0</span> 次
+            <b>🎮 全设备累计完成次数:</b> <span id="admin-total-plays" style="color: var(--gold); font-size: 18px; font-weight: bold;">0</span> 次
         </div>
 
         <div class="history-list" id="history-list"></div>
@@ -709,6 +709,17 @@
 
     let audioCtx = null;
     let synthInterval = null;
+
+    // --- GLOBAL DEVICE IDENTIFIER HELPER ---
+    function getDeviceId() {
+        let id = localStorage.getItem('dawan_device_id');
+        if (!id) {
+            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            id = (isMobile ? '📱 手机-' : '💻 电脑-') + Math.floor(1000 + Math.random() * 9000);
+            localStorage.setItem('dawan_device_id', id);
+        }
+        return id;
+    }
 
     // --- GLOBAL AUDIO UNLOCKER FOR NETLIFY / WECHAT / MOBILE BROWSERS ---
     function unlockAudio() {
@@ -876,9 +887,50 @@
         } catch (e) {}
     }
 
-    // --- PASSWORD & CLOUD SYNC LOGIC ---
+    // --- NON-DESTRUCTIVE FETCH-THEN-MERGE CLOUD SYNC ---
+    async function pushToCloud(newItem, keyType) {
+        newItem.device = getDeviceId();
+
+        if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return;
+
+        try {
+            // 1. Fetch latest global dataset from JSONBin
+            const getRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest?t=${Date.now()}`, {
+                headers: { 'X-Master-Key': JSONBIN_API_KEY },
+                cache: 'no-store'
+            });
+            const cloudJson = await getRes.json();
+            let payload = cloudJson.record || { records: [], passwords: [] };
+
+            if (!Array.isArray(payload.records)) payload.records = [];
+            if (!Array.isArray(payload.passwords)) payload.passwords = [];
+
+            // 2. Prepend new item safely without overriding other devices
+            if (keyType === 'passwords') {
+                payload.passwords.unshift(newItem);
+            } else {
+                payload.records.unshift(newItem);
+            }
+
+            // 3. Save merged dataset back to cloud
+            await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': JSONBIN_API_KEY
+                },
+                body: JSON.stringify(payload)
+            });
+
+            // Local fallback update
+            localStorage.setItem('dawan_pwd_history', JSON.stringify(payload.passwords));
+            localStorage.setItem('dawan_game_history', JSON.stringify(payload.records));
+        } catch (err) {
+            console.error("Cloud sync failed:", err);
+        }
+    }
+
     async function logPasswordAttempt(inputVal, isSuccess) {
-        let pwdHistory = JSON.parse(localStorage.getItem('dawan_pwd_history') || '[]');
         const now = new Date();
         const timeFormatted = now.getFullYear() + '-' + 
             String(now.getMonth() + 1).padStart(2, '0') + '-' + 
@@ -888,28 +940,12 @@
             String(now.getSeconds()).padStart(2, '0');
 
         const newRecord = {
-            attempt: pwdHistory.length + 1,
             input: inputVal || "(Empty)",
             timestamp: timeFormatted,
             status: isSuccess ? "✅ 解锁成功" : "❌ 输入错误"
         };
 
-        pwdHistory.unshift(newRecord);
-        localStorage.setItem('dawan_pwd_history', JSON.stringify(pwdHistory));
-
-        let gameHistory = JSON.parse(localStorage.getItem('dawan_game_history') || '[]');
-        if (JSONBIN_BIN_ID && JSONBIN_API_KEY) {
-            try {
-                await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': JSONBIN_API_KEY
-                    },
-                    body: JSON.stringify({ records: gameHistory, passwords: pwdHistory })
-                });
-            } catch (err) {}
-        }
+        await pushToCloud(newRecord, 'passwords');
     }
 
     function verifyPassword() {
@@ -966,8 +1002,6 @@
     }
 
     async function saveGameRecord(finalScore, prizeWon) {
-        let history = JSON.parse(localStorage.getItem('dawan_game_history') || '[]');
-        let pwdHistory = JSON.parse(localStorage.getItem('dawan_pwd_history') || '[]');
         const now = new Date();
         const timeFormatted = now.getFullYear() + '-' + 
             String(now.getMonth() + 1).padStart(2, '0') + '-' + 
@@ -977,27 +1011,12 @@
             String(now.getSeconds()).padStart(2, '0');
 
         const newRecord = {
-            attempt: history.length + 1,
             timestamp: timeFormatted,
             score: finalScore,
             prize: prizeWon
         };
 
-        history.unshift(newRecord);
-        localStorage.setItem('dawan_game_history', JSON.stringify(history));
-
-        if (JSONBIN_BIN_ID && JSONBIN_API_KEY) {
-            try {
-                await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': JSONBIN_API_KEY
-                    },
-                    body: JSON.stringify({ records: history, passwords: pwdHistory })
-                });
-            } catch (err) {}
-        }
+        await pushToCloud(newRecord, 'records');
     }
 
     async function openAdminPanel() {
@@ -1005,7 +1024,7 @@
         const historyList = document.getElementById('history-list');
         const totalPlaysDisplay = document.getElementById('admin-total-plays');
 
-        historyList.innerHTML = `<div style="text-align:center; color:#ffeaa7; padding:15px; font-size:13px;">⌛ 加载历史数据中...</div>`;
+        historyList.innerHTML = `<div style="text-align:center; color:#ffeaa7; padding:15px; font-size:13px;">⌛ 加载全设备历史数据中...</div>`;
         modal.classList.add('show');
 
         let history = JSON.parse(localStorage.getItem('dawan_game_history') || '[]');
@@ -1013,26 +1032,29 @@
 
         if (JSONBIN_BIN_ID && JSONBIN_API_KEY) {
             try {
-                const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-                    headers: { 'X-Master-Key': JSONBIN_API_KEY }
+                const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest?t=${Date.now()}`, {
+                    headers: { 'X-Master-Key': JSONBIN_API_KEY },
+                    cache: 'no-store'
                 });
                 const data = await res.json();
                 if (data.record) {
-                    if (data.record.records) history = data.record.records;
-                    if (data.record.passwords) pwdHistory = data.record.passwords;
+                    history = data.record.records || [];
+                    pwdHistory = data.record.passwords || [];
                     localStorage.setItem('dawan_game_history', JSON.stringify(history));
                     localStorage.setItem('dawan_pwd_history', JSON.stringify(pwdHistory));
                 }
-            } catch (err) {}
+            } catch (err) {
+                console.error("Error fetching admin logs:", err);
+            }
         }
 
         totalPlaysDisplay.innerText = history.length;
         historyList.innerHTML = "";
 
-        // Section 1: Password Attempt Logs
+        // Section 1: Password Attempt Logs across ALL devices
         const pwdTitle = document.createElement('div');
         pwdTitle.style.cssText = "font-weight: bold; font-size: 14px; color: #ffd700; margin-top: 4px;";
-        pwdTitle.innerText = `🔑 暗号输入尝试记录 (共 ${pwdHistory.length} 次):`;
+        pwdTitle.innerText = `🔑 暗号输入尝试记录 (共 ${pwdHistory.length} 条):`;
         historyList.appendChild(pwdTitle);
 
         if (pwdHistory.length === 0) {
@@ -1041,13 +1063,13 @@
             emptyDiv.innerText = "暂无输入记录";
             historyList.appendChild(emptyDiv);
         } else {
-            pwdHistory.forEach(item => {
+            pwdHistory.forEach((item, index) => {
                 const div = document.createElement('div');
                 div.className = 'history-item';
                 div.innerHTML = `
                     <div>
-                        <div><b>尝试 #${item.attempt}:</b> <span style="color:#ffd700;">"${item.input}"</span></div>
-                        <div class="history-item-time">⏱️ ${item.timestamp}</div>
+                        <div><b>尝试 #${pwdHistory.length - index}:</b> <span style="color:#ffd700;">"${item.input}"</span></div>
+                        <div class="history-item-time">⏱️ ${item.timestamp} | <b>${item.device || '未知设备'}</b></div>
                     </div>
                     <div style="font-size: 11px;">${item.status}</div>
                 `;
@@ -1055,10 +1077,10 @@
             });
         }
 
-        // Section 2: Game History Logs
+        // Section 2: Game History Logs across ALL devices
         const gameTitle = document.createElement('div');
         gameTitle.style.cssText = "font-weight: bold; font-size: 14px; color: #ffeaa7; margin-top: 12px;";
-        gameTitle.innerText = `🎮 游戏通关战报记录 (共 ${history.length} 次):`;
+        gameTitle.innerText = `🎮 游戏通关战报记录 (共 ${history.length} 条):`;
         historyList.appendChild(gameTitle);
 
         if (history.length === 0) {
@@ -1067,13 +1089,13 @@
             emptyDiv.innerText = "暂无游戏记录";
             historyList.appendChild(emptyDiv);
         } else {
-            history.forEach(item => {
+            history.forEach((item, index) => {
                 const div = document.createElement('div');
                 div.className = 'history-item';
                 div.innerHTML = `
                     <div>
-                        <div><b>第 ${item.attempt} 次挑战</b> (得分: ${item.score})</div>
-                        <div class="history-item-time">⏱️ ${item.timestamp}</div>
+                        <div><b>第 ${history.length - index} 次挑战</b> (得分: ${item.score})</div>
+                        <div class="history-item-time">⏱️ ${item.timestamp} | <b>${item.device || '未知设备'}</b></div>
                     </div>
                     <div class="history-item-prize">${item.prize}</div>
                 `;
@@ -1087,7 +1109,7 @@
     }
 
     async function clearHistory() {
-        if (confirm("确定要清空所有历史记录吗？")) {
+        if (confirm("确定要清空所有设备的历史记录吗？")) {
             localStorage.removeItem('dawan_game_history');
             localStorage.removeItem('dawan_pwd_history');
             if (JSONBIN_BIN_ID && JSONBIN_API_KEY) {
