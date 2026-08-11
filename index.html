@@ -2,10 +2,11 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>财神到·大碗生日抢宝大作战 🥣💰🎉</title>
     <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         :root {
             --gold: #ffd700;
@@ -19,6 +20,15 @@
             box-sizing: border-box;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            overscroll-behavior-y: none;
         }
 
         /* --- iOS SAFARI & WECHAT INPUT FIX --- */
@@ -31,7 +41,8 @@
         }
 
         canvas {
-            pointer-events: none !important;
+            pointer-events: auto;
+            touch-action: none;
         }
 
         body {
@@ -40,13 +51,11 @@
             background-size: 300% 300%;
             animation: gradientBG 10s ease infinite;
             color: #ffffff;
-            min-height: 100vh;
             margin: 0;
-            padding: 16px;
+            padding: 12px;
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow-x: hidden;
             position: relative;
         }
 
@@ -80,11 +89,36 @@
             100% { transform: translateY(-110vh) rotate(-15deg); opacity: 0; }
         }
 
+        /* --- SKY LANTERN ANIMATION --- */
+        .sky-lantern {
+            position: fixed;
+            bottom: -80px;
+            font-size: 24px;
+            color: #fff;
+            background: rgba(255, 120, 80, 0.85);
+            border: 2px solid #ffd700;
+            border-radius: 20px;
+            padding: 6px 14px;
+            box-shadow: 0 0 15px #ff7675;
+            z-index: 2;
+            pointer-events: none;
+            animation: floatLantern 12s linear forwards;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        @keyframes floatLantern {
+            0% { transform: translateY(0) scale(0.8); opacity: 1; }
+            100% { transform: translateY(-115vh) scale(1.1); opacity: 0; }
+        }
+
         .landing-screen {
             position: fixed;
             inset: 0;
             background: rgba(15, 5, 25, 0.96);
             backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             z-index: 1000;
             display: flex;
             justify-content: center;
@@ -103,7 +137,7 @@
             background: linear-gradient(180deg, #421147 0%, #1c0621 100%);
             border: 4px solid var(--gold);
             border-radius: 24px;
-            padding: 28px 20px;
+            padding: 24px 18px;
             width: 100%;
             max-width: 380px;
             text-align: center;
@@ -139,8 +173,8 @@
         }
 
         .envelope-seal {
-            width: 80px;
-            height: 80px;
+            width: 76px;
+            height: 76px;
             background: linear-gradient(135deg, #ffd700, #ff9f1a);
             border: 4px solid #ffffff;
             border-radius: 50%;
@@ -148,24 +182,31 @@
             align-items: center;
             justify-content: center;
             margin: 0 auto 12px;
-            font-size: 44px;
+            font-size: 40px;
             color: #5c1410;
             font-weight: bold;
             box-shadow: 0 0 18px rgba(255, 215, 0, 0.7);
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .envelope-seal:active {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.9);
         }
 
         .envelope-title {
             color: var(--gold);
-            font-size: 24px;
+            font-size: 22px;
             margin: 0 0 8px;
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
         .envelope-subtitle {
             color: #f1f2f6;
-            font-size: 14px;
+            font-size: 13px;
             line-height: 1.5;
-            margin-bottom: 16px;
+            margin-bottom: 12px;
             opacity: 0.95;
         }
 
@@ -174,15 +215,15 @@
             color: #2b1055;
             padding: 4px 14px;
             border-radius: 20px;
-            font-size: 13px;
+            font-size: 12px;
             font-weight: bold;
             display: inline-block;
-            margin-bottom: 12px;
+            margin-bottom: 10px;
             border: 2px solid var(--dark-border);
         }
 
         .password-box {
-            margin: 14px 0;
+            margin: 12px 0;
             display: flex;
             flex-direction: column;
             gap: 8px;
@@ -190,11 +231,11 @@
 
         .password-input {
             width: 100%;
-            padding: 12px 16px;
+            padding: 10px 14px;
             border-radius: 16px;
             border: 3px solid var(--gold);
             font-family: inherit;
-            font-size: 15px;
+            font-size: 14px;
             text-align: center;
             outline: none;
             background: rgba(255, 255, 255, 0.95);
@@ -204,27 +245,29 @@
 
         .error-msg {
             color: #ffd700;
-            font-size: 13px;
-            min-height: 18px;
+            font-size: 12px;
+            min-height: 16px;
             margin-top: -4px;
         }
 
         .container {
             width: 100%;
             max-width: 420px;
+            max-height: 100vh;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
             z-index: 10;
             position: relative;
+            padding-bottom: 10px;
         }
 
         .cartoon-card {
             background: #ffffff;
             border: 4px solid var(--dark-border);
             border-radius: 20px;
-            padding: 16px;
-            box-shadow: 0 6px 0 var(--dark-border);
+            padding: 12px;
+            box-shadow: 0 5px 0 var(--dark-border);
             text-align: center;
             position: relative;
             color: #2b1055;
@@ -241,28 +284,124 @@
             left: -8px;
             background: #ff7675;
             color: #fff;
-            font-size: 12px;
-            padding: 3px 10px;
+            font-size: 11px;
+            padding: 3px 8px;
             border-radius: 12px;
             border: 2px solid var(--dark-border);
             transform: rotate(-10deg);
             box-shadow: 2px 2px 0 var(--dark-border);
         }
 
+        /* --- POLAROID PHOTO SLIDESHOW & COVER --- */
+        .polaroid-container {
+            margin: 6px 0;
+            background: #fff;
+            border: 3px solid var(--dark-border);
+            border-radius: 12px;
+            padding: 6px 6px 10px;
+            box-shadow: 0 4px 0 var(--dark-border);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .polaroid-frame {
+            width: 100%;
+            height: 150px;
+            background: #6c5ce7;
+            border-radius: 8px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .polaroid-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            display: block;
+        }
+
+        .polaroid-cover {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #2b1055, #6c5ce7);
+            color: var(--gold);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+            z-index: 5;
+            cursor: pointer;
+            transition: opacity 0.4s ease, visibility 0.4s ease;
+            border-radius: 8px;
+            box-shadow: inset 0 0 12px rgba(0,0,0,0.5);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .polaroid-cover.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .polaroid-caption {
+            margin-top: 6px;
+            font-size: 12px;
+            color: #2b1055;
+            font-weight: bold;
+        }
+
+        /* --- AVATAR DRESS UP BAR --- */
+        .avatar-bar {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin: 4px 0;
+        }
+
+        .avatar-opt {
+            font-size: 18px;
+            background: #fff;
+            border: 2px solid var(--dark-border);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 0 var(--dark-border);
+            transition: transform 0.15s;
+        }
+
+        .avatar-opt.active {
+            background: var(--gold);
+            transform: scale(1.15);
+        }
+
         .bgm-card {
             background: #ffffff;
             border: 3px solid var(--dark-border);
             border-radius: 16px;
-            padding: 10px;
+            padding: 8px;
             box-shadow: 0 4px 0 var(--dark-border);
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
             align-items: center;
         }
 
         .bgm-title {
-            font-size: 13px;
+            font-size: 12px;
             font-weight: bold;
             color: #2b1055;
         }
@@ -287,7 +426,7 @@
             box-shadow: 0 2px 0 var(--dark-border);
             transition: all 0.15s ease;
             flex: 1 1 40%;
-            min-width: 80px;
+            min-width: 75px;
         }
 
         .bgm-btn:active {
@@ -309,7 +448,7 @@
         }
 
         .caishen-avatar {
-            font-size: 55px;
+            font-size: 48px;
             margin-bottom: 2px;
             cursor: pointer;
             animation: bounce 1.5s infinite ease-in-out;
@@ -323,10 +462,10 @@
         }
 
         .title {
-            font-size: 23px;
+            font-size: 20px;
             margin: 0;
             color: #2b1055;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
         }
 
         .mystery-badge {
@@ -334,11 +473,11 @@
             color: #ffffff;
             border: 2px dashed #ffffff;
             border-radius: 12px;
-            padding: 8px;
-            font-size: 14px;
+            padding: 6px;
+            font-size: 12px;
             font-weight: bold;
-            margin-top: 8px;
-            box-shadow: 0 4px 0 rgba(0,0,0,0.15);
+            margin-top: 6px;
+            box-shadow: 0 3px 0 rgba(0,0,0,0.15);
             animation: pulse 2s infinite;
         }
 
@@ -347,11 +486,38 @@
             50% { transform: scale(1.03); }
         }
 
+        .lantern-box {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+        }
+
+        .lantern-input {
+            flex: 1;
+            padding: 6px 10px;
+            border-radius: 10px;
+            border: 2px solid var(--dark-border);
+            font-family: inherit;
+            font-size: 12px;
+        }
+
+        .lantern-btn {
+            background: #ff7675;
+            color: #fff;
+            border: 2px solid var(--dark-border);
+            border-radius: 10px;
+            padding: 6px 10px;
+            font-family: inherit;
+            font-size: 12px;
+            cursor: pointer;
+            box-shadow: 0 2px 0 var(--dark-border);
+        }
+
         .prize-tier-grid {
             display: grid;
             grid-template-columns: 1fr 1fr 1fr;
             gap: 6px;
-            margin: 12px 0;
+            margin: 10px 0;
         }
 
         .tier-box {
@@ -359,7 +525,7 @@
             border: 2px solid rgba(255, 255, 255, 0.4);
             border-radius: 12px;
             padding: 6px 2px;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: bold;
             color: #fff;
             transition: all 0.3s;
@@ -369,69 +535,204 @@
             background: var(--gold) !important;
             color: #2b1055 !important;
             border-color: #fff !important;
-            transform: scale(1.08);
+            transform: scale(1.05);
             box-shadow: 0 0 12px var(--gold);
         }
 
         .game-arena {
-            height: 290px;
+            height: 280px;
             background: radial-gradient(circle, #2a1b4e 0%, #0f0721 100%);
             border: 4px solid var(--dark-border);
             border-radius: 20px;
             position: relative;
             overflow: hidden;
             box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+            transition: background 0.3s;
+            touch-action: none;
+        }
+
+        .game-arena.fever-mode {
+            background: radial-gradient(circle, #b33939 0%, #84817a 100%) !important;
+            animation: feverGlow 0.5s infinite alternate;
+        }
+
+        @keyframes feverGlow {
+            0% { border-color: #ffd700; box-shadow: inset 0 0 30px #ffd700; }
+            100% { border-color: #ff7675; box-shadow: inset 0 0 30px #ff7675; }
+        }
+
+        .fever-banner {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #ffd700;
+            color: #2b1055;
+            padding: 4px 14px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 13px;
+            border: 2px solid var(--dark-border);
+            box-shadow: 0 4px 0 var(--dark-border);
+            display: none;
+            z-index: 15;
+            animation: pulse 0.5s infinite;
         }
 
         .game-overlay {
             position: absolute;
             inset: 0;
-            background: rgba(0, 0, 0, 0.82);
+            background: rgba(0, 0, 0, 0.85);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             z-index: 20;
             color: #fff;
-            padding: 20px;
+            padding: 16px;
             text-align: center;
+        }
+
+        .cake-candle-area {
+            font-size: 55px;
+            margin: 6px 0;
+            cursor: pointer;
+            position: relative;
+            display: inline-block;
+        }
+
+        .candle-flame {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 22px;
+            animation: flicker 0.4s infinite alternate;
+        }
+
+        @keyframes flicker {
+            0% { transform: translateX(-50%) scale(1) rotate(-3deg); }
+            100% { transform: translateX(-50%) scale(1.15) rotate(3deg); }
+        }
+
+        .egg-wrapper {
+            position: relative;
+            display: inline-block;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+
+        .golden-egg {
+            font-size: 75px;
+            display: inline-block;
+            transition: transform 0.1s ease;
+            filter: drop-shadow(0 6px 12px rgba(255, 215, 0, 0.5));
+        }
+
+        .hammer-icon {
+            position: absolute;
+            top: -15px;
+            right: -15px;
+            font-size: 40px;
+            transform: rotate(-30deg);
+            transition: transform 0.15s ease;
+            pointer-events: none;
+        }
+
+        .hammer-swing {
+            animation: swingHammer 0.25s ease-in-out;
+        }
+
+        @keyframes swingHammer {
+            0% { transform: rotate(-30deg); }
+            50% { transform: rotate(-75deg) scale(1.2); }
+            100% { transform: rotate(-30deg); }
+        }
+
+        .egg-crack {
+            animation: eggShake 0.2s ease-in-out;
+        }
+
+        @keyframes eggShake {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            25% { transform: scale(1.1) rotate(-8deg); }
+            75% { transform: scale(1.1) rotate(8deg); }
         }
 
         .falling-item {
             position: absolute;
-            font-size: 40px;
+            font-size: 38px;
             cursor: pointer;
             top: -50px;
             animation: fall linear forwards;
             filter: drop-shadow(0 3px 0 rgba(0,0,0,0.4));
             transition: transform 0.1s ease-out, opacity 0.1s ease-out;
+            touch-action: none;
         }
 
         @keyframes fall {
-            to { transform: translateY(350px) rotate(180deg); }
+            to { transform: translateY(340px) rotate(180deg); }
+        }
+
+        .floating-combo {
+            position: fixed;
+            font-weight: bold;
+            font-size: 18px;
+            color: #ffd700;
+            text-shadow: 2px 2px 0 #1a0826;
+            pointer-events: none;
+            z-index: 999;
+            animation: floatAndFade 0.7s cubic-bezier(0.18, 0.89, 0.32, 1.28) forwards;
+        }
+
+        @keyframes floatAndFade {
+            0% { transform: translateY(0) scale(0.6); opacity: 1; }
+            100% { transform: translateY(-45px) scale(1.2); opacity: 0; }
         }
 
         .game-stats {
             display: flex;
-            justify-content: space-between;
+            flex-direction: column;
+            gap: 4px;
             background: #fff;
             border: 3px solid var(--dark-border);
             border-radius: 12px;
-            padding: 8px 16px;
+            padding: 6px 12px;
             font-weight: bold;
-            font-size: 16px;
+            font-size: 14px;
             color: #2b1055;
+        }
+
+        .stats-top {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .streak-bar-bg {
+            width: 100%;
+            height: 8px;
+            background: #dfe6e9;
+            border-radius: 5px;
+            overflow: hidden;
+            border: 1px solid var(--dark-border);
+        }
+
+        .streak-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #ff7675, #ffd700);
+            transition: width 0.2s ease;
         }
 
         .btn-action {
             background: linear-gradient(180deg, #ffd700 0%, #ff9f1a 100%);
             border: 3px solid var(--dark-border);
             color: var(--dark-border);
-            padding: 10px 24px;
+            padding: 8px 20px;
             border-radius: 16px;
             font-family: inherit;
             font-weight: bold;
-            font-size: 18px;
+            font-size: 16px;
             cursor: pointer;
             box-shadow: 0 4px 0 var(--dark-border);
             transition: transform 0.1s;
@@ -442,24 +743,78 @@
             box-shadow: 0 1px 0 var(--dark-border);
         }
 
-        .result-card {
+        .result-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 5, 20, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 1500;
             display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        .result-modal.show {
+            display: flex;
+        }
+
+        .result-card {
             background: linear-gradient(180deg, #421147 0%, #1c0621 100%);
             color: #fff;
             border: 4px solid var(--gold);
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 6px 0 var(--dark-border);
-            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border-radius: 24px;
+            padding: 20px 16px;
+            width: 100%;
+            max-width: 420px;
+            box-shadow: 0 0 35px rgba(255, 215, 0, 0.45), 0 8px 0 var(--dark-border);
+            animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
             position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.3) translateY(40px); opacity: 0; }
+            65% { transform: scale(1.06) translateY(-8px); opacity: 1; }
+            85% { transform: scale(0.96) translateY(2px); }
+            100% { transform: scale(1) translateY(0); opacity: 1; }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .scratch-box {
+            position: relative;
+            width: 100%;
+            height: 65px;
+            margin: 8px 0;
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(0,0,0,0.3);
+            border: 2px dashed var(--gold);
         }
 
         .prize-amount {
-            font-size: 38px;
+            font-size: 32px;
             color: var(--gold);
             text-shadow: 0 2px 4px rgba(0,0,0,0.5);
-            margin: 8px 0;
             font-weight: bold;
+        }
+
+        #scratch-canvas {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            cursor: pointer;
+            touch-action: none;
         }
 
         .admin-modal {
@@ -471,7 +826,7 @@
             display: none;
             justify-content: center;
             align-items: center;
-            padding: 20px;
+            padding: 16px;
         }
 
         .admin-modal.show {
@@ -482,13 +837,13 @@
             background: #2b1055;
             border: 3px solid var(--gold);
             border-radius: 20px;
-            padding: 20px;
+            padding: 16px;
             width: 100%;
             max-width: 400px;
             max-height: 85vh;
             display: flex;
             flex-direction: column;
-            gap: 12px;
+            gap: 10px;
             box-shadow: 0 0 25px rgba(255, 215, 0, 0.4);
             color: #fff;
         }
@@ -498,29 +853,29 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 2px solid rgba(255, 215, 0, 0.3);
-            padding-bottom: 8px;
+            padding-bottom: 6px;
         }
 
         .admin-title {
             margin: 0;
             color: var(--gold);
-            font-size: 20px;
+            font-size: 18px;
         }
 
         .admin-summary {
             background: rgba(255, 255, 255, 0.1);
             border-radius: 12px;
-            padding: 10px;
-            font-size: 14px;
+            padding: 8px;
+            font-size: 13px;
             text-align: center;
         }
 
         .history-list {
             overflow-y: auto;
-            max-height: 300px;
+            max-height: 280px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 6px;
             padding-right: 4px;
         }
 
@@ -528,7 +883,7 @@
             background: rgba(255, 255, 255, 0.08);
             border: 1px solid rgba(255, 215, 0, 0.2);
             border-radius: 10px;
-            padding: 8px 12px;
+            padding: 8px 10px;
             font-size: 12px;
             display: flex;
             justify-content: space-between;
@@ -537,20 +892,20 @@
 
         .history-item-time {
             color: #a29bfe;
-            font-size: 11px;
+            font-size: 10px;
         }
 
         .history-item-prize {
             color: var(--gold);
             font-weight: bold;
-            font-size: 13px;
+            font-size: 12px;
         }
 
         .btn-clear {
             background: #e63946;
             color: white;
             border: none;
-            padding: 8px 12px;
+            padding: 6px 10px;
             border-radius: 10px;
             cursor: pointer;
             font-weight: bold;
@@ -566,6 +921,58 @@
             20%, 60% { transform: translateX(-8px); }
             40%, 80% { transform: translateX(8px); }
         }
+
+        /* --- WECHAT COMPATIBLE VIDEO OVERLAY STYLES --- */
+        .bomb-video-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 3000;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .bomb-video-modal.show {
+            display: flex;
+        }
+
+        .bomb-video-card {
+            background: #11051b;
+            border: 4px solid #ff7675;
+            border-radius: 20px;
+            padding: 14px;
+            width: 100%;
+            max-width: 450px;
+            box-shadow: 0 0 30px rgba(255, 118, 117, 0.6);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            position: relative;
+        }
+
+        .bomb-video-card video {
+            width: 100%;
+            max-height: 55vh;
+            border-radius: 12px;
+            border: 2px solid var(--gold);
+            background: #000;
+            object-fit: contain;
+        }
+
+        .video-error-banner {
+            display: none;
+            background: rgba(230, 57, 70, 0.9);
+            color: #fff;
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 11px;
+            text-align: center;
+            width: 100%;
+        }
     </style>
 </head>
 <body id="body-root">
@@ -573,16 +980,27 @@
 <!-- BACKGROUND FLOATING CARTOON BALLOONS -->
 <div class="balloon-container" id="balloon-container"></div>
 
-<!-- LANDING SCREEN -->
+<!-- LANDING SCREEN (PASSWORD CHECK) -->
 <div class="landing-screen" id="landing-screen">
     <div class="envelope-card" id="envelope-card">
         <div class="party-sticker">🎂 HAPPY BIRTHDAY!</div>
-        <div class="envelope-seal">福</div>
+        <div class="envelope-seal" onclick="openFuVideo()" title="点击播放【福】字专属视频">福</div>
         <div class="envelope-tag">🔐 恰好4字/词暗号解锁</div>
         <h2 class="envelope-title">财神到 · 福气封条 🎈</h2>
         <p class="envelope-subtitle">
             这是一份只属于 <b>【大碗 🥣】</b> 的生日绝密礼包<br>输入<b>恰好 4 个</b>词语、字母或汉字即可拆封！
         </p>
+
+        <!-- POLAROID PHOTO CAROUSEL WITH COVER OVERLAY -->
+        <div class="polaroid-container" onclick="nextSlide()">
+            <div class="polaroid-frame">
+                <img id="polaroid-img" src="photo4.jpg" alt="独家回忆照片" />
+                <div class="polaroid-cover" id="polaroid-cover" onclick="revealPhoto(event)">
+                    <span>🔒 点击解锁(●'◡'●) 📸</span>
+                </div>
+            </div>
+            <div class="polaroid-caption" id="polaroid-text">点我切换：独家回忆 1/3</div>
+        </div>
 
         <div class="password-box">
             <input 
@@ -599,60 +1017,151 @@
     </div>
 </div>
 
+<!-- COUNTDOWN & DAILY TREE WATERING SCREEN -->
+<div class="landing-screen hidden" id="countdown-screen" style="z-index: 999;">
+    <div class="envelope-card" style="max-width: 400px;">
+        <div class="party-sticker">🌱 浇水加速解密</div>
+        <h2 class="envelope-title" style="margin-bottom: 4px;">生日倒计时 ⏳</h2>
+        <p style="font-size: 12px; color: #ffeaa7; margin-top: 0; margin-bottom: 10px;">目标时间：2026年9月27日 (UTC+8)</p>
+
+        <div id="tree-display" style="font-size: 70px; margin: 6px 0; transition: transform 0.3s ease; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">🌱</div>
+        <div id="tree-stage-name" style="font-size: 13px; color: var(--gold); font-weight: bold; margin-bottom: 10px;">希望幼苗</div>
+
+        <div id="countdown-timer-box" style="background: rgba(0,0,0,0.4); border: 2px solid var(--gold); border-radius: 16px; padding: 10px; margin-bottom: 10px;">
+            <div style="font-size: 11px; color: #a29bfe;">解锁剩余时间</div>
+            <div id="countdown-digits" style="font-size: 20px; font-weight: bold; color: var(--gold); margin-top: 2px;">计算中...</div>
+        </div>
+
+        <button class="btn-action" id="water-tree-btn" onclick="waterPlant()" style="width: 100%; margin-bottom: 6px;">💧 浇水养树 (-24小时)</button>
+        <div id="water-msg" style="font-size: 11px; color: #ffeaa7; min-height: 16px; margin-bottom: 10px;">每天可浇水 1 次，加速 1 天解锁！</div>
+
+        <button class="btn-action" id="enter-game-btn" onclick="enterGameFromCountdown()" style="width: 100%; display: none; background: linear-gradient(180deg, #22c55e 0%, #15803d 100%); color: white;">🎉 开启生日抢宝大作战 🚀</button>
+    </div>
+</div>
+
 <div class="container">
 
     <div class="cartoon-card header-card">
         <div class="header-sticker-left">🎈 Party Time!</div>
         <div class="caishen-avatar" id="caishen-face" onclick="handleAvatarClick()">🧙‍♂️</div>
+        
+        <div class="avatar-bar">
+            <div class="avatar-opt active" onclick="setAvatar('🧙‍♂️', this)">🧙‍♂️</div>
+            <div class="avatar-opt" onclick="setAvatar('👑🧙‍♂️', this)">👑</div>
+            <div class="avatar-opt" onclick="setAvatar('🕶️🧙‍♂️', this)">🕶️</div>
+            <div class="avatar-opt" onclick="setAvatar('🥳🧙‍♂️', this)">🥳</div>
+        </div>
+
         <h1 class="title">财神到·大碗纳福抢宝 🥣✨</h1>
-        <p style="font-size: 13px; margin: 4px 0 6px; color: #4b5563;">限时10秒！抢🎂生日蛋糕、🎁礼物与🥣大碗福气！（避开💣）</p>
+        <p style="font-size: 12px; margin: 2px 0 4px; color: #4b5563;">限时10秒！抢🎂生日蛋糕、🎁礼物与🥣大碗福气！（避开💣）</p>
         
         <div class="mystery-badge">🎉 隐藏【大碗专属生日福气红包】待解锁 🎉</div>
+
+        <div class="lantern-box">
+            <input type="text" id="wish-input" class="lantern-input" placeholder="写下你的生日愿望... 🕯️" />
+            <button class="lantern-btn" onclick="sendWishLantern()">放飞天灯 🏮</button>
+        </div>
     </div>
 
-    <!-- BGM CONTROL BAR -->
     <div class="bgm-card">
         <div class="bgm-title">🎵 HAPPY BIRTHDAY 🥣🎂🥳 背景音乐点歌台</div>
         <div class="bgm-btn-group">
             <button class="bgm-btn" id="btn-song1" onclick="playBGM('song1')">🎤 《特别的人》</button>
             <button class="bgm-btn" id="btn-song2" onclick="playBGM('song2')">☀️ 《两只老虎爱跳舞》</button>
-            <button class="bgm-btn" id="btn-song3" onclick="playBGM('song3')">🎂 《生日快乐歌》(八音盒)</button>
+            <button class="bgm-btn" id="btn-song3" onclick="playBGM('song3')">🎂 《八音盒》</button>
             <button class="bgm-btn" id="btn-pause" onclick="pauseBGM()" style="background: #e63946; flex: 1 1 100%;">⏸️ 暂停播放</button>
         </div>
         <div class="audio-status-msg" id="audio-status"></div>
-        <audio id="bgm-audio" loop></audio>
+        <audio id="bgm-audio" loop playsinline webkit-playsinline></audio>
+        <audio id="voice-audio" src="money.mp3" playsinline webkit-playsinline></audio>
     </div>
 
     <div class="game-stats">
-        <div>⏳ 倒计时: <span id="timer" style="color: #6c5ce7;">10</span>秒</div>
-        <div>🥣 碗里财富: <span id="score" style="color: #059669;">0</span></div>
+        <div class="stats-top">
+            <div>⏳ 倒计时: <span id="timer" style="color: #6c5ce7;">10</span>秒</div>
+            <div>🥣 碗里财富: <span id="score" style="color: #059669;">0</span></div>
+        </div>
+        <div style="font-size: 11px; display: flex; justify-content: space-between; align-items: center; color: #666;">
+            <span>🔥 连击狂暴 (Combo x<span id="combo-count">0</span>):</span>
+            <span id="fever-txt" style="color: #ff7675; font-weight: bold;">普通模式</span>
+        </div>
+        <div class="streak-bar-bg">
+            <div class="streak-bar-fill" id="fever-bar"></div>
+        </div>
     </div>
 
     <div class="game-arena" id="arena">
+        <div class="fever-banner" id="fever-banner">🔥 FEVER GOLDEN RAIN! 双倍暴击 🔥</div>
+
         <div class="game-overlay" id="overlay">
-            <h2 style="margin: 0 0 8px; color: var(--gold); font-size: 22px;">🎂 大碗准备好了吗？</h2>
-            <p style="font-size: 13px; margin-bottom: 16px; color: #ffeaa7;">💡 提示：抢到【🎂蛋糕/🎁礼物/🥣大碗/🍜长寿面】得双倍财气(+20分)！</p>
-            <button class="btn-action" onclick="startGame()">开始抢大奖 🚀</button>
+            <h2 style="margin: 0 0 4px; color: var(--gold); font-size: 20px;">🎂 大碗生日吹蜡烛仪式</h2>
+            <p style="font-size: 12px; margin-bottom: 6px; color: #ffeaa7;">点击蜡烛 3 次“吹灭火焰”开启游戏！</p>
+            
+            <div class="cake-candle-area" onclick="blowCandle(event)">
+                <span class="candle-flame" id="candle-flame">🔥</span>
+                🎂
+            </div>
+
+            <p style="font-size: 11px; color: #aaa; margin-top: 4px;">💡 提示：抢到【🎂/🎁/🥣/🍜/福】得双倍财气(+20分)！连续打中 5 次触发暴走！</p>
+            <button class="btn-action" id="start-btn" onclick="startGame()" style="display:none; margin-top: 6px;">开始抢大奖 🚀</button>
         </div>
     </div>
 
+</div>
+
+<!-- RESULT POP-UP MODAL -->
+<div class="result-modal" id="result-modal">
     <div class="result-card" id="result-card">
-        <div class="party-sticker" style="top: -12px; right: 10px;">🎉 生日大喜！</div>
-        <h3 style="margin: 0; font-size: 20px; color: var(--gold);" id="prize-title">🎉 恭喜大碗！</h3>
-        <div class="prize-amount" id="prize-amount">￥988.88</div>
-        <p id="prize-desc" style="font-size: 14px; line-height: 1.5; color: #ffeaa7; margin-bottom: 8px;">
-            祝大碗生日快乐！新的一年福气满满、盆满钵满！
-        </p>
+        
+        <!-- PHASE 1: GOLDEN EGG -->
+        <div id="egg-stage" style="text-align: center;">
+            <div class="party-sticker">🔨 砸金蛋环节</div>
+            <h3 style="margin: 8px 0 4px; font-size: 20px; color: var(--gold);">🔨 幸运大碗金蛋</h3>
+            <p style="font-size: 12px; color: #ffeaa7; margin-bottom: 8px;">敲击金蛋 <b>3</b> 次破蛋开启【刮刮乐】大奖！</p>
+            
+            <div class="egg-wrapper" onclick="knockEgg(event)">
+                <span class="hammer-icon" id="hammer">🔨</span>
+                <span class="golden-egg" id="golden-egg">🥚</span>
+            </div>
 
-        <div class="prize-tier-grid">
-            <div class="tier-box" id="tier-small">🥉 纳福奖<br>¥ 388.88</div>
-            <div class="tier-box" id="tier-mid">🥈 聚财奖<br>¥ 688.88</div>
-            <div class="tier-box" id="tier-grand">🥇 金碗福气大奖<br>¥ 988.88</div>
+            <div style="font-size: 14px; color: var(--gold); font-weight: bold; margin-top: 4px;">
+                敲击进度: <span id="egg-knock-txt" style="font-size: 18px; color: #ff7675;">0</span> / 3
+            </div>
         </div>
 
-        <button class="btn-action" onclick="resetGame()" style="width: 100%;">再玩一次 🔄</button>
-    </div>
+        <!-- PHASE 2: SCRATCH CARD STAGE -->
+        <div id="scratch-stage" style="display: none; text-align: center;">
+            <div class="party-sticker" style="top: -12px; right: 10px;">🎉 生日大喜！</div>
+            <h3 style="margin: 0; font-size: 18px; color: var(--gold);">✨ 幸运刮刮乐</h3>
+            <p id="scratch-hint" style="font-size: 12px; color: #ffeaa7; margin: 4px 0 8px;">👇 动手刮一刮下方涂层，揭晓大奖！👇</p>
+            
+            <div class="scratch-box">
+                <div class="prize-amount" id="prize-amount" style="opacity: 0; transition: opacity 0.4s ease;">￥988.88</div>
+                <canvas id="scratch-canvas"></canvas>
+            </div>
 
+            <div id="scratch-result-details" style="display: none; margin-top: 10px; animation: fadeIn 0.5s ease forwards;">
+                <h3 style="margin: 0; font-size: 18px; color: var(--gold);" id="prize-title">🎉 恭喜大碗！</h3>
+                <p id="prize-desc" style="font-size: 12px; line-height: 1.4; color: #ffeaa7; margin: 6px 0;">
+                    祝大碗生日快乐！新的一岁福气满满、盆满钵满！
+                </p>
+
+                <div class="prize-tier-grid">
+                    <div class="tier-box" id="tier-small">🥉 纳福奖<br>¥ 388.88</div>
+                    <div class="tier-box" id="tier-mid">🥈 聚财奖<br>¥ 688.88</div>
+                    <div class="tier-box" id="tier-grand">🥇 金碗福气大奖<br>¥ 988.88</div>
+                </div>
+
+                <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+                    <button class="bgm-btn" onclick="playVoiceWish()" style="background: #00b894; flex:1; padding: 8px; font-size:11px;">🎙️ 听专属语音祝福</button>
+                    <button class="bgm-btn" onclick="exportPoster()" style="background: #0984e3; flex:1; padding: 8px; font-size:11px;">📸 保存生日纪念卡</button>
+                </div>
+
+                <button class="btn-action" onclick="resetGame()" style="width: 100%;">再吹一次蜡烛 🔄</button>
+            </div>
+        </div>
+
+    </div>
 </div>
 
 <!-- ADMIN MODAL -->
@@ -660,24 +1169,80 @@
     <div class="admin-card">
         <div class="admin-header">
             <h3 class="admin-title">👑 专属管理员战报面板</h3>
-            <button onclick="closeAdminPanel()" style="background:none; border:none; color:#fff; font-size:20px; cursor:pointer;">✕</button>
+            <button onclick="closeAdminPanel()" style="background:none; border:none; color:#fff; font-size:18px; cursor:pointer;">✕</button>
         </div>
 
         <div class="admin-summary">
-            <b>🎮 全设备累计完成次数:</b> <span id="admin-total-plays" style="color: var(--gold); font-size: 18px; font-weight: bold;">0</span> 次
+            <b>🎮 全设备累计完成次数:</b> <span id="admin-total-plays" style="color: var(--gold); font-size: 16px; font-weight: bold;">0</span> 次
         </div>
 
         <div class="history-list" id="history-list"></div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 8px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
             <button class="btn-clear" onclick="clearHistory()">清空历史数据</button>
-            <button class="btn-action" onclick="closeAdminPanel()" style="padding: 6px 16px; font-size: 14px;">关闭</button>
+            <button class="btn-action" onclick="closeAdminPanel()" style="padding: 4px 14px; font-size: 13px;">关闭</button>
+        </div>
+    </div>
+</div>
+
+<!-- BOMB TRIGGER VIDEO MODAL (WECHAT OPTIMIZED) -->
+<div class="bomb-video-modal" id="bomb-video-modal">
+    <div class="bomb-video-card">
+        <h3 style="margin: 0; color: #ff7675; font-size: 18px;">💣 踩雷惩罚 / 爆笑彩蛋视频 🎬</h3>
+        <p style="margin: 0; font-size: 11px; color: #ffeaa7;">不小心点到了炸弹！视频播放完成后将自动返回游戏！</p>
+        
+        <div class="video-error-banner" id="video-error-msg">
+            ⚠️ 视频未正常加载：请检查 <b>bigboom.mp4</b> 是否存在且编码为 H.264 AAC 的 MP4。
+        </div>
+
+        <video id="bomb-video" 
+               playsinline 
+               webkit-playsinline 
+               x5-playsinline="true" 
+               x5-video-player-type="h5-page" 
+               x5-video-orientation="portrait" 
+               preload="auto" 
+               controls>
+            <source src="bigboom.mp4" type="video/mp4">
+        </video>
+
+        <div style="display: flex; gap: 8px; width: 100%; justify-content: center;">
+            <button class="btn-action" id="manual-play-btn" onclick="forcePlayVideo()" style="padding: 6px 12px; font-size: 12px; background: #6c5ce7; color: #fff;">▶ 手动播放</button>
+            <button class="btn-action" onclick="closeBombVideo()" style="padding: 6px 12px; font-size: 12px; background: #e63946; color: #fff;">跳过视频 ✕</button>
+        </div>
+    </div>
+</div>
+
+<!-- FU WORD POPUP VIDEO MODAL (WECHAT OPTIMIZED) -->
+<div class="bomb-video-modal" id="fu-video-modal">
+    <div class="bomb-video-card" style="border-color: var(--gold); box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);">
+        <h3 style="margin: 0; color: var(--gold); font-size: 18px;">🧧 福气满满 · 专属视频 🎬</h3>
+        <p style="margin: 0; font-size: 11px; color: #ffeaa7;">点击【福】字解锁的专属送福彩蛋视频！</p>
+        
+        <div class="video-error-banner" id="fu-video-error-msg">
+            ⚠️ 视频未正常加载：请检查 <b>fuvideo.mp4</b> 是否放在跟网页同目录下。
+        </div>
+
+        <video id="fu-video" 
+               playsinline 
+               webkit-playsinline 
+               x5-playsinline="true" 
+               x5-video-player-type="h5-page" 
+               x5-video-orientation="portrait" 
+               preload="auto" 
+               controls>
+            <source src="jealosy.mp4" type="video/mp4">
+        </video>
+
+        <div style="display: flex; gap: 8px; width: 100%; justify-content: center;">
+            <button class="btn-action" onclick="forcePlayFuVideo()" style="padding: 6px 12px; font-size: 12px; background: #6c5ce7; color: #fff;">▶ 手动播放</button>
+            <button class="btn-action" onclick="closeFuVideo()" style="padding: 6px 12px; font-size: 12px; background: #e63946; color: #fff;">关闭 ✕</button>
         </div>
     </div>
 </div>
 
 <script>
-    // --- GENERATE FLOATING BACKGROUND CARTOON BALLOONS ---
+    // --- BACKGROUND BALLOONS ---
     function generateBalloons() {
         const balloonContainer = document.getElementById('balloon-container');
         const balloonEmojis = ['🎈', '🎁', '✨', '🎂', '🎉', '🥳', '🧁'];
@@ -694,8 +1259,203 @@
     }
     generateBalloons();
 
+    // --- POLAROID SLIDESHOW WITH PHOTO COVER REVEAL LOGIC ---
+    const slides = [
+        { img: 'photo4.jpg', text: '回忆 1/3: 快乐每一天！' },
+        { img: 'photo2.jpg', text: '回忆 2/3: 大碗福气无限！' },
+        { img: 'photo5.jpg', text: '回忆 3/3: 愿所有的美好如期而至！' }
+    ];
+    let slideIdx = 0;
+    let isPhotoRevealed = false;
+
+    function revealPhoto(e) {
+        if (e) e.stopPropagation();
+        isPhotoRevealed = true;
+        const cover = document.getElementById('polaroid-cover');
+        if (cover) cover.classList.add('hidden');
+    }
+
+    function nextSlide() {
+        if (!isPhotoRevealed) {
+            revealPhoto();
+            return;
+        }
+        slideIdx = (slideIdx + 1) % slides.length;
+        document.getElementById('polaroid-img').src = slides[slideIdx].img;
+        document.getElementById('polaroid-text').innerText = slides[slideIdx].text;
+    }
+
+    // --- SKY LANTERN ---
+    function sendWishLantern() {
+        const input = document.getElementById('wish-input');
+        const text = input.value.trim() || "大碗生日快乐！";
+        const lantern = document.createElement('div');
+        lantern.className = 'sky-lantern';
+        lantern.innerHTML = `🏮 <span>${text}</span>`;
+        lantern.style.left = `${10 + Math.random() * 70}%`;
+        document.body.appendChild(lantern);
+        input.value = "";
+        setTimeout(() => lantern.remove(), 12000);
+    }
+
+    // --- AVATAR DRESS UP ---
+    let currentAvatarEmoji = '🧙‍♂️';
+    function setAvatar(emoji, el) {
+        currentAvatarEmoji = emoji;
+        document.getElementById('caishen-face').innerText = emoji;
+        document.querySelectorAll('.avatar-opt').forEach(opt => opt.classList.remove('active'));
+        if(el) el.classList.add('active');
+    }
+
+    // --- COUNTDOWN & TREE WATERING LOGIC ---
+    const BIRTHDAY_TARGET = new Date('2026-09-27T00:00:00+08:00').getTime();
+    let bonusDays = parseInt(localStorage.getItem('dawan_bonus_days')) || 0;
+    let lastWateredDate = localStorage.getItem('dawan_last_watered_date') || "";
+    let countdownInterval = null;
+
+    function getTodayString() {
+        const d = new Date();
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }
+
+    function updateTreeVisual() {
+        const treeEl = document.getElementById('tree-display');
+        const stageEl = document.getElementById('tree-stage-name');
+        if (bonusDays >= 12) {
+            treeEl.innerText = '🌸🌳';
+            stageEl.innerText = '许愿繁花树 (满级)';
+        } else if (bonusDays >= 7) {
+            treeEl.innerText = '🌳';
+            stageEl.innerText = '茁壮大树';
+        } else if (bonusDays >= 3) {
+            treeEl.innerText = '🌿';
+            stageEl.innerText = '生机小树';
+        } else {
+            treeEl.innerText = '🌱';
+            stageEl.innerText = '希望幼苗';
+        }
+    }
+
+    function updateCountdownTimer() {
+        const now = new Date().getTime();
+        const effectiveTarget = BIRTHDAY_TARGET - (bonusDays * 24 * 60 * 60 * 1000);
+        const timeLeft = effectiveTarget - now;
+
+        const digitsEl = document.getElementById('countdown-digits');
+        const enterBtn = document.getElementById('enter-game-btn');
+
+        if (timeLeft <= 0) {
+            digitsEl.innerText = "🎉 倒计时结束！已成功解锁！";
+            digitsEl.style.color = "#22c55e";
+            enterBtn.style.display = "block";
+            return;
+        } else {
+            enterBtn.style.display = "none";
+        }
+
+        const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const mins = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+        const secs = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+        digitsEl.innerText = `${days}天 ${hours}时 ${mins}分 ${secs}秒`;
+    }
+
+    function checkWaterButton() {
+        const today = getTodayString();
+        const btn = document.getElementById('water-tree-btn');
+        const msg = document.getElementById('water-msg');
+
+        if (lastWateredDate === today) {
+            btn.disabled = true;
+            btn.style.opacity = '0.6';
+            btn.innerText = '🚿 今日已浇水 (明天再来)';
+            msg.innerText = `今天已经给小树浇过水啦！累计已加速 ${bonusDays} 天`;
+        } else {
+            btn.disabled = false;
+            btn.style.opacity = '1';
+            btn.innerText = '💧 浇水养树 (-24小时)';
+            msg.innerText = '每天可浇水 1 次，加速 1 天解锁！';
+        }
+    }
+
+    function waterPlant() {
+        const today = getTodayString();
+        if (lastWateredDate !== today) {
+            bonusDays++;
+            lastWateredDate = today;
+
+            localStorage.setItem('dawan_bonus_days', bonusDays);
+            localStorage.setItem('dawan_last_watered_date', lastWateredDate);
+
+            playSound(600, 0.2, 'sine');
+            confetti({ particleCount: 60, spread: 60, origin: { y: 0.5 } });
+
+            const treeEl = document.getElementById('tree-display');
+            treeEl.style.transform = 'scale(1.3)';
+            setTimeout(() => treeEl.style.transform = 'scale(1)', 300);
+
+            updateTreeVisual();
+            checkWaterButton();
+            updateCountdownTimer();
+        }
+    }
+
+    function enterGameFromCountdown() {
+        document.getElementById('countdown-screen').classList.add('hidden');
+        setTimeout(() => {
+            document.getElementById('countdown-screen').style.display = 'none';
+        }, 600);
+        if (countdownInterval) clearInterval(countdownInterval);
+        playBGM('song1');
+    }
+
+    function verifyPassword() {
+        const pwdInput = document.getElementById('pwd-input').value.trim();
+        const errorMsg = document.getElementById('error-msg');
+        const envelopeCard = document.getElementById('envelope-card');
+
+        if (pwdInput.toUpperCase() === 'ADMIN23') {
+            playSound(600, 0.2, 'sine');
+            document.getElementById('landing-screen').style.display = 'none';
+            const countdownScreen = document.getElementById('countdown-screen');
+            if (countdownScreen) countdownScreen.style.display = 'none';
+            playBGM('song1');
+            return;
+        }
+
+        if (pwdInput.length === 4) {
+            playSound(600, 0.2, 'sine');
+            document.getElementById('landing-screen').classList.add('hidden');
+            setTimeout(() => {
+                document.getElementById('landing-screen').style.display = 'none';
+            }, 600);
+
+            const countdownScreen = document.getElementById('countdown-screen');
+            if (countdownScreen) {
+                countdownScreen.classList.remove('hidden');
+                countdownScreen.style.display = 'flex';
+
+                updateTreeVisual();
+                checkWaterButton();
+                updateCountdownTimer();
+                if (countdownInterval) clearInterval(countdownInterval);
+                countdownInterval = setInterval(updateCountdownTimer, 1000);
+            }
+        } else {
+            playSound(200, 0.3, 'sawtooth');
+            errorMsg.innerText = `❌ 暗号错误！输入 ADMIN23 可直接跳过`;
+            envelopeCard.classList.remove('shake');
+            void envelopeCard.offsetWidth; 
+            envelopeCard.classList.add('shake');
+        }
+    }
+
     const JSONBIN_BIN_ID = "6a77b481f5f4af5e29fcd624"; 
-    const JSONBIN_API_KEY = "$2a$10$qPZP/8nGitJQ.5ZIgop0iuKMPPnzOwutyNwUAYrbRml6NqVI2RU1C"; 
+    const JSONBIN_API_KEY = "$2a$10$gs19IghnkwnYX5kB9olXU.9qx34bAPY6.kY4zATAD1lVgQnAB49Uy"; 
 
     const playlist = {
         song1: "song1.mp3",
@@ -710,18 +1470,17 @@
     let audioCtx = null;
     let synthInterval = null;
 
-    // --- GLOBAL DEVICE IDENTIFIER HELPER ---
     function getDeviceId() {
         let id = localStorage.getItem('dawan_device_id');
         if (!id) {
-            const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+            const isMobile = /iPhone|iPad|iPod|Android|MicroMessenger/i.test(navigator.userAgent);
             id = (isMobile ? '📱 手机-' : '💻 电脑-') + Math.floor(1000 + Math.random() * 9000);
             localStorage.setItem('dawan_device_id', id);
         }
         return id;
     }
 
-    // --- GLOBAL AUDIO UNLOCKER FOR NETLIFY / WECHAT / MOBILE BROWSERS ---
+    // --- WECHAT COMPATIBLE AUDIO UNLOCK LOGIC ---
     function unlockAudio() {
         if (!audioCtx) {
             audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -732,16 +1491,21 @@
         if (bgmAudio) {
             bgmAudio.load();
         }
+        
+        // Pre-load videos silently to allow programmatic play in WeChat
+        const bombVid = document.getElementById('bomb-video');
+        const fuVid = document.getElementById('fu-video');
+        if (bombVid) bombVid.load();
+        if (fuVid) fuVid.load();
+
         document.removeEventListener('click', unlockAudio);
         document.removeEventListener('touchstart', unlockAudio);
-        document.removeEventListener('keydown', unlockAudio);
     }
 
     document.addEventListener('click', unlockAudio);
     document.addEventListener('touchstart', unlockAudio);
-    document.addEventListener('keydown', unlockAudio);
 
-    // WeChat Browser auto-play support
+    // WECHAT BRIDGE EVENT LISTENER
     document.addEventListener("WeixinJSBridgeReady", function () {
         unlockAudio();
     }, false);
@@ -755,7 +1519,6 @@
         }
     }
 
-    // Hardcoded Happy Birthday Chime Synthesizer
     function playHappyBirthdaySynth() {
         stopSynth();
         initAudio();
@@ -858,22 +1621,26 @@
     let avatarClickCount = 0;
     let avatarTimer = null;
 
+    let streak = 0;
+    let isFever = false;
+    let feverTimer = null;
+
+    let eggKnockCount = 0;
+    let scratchRevealed = false;
+
     const arena = document.getElementById('arena');
     const overlay = document.getElementById('overlay');
     const scoreDisplay = document.getElementById('score');
     const timerDisplay = document.getElementById('timer');
-    const resultCard = document.getElementById('result-card');
+    const resultModal = document.getElementById('result-modal');
     const caishenFace = document.getElementById('caishen-face');
 
-    // EXPANDED CARTOON BIRTHDAY ITEMS
-    const items = ['🎂', '🎁', '🎈', '🥳', '🧁', '🥣', '🍜', '💰', '🧧', '福', '💣'];
+    const items = ['🎂', '🎁', '🎈', '🥳', '🧁', '🥣', '🍜', '💰', '福', '💣'];
 
     function playSound(freq, duration, type = 'sine') {
-        initAudio();
         try {
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume();
-            }
+            initAudio();
+            if (!audioCtx) return;
             const osc = audioCtx.createOscillator();
             const gain = audioCtx.createGain();
             osc.type = type;
@@ -884,380 +1651,593 @@
             gain.connect(audioCtx.destination);
             osc.start();
             osc.stop(audioCtx.currentTime + duration);
-        } catch (e) {}
+        } catch(e) {}
     }
 
-    // --- NON-DESTRUCTIVE FETCH-THEN-MERGE CLOUD SYNC ---
-    async function pushToCloud(newItem, keyType) {
-        newItem.device = getDeviceId();
-        if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return;
+    // --- FU VIDEO POPUP LOGIC ---
+    function openFuVideo() {
+        const modal = document.getElementById('fu-video-modal');
+        const video = document.getElementById('fu-video');
+        const errBanner = document.getElementById('fu-video-error-msg');
 
-        try {
-            const getRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest?t=${Date.now()}`, {
-                headers: { 'X-Access-Key': JSONBIN_API_KEY },
-                cache: 'no-store'
-            });
-            
-            if (!getRes.ok) throw new Error(`Fetch failed: ${getRes.status}`);
-            
-            const cloudJson = await getRes.json();
-            let recordData = cloudJson.record || {};
-            
-            let records = Array.isArray(recordData.records) ? recordData.records : [];
-            let passwords = Array.isArray(recordData.passwords) ? recordData.passwords : [];
+        if (modal && video) {
+            errBanner.style.display = 'none';
+            if (bgmAudio && !bgmAudio.paused) bgmAudio.pause();
 
-            if (keyType === 'passwords') {
-                passwords.unshift(newItem);
-            } else {
-                records.unshift(newItem);
+            modal.classList.add('show');
+            video.currentTime = 0;
+            video.muted = false;
+
+            video.onerror = () => { errBanner.style.display = 'block'; };
+
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(err => {
+                    video.muted = true;
+                    video.play().catch(() => { errBanner.style.display = 'block'; });
+                });
+            }
+        }
+    }
+
+    function forcePlayFuVideo() {
+        const video = document.getElementById('fu-video');
+        if (video) {
+            video.muted = false;
+            video.play().catch(e => console.warn(e));
+        }
+    }
+
+    function closeFuVideo() {
+        const modal = document.getElementById('fu-video-modal');
+        const video = document.getElementById('fu-video');
+        if (modal && video) {
+            video.pause();
+            modal.classList.remove('show');
+            if (currentTrack && currentTrack !== 'song3') bgmAudio.play().catch(() => {});
+        }
+    }
+
+    // --- BOMB VIDEO TRIGGER LOGIC ---
+    function triggerBombVideo() {
+        const modal = document.getElementById('bomb-video-modal');
+        const video = document.getElementById('bomb-video');
+        const errBanner = document.getElementById('video-error-msg');
+        
+        if (modal && video) {
+            errBanner.style.display = 'none';
+            if (bgmAudio && !bgmAudio.paused) bgmAudio.pause();
+
+            modal.classList.add('show');
+            video.currentTime = 0;
+            video.muted = false;
+
+            video.onerror = () => { errBanner.style.display = 'block'; };
+
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(err => {
+                    video.muted = true;
+                    video.play().catch(e => { errBanner.style.display = 'block'; });
+                });
             }
 
-            const putRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Access-Key': JSONBIN_API_KEY
-                },
-                body: JSON.stringify({ records, passwords })
-            });
-
-            if (!putRes.ok) throw new Error(`Update failed: ${putRes.status}`);
-
-            localStorage.setItem('dawan_pwd_history', JSON.stringify(passwords));
-            localStorage.setItem('dawan_game_history', JSON.stringify(records));
-        } catch (err) {
-            console.error("Cloud sync error:", err);
+            video.onended = () => { closeBombVideo(); };
         }
     }
 
-    async function logPasswordAttempt(inputVal, isSuccess) {
-        const now = new Date();
-        const timeFormatted = now.getFullYear() + '-' + 
-            String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-            String(now.getDate()).padStart(2, '0') + ' ' + 
-            String(now.getHours()).padStart(2, '0') + ':' + 
-            String(now.getMinutes()).padStart(2, '0') + ':' + 
-            String(now.getSeconds()).padStart(2, '0');
-
-        const newRecord = {
-            input: inputVal || "(Empty)",
-            timestamp: timeFormatted,
-            status: isSuccess ? "✅ 解锁成功" : "❌ 输入错误"
-        };
-
-        await pushToCloud(newRecord, 'passwords');
+    function forcePlayVideo() {
+        const video = document.getElementById('bomb-video');
+        if (video) {
+            video.muted = false;
+            video.play().catch(e => console.warn(e));
+        }
     }
 
-    function verifyPassword() {
-        initAudio();
-        const inputVal = document.getElementById('pwd-input').value.trim();
-        const errorMsg = document.getElementById('error-msg');
-        const envelopeCard = document.getElementById('envelope-card');
-
-        if (inputVal.toUpperCase() === 'ADMIN23') {
-            document.getElementById('pwd-input').value = "";
-            openAdminPanel();
-            return;
+    function closeBombVideo() {
+        const modal = document.getElementById('bomb-video-modal');
+        const video = document.getElementById('bomb-video');
+        if (modal && video) {
+            video.pause();
+            modal.classList.remove('show');
+            if (currentTrack && currentTrack !== 'song3') bgmAudio.play().catch(() => {});
         }
+    }
 
-        const cleanInput = inputVal.replace(/\s+/g, '');
-        const spaceSeparatedWords = inputVal.split(/\s+/).filter(w => w.length > 0);
-        const chineseChars = inputVal.match(/[\u4e00-\u9fa5]/g) || [];
+    // --- CANDLE BLOW LOGIC ---
+    let candleBlows = 0;
+    function blowCandle(e) {
+        candleBlows++;
+        playSound(400 + candleBlows * 150, 0.2, 'triangle');
         
-        const totalCount = Math.max(cleanInput.length, spaceSeparatedWords.length, chineseChars.length);
-
-        if (totalCount === 4) {
-            logPasswordAttempt(inputVal, true);
-            errorMsg.innerText = "";
-            playSound(800, 0.2, 'sine');
-            playBGM('song3');
-
-            confetti({
-                particleCount: 120,
-                spread: 80,
-                origin: { y: 0.5 },
-                colors: ['#ffd700', '#ff7675', '#a29bfe', '#ffffff']
-            });
-
-            document.getElementById('landing-screen').classList.add('hidden');
-        } else {
-            logPasswordAttempt(inputVal, false);
-            playSound(150, 0.3, 'sawtooth');
-            errorMsg.innerText = `❌ 需要恰好 4 个字/词哦！(当前已输入 ${totalCount} 个)`;
+        const candleFlame = document.getElementById('candle-flame');
+        if (candleBlows === 1) {
+            candleFlame.style.transform = 'scale(0.6) translateX(-80%)';
+        } else if (candleBlows === 2) {
+            candleFlame.style.transform = 'scale(0.3) translateX(-150%)';
+        } else if (candleBlows >= 3) {
+            candleFlame.style.display = 'none';
+            playSound(880, 0.4, 'sine');
+            confetti({ particleCount: 60, spread: 60, origin: { y: 0.6 } });
             
-            envelopeCard.classList.add('shake');
-            setTimeout(() => envelopeCard.classList.remove('shake'), 300);
+            const startBtn = document.getElementById('start-btn');
+            startBtn.style.display = 'inline-block';
+            startBtn.classList.add('shake');
         }
     }
 
     function handleAvatarClick() {
         avatarClickCount++;
+        playSound(300 + avatarClickCount * 100, 0.1);
+        
+        caishenFace.style.transform = 'scale(1.3) rotate(15deg)';
+        setTimeout(() => caishenFace.style.transform = 'scale(1) rotate(0deg)', 150);
+
         clearTimeout(avatarTimer);
+        avatarTimer = setTimeout(() => { avatarClickCount = 0; }, 3000);
+
         if (avatarClickCount >= 5) {
             avatarClickCount = 0;
             openAdminPanel();
-        } else {
-            avatarTimer = setTimeout(() => { avatarClickCount = 0; }, 2000);
         }
     }
 
-    async function saveGameRecord(finalScore, prizeWon) {
-        const now = new Date();
-        const timeFormatted = now.getFullYear() + '-' + 
-            String(now.getMonth() + 1).padStart(2, '0') + '-' + 
-            String(now.getDate()).padStart(2, '0') + ' ' + 
-            String(now.getHours()).padStart(2, '0') + ':' + 
-            String(now.getMinutes()).padStart(2, '0') + ':' + 
-            String(now.getSeconds()).padStart(2, '0');
+    function triggerFeverMode() {
+        isFever = true;
+        document.getElementById('fever-banner').style.display = 'block';
+        arena.classList.add('fever-mode');
+        playSound(880, 0.5, 'square');
 
-        const newRecord = {
-            timestamp: timeFormatted,
-            score: finalScore,
-            prize: prizeWon
+        if (feverTimer) clearTimeout(feverTimer);
+        feverTimer = setTimeout(() => { endFeverMode(); }, 3500);
+    }
+
+    function endFeverMode() {
+        isFever = false;
+        document.getElementById('fever-banner').style.display = 'none';
+        arena.classList.remove('fever-mode');
+        streak = 0;
+        updateStreakBar();
+    }
+
+    function updateStreakBar() {
+        document.getElementById('combo-count').innerText = streak;
+        const percent = Math.min((streak / 5) * 100, 100);
+        document.getElementById('fever-bar').style.width = `${percent}%`;
+        document.getElementById('fever-txt').innerText = isFever ? "🔥 FEVER 暴走中!" : "普通模式";
+    }
+
+    function showFloatingText(x, y, text) {
+        const pop = document.createElement('div');
+        pop.className = 'floating-combo';
+        pop.innerText = text;
+        pop.style.left = `${x}px`;
+        pop.style.top = `${y}px`;
+        document.body.appendChild(pop);
+        setTimeout(() => pop.remove(), 700);
+    }
+
+    function startGame() {
+        score = 0;
+        timeLeft = 10;
+        streak = 0;
+        isFever = false;
+        scoreDisplay.innerText = score;
+        timerDisplay.innerText = timeLeft;
+        updateStreakBar();
+        
+        overlay.style.display = 'none';
+        resultModal.classList.remove('show');
+
+        if (gameInterval) clearInterval(gameInterval);
+        if (spawnInterval) clearInterval(spawnInterval);
+
+        gameInterval = setInterval(() => {
+            timeLeft--;
+            timerDisplay.innerText = timeLeft;
+            if (timeLeft <= 0) endGame();
+        }, 1000);
+
+        spawnInterval = setInterval(() => {
+            spawnItem();
+            if (isFever) setTimeout(spawnItem, 100);
+        }, 350);
+    }
+
+    function spawnItem() {
+        const item = document.createElement('div');
+        item.className = 'falling-item';
+        
+        let type = isFever ? 
+            ['🎂', '🎁', '🥣', '🍜', '福', '💰'][Math.floor(Math.random() * 6)] : 
+            items[Math.floor(Math.random() * items.length)];
+        
+        item.innerText = type;
+
+        const maxLeft = arena.clientWidth - 45;
+        const randomLeft = Math.floor(Math.random() * maxLeft);
+        item.style.left = `${randomLeft}px`;
+
+        const speed = isFever ? (1.0 + Math.random() * 0.8) : (1.5 + Math.random() * 1.5);
+        item.style.animationDuration = `${speed}s`;
+
+        const handleCatch = (e) => {
+            if (e.cancelable) e.preventDefault();
+            e.stopPropagation();
+
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            if (type === '💣') {
+                playSound(150, 0.3, 'sawtooth');
+                score = Math.max(0, score - 10);
+                streak = 0;
+                updateStreakBar();
+                showFloatingText(clientX, clientY, '-10 💣');
+                if (isFever) endFeverMode();
+                triggerBombVideo();
+            } else {
+                let basePoints = (['🎂', '🎁', '🥣', '🍜', '福'].includes(type)) ? 20 : 10;
+                let multiplier = isFever ? 2 : 1;
+                let added = basePoints * multiplier;
+                
+                score += added;
+                playSound(isFever ? 800 : 523, 0.15);
+                streak++;
+                updateStreakBar();
+
+                showFloatingText(clientX, clientY, `+${added} ${type}`);
+                if (streak >= 5 && !isFever) triggerFeverMode();
+            }
+
+            scoreDisplay.innerText = score;
+            item.style.transform = 'scale(1.5)';
+            item.style.opacity = '0';
+            setTimeout(() => item.remove(), 100);
         };
 
-        await pushToCloud(newRecord, 'records');
+        item.addEventListener('touchstart', handleCatch, {passive: false});
+        item.addEventListener('mousedown', handleCatch);
+
+        arena.appendChild(item);
+        setTimeout(() => { if (item.parentElement) item.remove(); }, speed * 1000);
+    }
+
+    function endGame() {
+        clearInterval(gameInterval);
+        clearInterval(spawnInterval);
+        if (feverTimer) clearTimeout(feverTimer);
+        endFeverMode();
+
+        document.querySelectorAll('.falling-item').forEach(el => el.remove());
+        playSound(600, 0.3);
+
+        const currentPrize = calculatePrize(score);
+        saveGameResult(score, currentPrize);
+
+        eggKnockCount = 0;
+        document.getElementById('egg-stage').style.display = 'block';
+        document.getElementById('scratch-stage').style.display = 'none';
+        document.getElementById('egg-knock-txt').innerText = '0';
+        document.getElementById('golden-egg').innerText = '🥚';
+        document.getElementById('golden-egg').style.transform = 'scale(1)';
+
+        resultModal.classList.add('show');
+        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+    }
+
+    // --- GOLDEN EGG ---
+    function knockEgg(e) {
+        if (eggKnockCount >= 3) return;
+
+        eggKnockCount++;
+        playSound(300 + eggKnockCount * 150, 0.15, 'triangle');
+
+        const hammer = document.getElementById('hammer');
+        const egg = document.getElementById('golden-egg');
+
+        hammer.classList.remove('hammer-swing');
+        egg.classList.remove('egg-crack');
+        void hammer.offsetWidth; 
+        hammer.classList.add('hammer-swing');
+        egg.classList.add('egg-crack');
+
+        document.getElementById('egg-knock-txt').innerText = eggKnockCount;
+
+        if (eggKnockCount === 1) egg.innerText = '🥚';
+        else if (eggKnockCount === 2) egg.innerText = '🐣';
+        else if (eggKnockCount >= 3) {
+            playSound(880, 0.4, 'sine');
+            egg.innerText = '💥';
+            confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
+            setTimeout(() => { transitionToScratchStage(); }, 600);
+        }
+    }
+
+    // --- TRANSITION TO SCRATCH CARD ---
+    function transitionToScratchStage() {
+        document.getElementById('egg-stage').style.display = 'none';
+        document.getElementById('scratch-stage').style.display = 'block';
+
+        const finalPrize = calculatePrize(score);
+        document.getElementById('prize-amount').innerText = `￥${finalPrize.amount}`;
+        document.getElementById('prize-title').innerText = `🎉 恭喜大碗！`;
+        document.getElementById('prize-desc').innerText = finalPrize.wish;
+
+        document.querySelectorAll('.tier-box').forEach(el => el.classList.remove('won'));
+        if (finalPrize.id) {
+            const targetTier = document.getElementById(finalPrize.id);
+            if (targetTier) targetTier.classList.add('won');
+        }
+
+        initScratchCard();
+    }
+
+    // --- SCRATCH CARD LOGIC ---
+    function initScratchCard() {
+        scratchRevealed = false;
+        
+        const resultDetails = document.getElementById('scratch-result-details');
+        resultDetails.style.display = 'none';
+        
+        const prizeAmtEl = document.getElementById('prize-amount');
+        prizeAmtEl.style.opacity = '0';
+
+        document.getElementById('scratch-hint').innerText = "👇 动手刮一刮下方涂层，揭晓大奖！👇";
+
+        const canvas = document.getElementById('scratch-canvas');
+        canvas.style.display = 'block';
+        canvas.style.opacity = '1';
+
+        const box = canvas.parentElement;
+        canvas.width = box.clientWidth;
+        canvas.height = box.clientHeight;
+
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#c0c0c0';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        ctx.fillStyle = '#666';
+        ctx.font = 'bold 14px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('✨ 刮刮乐：滑动刮开有惊喜 ✨', canvas.width / 2, canvas.height / 2);
+
+        let isScratching = false;
+
+        function scratch(e) {
+            if (!isScratching || scratchRevealed) return;
+            if (e.cancelable) e.preventDefault();
+
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            const x = clientX - rect.left;
+            const y = clientY - rect.top;
+
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.arc(x, y, 22, 0, Math.PI * 2);
+            ctx.fill();
+
+            checkScratchCompletion(ctx, canvas);
+        }
+
+        function checkScratchCompletion(ctx, canvas) {
+            if (scratchRevealed) return;
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const pixels = imageData.data;
+            let clearedPixels = 0;
+
+            for (let i = 3; i < pixels.length; i += 16) {
+                if (pixels[i] === 0) clearedPixels++;
+            }
+
+            const totalSampled = pixels.length / 16;
+            const percentCleared = (clearedPixels / totalSampled) * 100;
+
+            if (percentCleared >= 35) {
+                scratchRevealed = true;
+                revealPrizeDetails(ctx, canvas);
+            }
+        }
+
+        canvas.onmousedown = (e) => { isScratching = true; scratch(e); };
+        canvas.onmousemove = scratch;
+        canvas.onmouseup = () => { isScratching = false; };
+
+        canvas.ontouchstart = (e) => { isScratching = true; scratch(e); };
+        canvas.ontouchmove = scratch;
+        canvas.ontouchend = () => { isScratching = false; };
+    }
+
+    function revealPrizeDetails(ctx, canvas) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.style.transition = 'opacity 0.4s ease';
+        canvas.style.opacity = '0';
+        setTimeout(() => { canvas.style.display = 'none'; }, 400);
+
+        document.getElementById('prize-amount').style.opacity = '1';
+        document.getElementById('scratch-hint').innerText = "🎉 刮奖完成！全套生日大奖与专属祝福已解锁！";
+        document.getElementById('scratch-result-details').style.display = 'block';
+
+        playSound(880, 0.4, 'sine');
+        confetti({
+            particleCount: 150,
+            spread: 100,
+            origin: { y: 0.6 },
+            colors: ['#ffd700', '#ff7675', '#ffffff', '#a29bfe']
+        });
+    }
+
+    function calculatePrize(finalScore) {
+        if (finalScore >= 200) {
+            return { 
+                amount: "988.88", 
+                name: "🥇 金碗福气大奖", 
+                id: "tier-grand",
+                wish: "太厉害啦！大碗手速惊人！把财神爷的金碗、生日蛋糕与福气装得满满当当，祝大碗生日快乐、福气满满、财源滚滚！"
+            };
+        } else if (finalScore >= 100) {
+            return { 
+                amount: "688.88", 
+                name: "🥈 聚财奖", 
+                id: "tier-mid",
+                wish: "太棒啦！碗里装满了财富、蛋糕与福气！祝大碗生日快乐，新的一岁事事顺心、天天吃大碗美味！"
+            };
+        } else {
+            return { 
+                amount: "388.88", 
+                name: "🥉 纳福奖", 
+                id: "tier-small",
+                wish: "恭喜大碗！为你解锁专属生日红包，祝你生日快乐、金碗常满、福气连连、健康平安！"
+            };
+        }
+    }
+
+    function playVoiceWish() {
+        const voiceAudio = document.getElementById('voice-audio');
+        pauseBGM();
+
+        if (voiceAudio) {
+            if (voiceAudio.paused) {
+                voiceAudio.currentTime = 0;
+                voiceAudio.play().catch(err => {
+                    alert("⚠️ 播放失败：请确保 money.mp3 与网页文件放在同一目录下！");
+                });
+            } else {
+                voiceAudio.pause();
+            }
+        }
+    }
+
+    function exportPoster() {
+        const resultArea = document.getElementById('result-card');
+        if (typeof html2canvas !== 'undefined') {
+            html2canvas(resultArea, {
+                backgroundColor: '#2d103b',
+                scale: 2
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `大碗生日专属纪念卡.png`;
+                link.href = canvas.toDataURL();
+                link.click();
+            }).catch(() => {
+                alert("📸 导出图片失败，请截图保存这张生日纪念卡！");
+            });
+        } else {
+            alert("📸 请直接手机截屏保存这张专属生日纪念卡！");
+        }
+    }
+
+    function saveGameResult(finalScore, prizeObj) {
+        const history = getLocalHistory();
+        const record = {
+            time: new Date().toLocaleString('zh-CN'),
+            score: finalScore,
+            prize: prizeObj.name,
+            amount: prizeObj.amount,
+            device: getDeviceId()
+        };
+        history.unshift(record);
+        localStorage.setItem('dawan_game_history', JSON.stringify(history));
+        syncCloudHistory(history);
+    }
+
+    function getLocalHistory() {
+        const data = localStorage.getItem('dawan_game_history');
+        return data ? JSON.parse(data) : [];
+    }
+
+    async function syncCloudHistory(localHistory) {
+        if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return;
+        try {
+            await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': JSONBIN_API_KEY
+                },
+                body: JSON.stringify({ records: localHistory })
+            });
+        } catch(e) {
+            console.warn("Cloud sync failed or offline:", e);
+        }
+    }
+
+    async function fetchCloudHistory() {
+        if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return getLocalHistory();
+        try {
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+                headers: { 'X-Master-Key': JSONBIN_API_KEY }
+            });
+            const data = await res.json();
+            if (data && data.record && data.record.records) {
+                localStorage.setItem('dawan_game_history', JSON.stringify(data.record.records));
+                return data.record.records;
+            }
+        } catch(e) {
+            console.warn("Cloud fetch failed, fallback to local:", e);
+        }
+        return getLocalHistory();
     }
 
     async function openAdminPanel() {
         const modal = document.getElementById('admin-modal');
-        const historyList = document.getElementById('history-list');
-        const totalPlaysDisplay = document.getElementById('admin-total-plays');
-
-        historyList.innerHTML = `<div style="text-align:center; color:#ffeaa7; padding:15px; font-size:13px;">⌛ 加载全设备历史数据中...</div>`;
+        const listEl = document.getElementById('history-list');
+        listEl.innerHTML = '<div style="text-align:center; padding:10px;">⏳ 正在同步全设备战报...</div>';
         modal.classList.add('show');
 
-        let history = JSON.parse(localStorage.getItem('dawan_game_history') || '[]');
-        let pwdHistory = JSON.parse(localStorage.getItem('dawan_pwd_history') || '[]');
+        const records = await fetchCloudHistory();
+        document.getElementById('admin-total-plays').innerText = records.length;
 
-        if (JSONBIN_BIN_ID && JSONBIN_API_KEY) {
-            try {
-                const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest?t=${Date.now()}`, {
-                    headers: { 'X-Access-Key': JSONBIN_API_KEY },
-                    cache: 'no-store'
-                });
-                const data = await res.json();
-                if (data.record) {
-                    history = data.record.records || [];
-                    pwdHistory = data.record.passwords || [];
-                    localStorage.setItem('dawan_game_history', JSON.stringify(history));
-                    localStorage.setItem('dawan_pwd_history', JSON.stringify(pwdHistory));
-                }
-            } catch (err) {
-                console.error("Error fetching admin logs:", err);
-            }
+        if (records.length === 0) {
+            listEl.innerHTML = '<div style="text-align:center; color:#aaa; padding:10px;">暂无战报记录</div>';
+            return;
         }
 
-        totalPlaysDisplay.innerText = history.length;
-        historyList.innerHTML = "";
-
-        // Section 1: Password Attempt Logs across ALL devices
-        const pwdTitle = document.createElement('div');
-        pwdTitle.style.cssText = "font-weight: bold; font-size: 14px; color: #ffd700; margin-top: 4px;";
-        pwdTitle.innerText = `🔑 暗号输入尝试记录 (共 ${pwdHistory.length} 条):`;
-        historyList.appendChild(pwdTitle);
-
-        if (pwdHistory.length === 0) {
-            const emptyDiv = document.createElement('div');
-            emptyDiv.style.cssText = "text-align:center; color:#ccc; padding:6px; font-size:12px;";
-            emptyDiv.innerText = "暂无输入记录";
-            historyList.appendChild(emptyDiv);
-        } else {
-            pwdHistory.forEach((item, index) => {
-                const div = document.createElement('div');
-                div.className = 'history-item';
-                div.innerHTML = `
-                    <div>
-                        <div><b>尝试 #${pwdHistory.length - index}:</b> <span style="color:#ffd700;">"${item.input}"</span></div>
-                        <div class="history-item-time">⏱️ ${item.timestamp} | <b>${item.device || '未知设备'}</b></div>
-                    </div>
-                    <div style="font-size: 11px;">${item.status}</div>
-                `;
-                historyList.appendChild(div);
-            });
-        }
-
-        // Section 2: Game History Logs across ALL devices
-        const gameTitle = document.createElement('div');
-        gameTitle.style.cssText = "font-weight: bold; font-size: 14px; color: #ffeaa7; margin-top: 12px;";
-        gameTitle.innerText = `🎮 游戏通关战报记录 (共 ${history.length} 条):`;
-        historyList.appendChild(gameTitle);
-
-        if (history.length === 0) {
-            const emptyDiv = document.createElement('div');
-            emptyDiv.style.cssText = "text-align:center; color:#ccc; padding:6px; font-size:12px;";
-            emptyDiv.innerText = "暂无游戏记录";
-            historyList.appendChild(emptyDiv);
-        } else {
-            history.forEach((item, index) => {
-                const div = document.createElement('div');
-                div.className = 'history-item';
-                div.innerHTML = `
-                    <div>
-                        <div><b>第 ${history.length - index} 次挑战</b> (得分: ${item.score})</div>
-                        <div class="history-item-time">⏱️ ${item.timestamp} | <b>${item.device || '未知设备'}</b></div>
-                    </div>
-                    <div class="history-item-prize">${item.prize}</div>
-                `;
-                historyList.appendChild(div);
-            });
-        }
+        listEl.innerHTML = records.map((item, idx) => `
+            <div class="history-item">
+                <div>
+                    <div><b>#${records.length - idx}</b> - ${item.device || '📱 手机'} - <b>${item.score}分</b></div>
+                    <div class="history-item-time">${item.time}</div>
+                </div>
+                <div class="history-item-prize">￥${item.amount}</div>
+            </div>
+        `).join('');
     }
 
     function closeAdminPanel() {
         document.getElementById('admin-modal').classList.remove('show');
     }
 
-    async function clearHistory() {
-        if (confirm("确定要清空所有设备的历史记录吗？")) {
+    function clearHistory() {
+        if (confirm("确定要清空所有战报记录吗？")) {
             localStorage.removeItem('dawan_game_history');
-            localStorage.removeItem('dawan_pwd_history');
-            if (JSONBIN_BIN_ID && JSONBIN_API_KEY) {
-                try {
-                    await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Access-Key': JSONBIN_API_KEY
-                        },
-                        body: JSON.stringify({ records: [], passwords: [] })
-                    });
-                } catch (e) {}
-            }
+            syncCloudHistory([]);
             openAdminPanel();
         }
     }
 
-    function startGame() {
-        initAudio();
-        score = 0;
-        timeLeft = 10;
-        scoreDisplay.innerText = score;
-        timerDisplay.innerText = timeLeft;
-        overlay.style.display = 'none';
-        resultCard.style.display = 'none';
-        caishenFace.innerText = '😮🎂';
-
-        document.querySelectorAll('.tier-box').forEach(el => el.classList.remove('won'));
-
-        gameInterval = setInterval(() => {
-            timeLeft--;
-            timerDisplay.innerText = timeLeft;
-            if (timeLeft <= 0) {
-                endGame();
-            }
-        }, 1000);
-
-        spawnInterval = setInterval(spawnItem, 280);
-    }
-
-    function spawnItem() {
-        if (timeLeft <= 0) return;
-
-        const item = document.createElement('div');
-        item.className = 'falling-item';
-        const selectedSymbol = items[Math.floor(Math.random() * items.length)];
-        item.innerText = selectedSymbol;
-        
-        const randomX = Math.floor(Math.random() * (arena.clientWidth - 45));
-        const duration = (Math.random() * 1.1 + 0.9).toFixed(1);
-
-        item.style.left = `${randomX}px`;
-        item.style.animationDuration = `${duration}s`;
-
-        const catchItem = (e) => {
-            e.stopPropagation();
-            
-            if (selectedSymbol === '💣') {
-                score = Math.max(0, score - 10);
-                playSound(150, 0.3, 'sawtooth');
-                document.getElementById('body-root').classList.add('shake');
-                setTimeout(() => document.getElementById('body-root').classList.remove('shake'), 300);
-            } else if (['🎂', '🎁', '🧁', '🥣', '🍜', '福'].includes(selectedSymbol)) {
-                score += 20; // Special birthday items double points!
-                playSound(950, 0.25, 'triangle');
-            } else {
-                score += 10;
-                playSound(600 + (score * 5), 0.1, 'sine');
-            }
-
-            scoreDisplay.innerText = score;
-            item.style.transform = 'scale(1.8) rotate(15deg)';
-            item.style.opacity = '0';
-            setTimeout(() => item.remove(), 100);
-        };
-
-        item.addEventListener('touchstart', catchItem);
-        item.addEventListener('mousedown', catchItem);
-
-        arena.appendChild(item);
-
-        setTimeout(() => {
-            if (item.parentNode) item.remove();
-        }, duration * 1000);
-    }
-
-    function endGame() {
-        clearInterval(gameInterval);
-        clearInterval(spawnInterval);
-
-        document.querySelectorAll('.falling-item').forEach(el => el.remove());
-
-        let prize = "";
-        let title = "";
-        let desc = "";
-        let wonTierId = "";
-
-        if (score >= 130) {
-            prize = "￥988.88";
-            title = "🥇 揭晓：大碗满堂彩金碗福气奖！";
-            desc = "太厉害啦！大碗手速惊人！把财神爷的金碗、生日蛋糕与福气装得满满当当，祝大碗生日快乐、福气满满、财源滚滚！";
-            wonTierId = "tier-grand";
-            caishenFace.innerText = '🤑🎂';
-        } else if (score >= 70) {
-            prize = "￥688.88";
-            title = "🥈 揭晓：大碗聚财纳福奖！";
-            desc = "太棒啦！碗里装满了财富、蛋糕与福气！祝大碗生日快乐，新的一年事事顺心、天天吃大碗美味！";
-            wonTierId = "tier-mid";
-            caishenFace.innerText = '😃🎉';
-        } else {
-            prize = "￥388.88";
-            title = "🥉 揭晓：大碗招财纳福奖！";
-            desc = "恭喜大碗！为你解锁专属生日红包，祝你生日快乐、金碗常满、福气连连、健康平安！";
-            wonTierId = "tier-small";
-            caishenFace.innerText = '🥳🎈';
-        }
-
-        saveGameRecord(score, prize);
-
-        document.getElementById('prize-amount').innerText = prize;
-        document.getElementById('prize-title').innerText = title;
-        document.getElementById('prize-desc').innerText = desc;
-        
-        if (wonTierId) {
-            document.getElementById(wonTierId).classList.add('won');
-        }
-
-        resultCard.style.display = 'block';
-
-        playSound(523, 0.15);
-        setTimeout(() => playSound(659, 0.15), 150);
-        setTimeout(() => playSound(783, 0.3), 300);
-
-        confetti({
-            particleCount: 220,
-            spread: 95,
-            origin: { y: 0.6 },
-            colors: ['#ffd700', '#ff7675', '#a29bfe', '#06d6a0', '#ffffff']
-        });
-    }
-
     function resetGame() {
+        resultModal.classList.remove('show');
         overlay.style.display = 'flex';
-        resultCard.style.display = 'none';
-        caishenFace.innerText = '🧙‍♂️';
+        
+        candleBlows = 0;
+        const candleFlame = document.getElementById('candle-flame');
+        candleFlame.style.display = 'inline-block';
+        candleFlame.style.transform = 'scale(1) translateX(-50%)';
+        
+        document.getElementById('start-btn').style.display = 'none';
+        document.getElementById('score').innerText = '0';
+        document.getElementById('timer').innerText = '10';
+        
+        streak = 0;
+        isFever = false;
+        updateStreakBar();
     }
 </script>
-
 </body>
 </html>
