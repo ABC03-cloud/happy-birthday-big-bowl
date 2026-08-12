@@ -100,7 +100,7 @@
             border-radius: 20px;
             padding: 6px 14px;
             box-shadow: 0 0 15px #ff7675;
-            z-index: 2;
+            z-index: 9999;
             pointer-events: none;
             animation: floatLantern 12s linear forwards;
             display: flex;
@@ -866,7 +866,9 @@
             background: rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             padding: 8px;
-            font-size: 13px;
+            font-size: 12px;
+            display: flex;
+            justify-content: space-around;
             text-align: center;
         }
 
@@ -1058,10 +1060,10 @@
              style="font-size: 70px; margin: 6px 0; transition: transform 0.3s ease; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)); cursor: pointer;">🌱</div>
         
         <div id="tree-stage-name" style="font-size: 13px; color: var(--gold); font-weight: bold; margin-bottom: 2px;">希望幼苗</div>
-        <div style="font-size: 11px; color: #ffeaa7; margin-bottom: 10px;">💡 提示：双击小树可触发 8 秒照片雨彩蛋！</div>
+        <div id="tree-days-info" style="font-size: 11px; color: #ffeaa7; margin-bottom: 10px;">距离树木完全解锁还剩: 计算中...</div>
 
         <div id="countdown-timer-box" style="background: rgba(0,0,0,0.4); border: 2px solid var(--gold); border-radius: 16px; padding: 10px; margin-bottom: 10px;">
-            <div style="font-size: 11px; color: #a29bfe;">解锁剩余时间</div>
+            <div style="font-size: 11px; color: #a29bfe;">实时解锁倒计时</div>
             <div id="countdown-digits" style="font-size: 20px; font-weight: bold; color: var(--gold); margin-top: 2px;">计算中...</div>
         </div>
 
@@ -1197,22 +1199,29 @@
     </div>
 </div>
 
-<!-- ADMIN MODAL -->
+<!-- ADMIN MODAL WITH TRACKED WISHES & GAME HISTORY -->
 <div class="admin-modal" id="admin-modal">
     <div class="admin-card">
         <div class="admin-header">
-            <h3 class="admin-title">👑 专属管理员战报面板</h3>
+            <h3 class="admin-title">👑 专属管理员战报与许愿面板</h3>
             <button onclick="closeAdminPanel()" style="background:none; border:none; color:#fff; font-size:18px; cursor:pointer;">✕</button>
         </div>
 
         <div class="admin-summary">
-            <b>🎮 全设备累计完成次数:</b> <span id="admin-total-plays" style="color: var(--gold); font-size: 16px; font-weight: bold;">0</span> 次
+            <div><b>🎮 累计游玩:</b> <span id="admin-total-plays" style="color: var(--gold); font-weight: bold;">0</span> 次</div>
+            <div><b>🏮 放飞愿望:</b> <span id="admin-total-wishes" style="color: var(--gold); font-weight: bold;">0</span> 条</div>
+        </div>
+
+        <div style="display:flex; gap:6px; margin: 2px 0;">
+            <button id="tab-btn-history" onclick="switchAdminTab('history')" style="flex:1; padding:4px; font-size:11px; background:var(--gold); border:none; border-radius:6px; cursor:pointer; font-weight:bold;">🎮 战报记录</button>
+            <button id="tab-btn-wishes" onclick="switchAdminTab('wishes')" style="flex:1; padding:4px; font-size:11px; background:#6c5ce7; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">🏮 愿望追踪</button>
         </div>
 
         <div class="history-list" id="history-list"></div>
+        <div class="history-list" id="wishes-list" style="display:none;"></div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
-            <button class="btn-clear" onclick="clearHistory()">清空历史数据</button>
+            <button class="btn-clear" onclick="clearHistory()">清空记录</button>
             <button class="btn-action" onclick="closeAdminPanel()" style="padding: 4px 14px; font-size: 13px;">关闭</button>
         </div>
     </div>
@@ -1378,16 +1387,39 @@
         document.getElementById('polaroid-text').innerText = slides[slideIdx].text;
     }
 
-    // --- SKY LANTERN ---
+    // --- SKY LANTERN & WISH TRACKING LOGIC ---
+    function saveWishRecord(wishText) {
+        const wishes = getSavedWishes();
+        const record = {
+            wish: wishText,
+            time: new Date().toLocaleString('zh-CN'),
+            device: getDeviceId()
+        };
+        wishes.unshift(record);
+        localStorage.setItem('dawan_saved_wishes', JSON.stringify(wishes));
+    }
+
+    function getSavedWishes() {
+        const data = localStorage.getItem('dawan_saved_wishes');
+        return data ? JSON.parse(data) : [];
+    }
+
     function sendWishLantern() {
         const input = document.getElementById('wish-input');
         const text = input.value.trim() || "大碗生日快乐！";
+        
+        // 1. 保存愿望追踪记录
+        saveWishRecord(text);
+
+        // 2. 动画效果
         const lantern = document.createElement('div');
         lantern.className = 'sky-lantern';
         lantern.innerHTML = `🏮 <span>${text}</span>`;
         lantern.style.left = `${10 + Math.random() * 70}%`;
         document.body.appendChild(lantern);
+        
         input.value = "";
+        playSound(650, 0.25, 'sine');
         setTimeout(() => lantern.remove(), 12000);
     }
 
@@ -1400,7 +1432,7 @@
         if(el) el.classList.add('active');
     }
 
-    // --- COUNTDOWN & TREE WATERING LOGIC ---
+    // --- COUNTDOWN & ACCURATE TREE DAYS REMAINING LOGIC ---
     const BIRTHDAY_TARGET = new Date('2026-09-27T00:00:00+08:00').getTime();
     let bonusDays = parseInt(localStorage.getItem('dawan_bonus_days')) || 0;
     let lastWateredDate = localStorage.getItem('dawan_last_watered_date') || "";
@@ -1432,17 +1464,21 @@
         }
     }
 
+    // 精确计算剩余天数与实时倒计时
     function updateCountdownTimer() {
         const now = new Date().getTime();
         const effectiveTarget = BIRTHDAY_TARGET - (bonusDays * 24 * 60 * 60 * 1000);
         const timeLeft = effectiveTarget - now;
 
         const digitsEl = document.getElementById('countdown-digits');
+        const daysInfoEl = document.getElementById('tree-days-info');
         const enterBtn = document.getElementById('enter-game-btn');
 
         if (timeLeft <= 0) {
             digitsEl.innerText = "🎉 倒计时结束！已成功解锁！";
             digitsEl.style.color = "#22c55e";
+            daysInfoEl.innerText = "🌸 树木已完全成熟解锁！";
+            daysInfoEl.style.color = "#22c55e";
             enterBtn.style.display = "block";
             return;
         } else {
@@ -1454,6 +1490,9 @@
         const mins = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
         const secs = Math.floor((timeLeft % (1000 * 60)) / 1000);
 
+        // 精确显示树木解锁所需天数计算结果 (考虑浇水加速)
+        const exactDaysLeft = (timeLeft / (1000 * 60 * 60 * 24)).toFixed(1);
+        daysInfoEl.innerText = `⏳ 距离小树解密还剩: ${days} 天 ${hours} 小时 (计算加速: -${bonusDays}天)`;
         digitsEl.innerText = `${days}天 ${hours}时 ${mins}分 ${secs}秒`;
     }
 
@@ -2300,7 +2339,10 @@
                     'Content-Type': 'application/json',
                     'X-Master-Key': JSONBIN_API_KEY
                 },
-                body: JSON.stringify({ records: localHistory })
+                body: JSON.stringify({ 
+                    records: localHistory,
+                    wishes: getSavedWishes()
+                })
             });
         } catch(e) {
             console.warn("Cloud sync failed or offline:", e);
@@ -2314,8 +2356,9 @@
                 headers: { 'X-Master-Key': JSONBIN_API_KEY }
             });
             const data = await res.json();
-            if (data && data.record && data.record.records) {
-                localStorage.setItem('dawan_game_history', JSON.stringify(data.record.records));
+            if (data && data.record) {
+                if (data.record.records) localStorage.setItem('dawan_game_history', JSON.stringify(data.record.records));
+                if (data.record.wishes) localStorage.setItem('dawan_saved_wishes', JSON.stringify(data.record.wishes));
                 return data.record.records;
             }
         } catch(e) {
@@ -2324,29 +2367,73 @@
         return getLocalHistory();
     }
 
+    function switchAdminTab(tab) {
+        const historyList = document.getElementById('history-list');
+        const wishesList = document.getElementById('wishes-list');
+        const btnHistory = document.getElementById('tab-btn-history');
+        const btnWishes = document.getElementById('tab-btn-wishes');
+
+        if (tab === 'history') {
+            historyList.style.display = 'flex';
+            wishesList.style.display = 'none';
+            btnHistory.style.background = 'var(--gold)';
+            btnHistory.style.color = '#2b1055';
+            btnWishes.style.background = '#6c5ce7';
+            btnWishes.style.color = 'white';
+        } else {
+            historyList.style.display = 'none';
+            wishesList.style.display = 'flex';
+            btnWishes.style.background = 'var(--gold)';
+            btnWishes.style.color = '#2b1055';
+            btnHistory.style.background = '#6c5ce7';
+            btnHistory.style.color = 'white';
+        }
+    }
+
     async function openAdminPanel() {
         const modal = document.getElementById('admin-modal');
         const listEl = document.getElementById('history-list');
+        const wishesEl = document.getElementById('wishes-list');
+
         listEl.innerHTML = '<div style="text-align:center; padding:10px;">⏳ 正在同步全设备战报...</div>';
         modal.classList.add('show');
 
         const records = await fetchCloudHistory();
-        document.getElementById('admin-total-plays').innerText = records.length;
+        const wishes = getSavedWishes();
 
+        document.getElementById('admin-total-plays').innerText = records.length;
+        document.getElementById('admin-total-wishes').innerText = wishes.length;
+
+        // 战报列表
         if (records.length === 0) {
             listEl.innerHTML = '<div style="text-align:center; color:#aaa; padding:10px;">暂无战报记录</div>';
-            return;
+        } else {
+            listEl.innerHTML = records.map((item, idx) => `
+                <div class="history-item">
+                    <div>
+                        <div><b>#${records.length - idx}</b> - ${item.device || '📱 手机'} - <b>${typeof item.score === 'number' ? item.score + '分' : item.score}</b></div>
+                        <div class="history-item-time">${item.time} | 🔑 暗号: <span style="color:var(--gold);">${item.password || '无'}</span></div>
+                    </div>
+                    <div class="history-item-prize">￥${item.amount}</div>
+                </div>
+            `).join('');
         }
 
-        listEl.innerHTML = records.map((item, idx) => `
-            <div class="history-item">
-                <div>
-                    <div><b>#${records.length - idx}</b> - ${item.device || '📱 手机'} - <b>${typeof item.score === 'number' ? item.score + '分' : item.score}</b></div>
-                    <div class="history-item-time">${item.time} | 🔑 暗号: <span style="color:var(--gold);">${item.password || '无'}</span></div>
+        // 愿望记录列表
+        if (wishes.length === 0) {
+            wishesEl.innerHTML = '<div style="text-align:center; color:#aaa; padding:10px;">暂无许愿记录</div>';
+        } else {
+            wishesEl.innerHTML = wishes.map((item, idx) => `
+                <div class="history-item">
+                    <div>
+                        <div style="color:var(--gold); font-weight:bold;">🏮 ${item.wish}</div>
+                        <div class="history-item-time">${item.time} | ${item.device || '📱 手机'}</div>
+                    </div>
                 </div>
-                <div class="history-item-prize">￥${item.amount}</div>
-            </div>
-        `).join('');
+            `).join('');
+        }
+
+        switchAdminTab('history');
     }
 
     function closeAdminPanel() {
@@ -2354,8 +2441,9 @@
     }
 
     function clearHistory() {
-        if (confirm("确定要清空所有战报记录吗？")) {
+        if (confirm("确定要清空战报与许愿记录吗？")) {
             localStorage.removeItem('dawan_game_history');
+            localStorage.removeItem('dawan_saved_wishes');
             syncCloudHistory([]);
             openAdminPanel();
         }
