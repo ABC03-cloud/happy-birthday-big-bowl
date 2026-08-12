@@ -973,6 +973,54 @@
             text-align: center;
             width: 100%;
         }
+
+        /* --- TREE DROPPED PICTURE STYLES --- */
+        .tree-photo-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 5, 20, 0.88);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 2500;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .tree-photo-modal.show {
+            display: flex;
+        }
+
+        .tree-photo-card {
+            background: #ffffff;
+            border: 4px solid var(--gold);
+            border-radius: 20px;
+            padding: 14px;
+            width: 100%;
+            max-width: 350px;
+            text-align: center;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5), 0 8px 0 var(--dark-border);
+            animation: dropFromTree 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            position: relative;
+        }
+
+        @keyframes dropFromTree {
+            0% { transform: translateY(-180px) scale(0.2) rotate(-20deg); opacity: 0; }
+            70% { transform: translateY(12px) scale(1.05) rotate(4deg); opacity: 1; }
+            100% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
+        }
+
+        .tree-photo-card img {
+            width: 100%;
+            max-height: 280px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 3px solid var(--dark-border);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            margin: 8px 0;
+            display: block;
+        }
     </style>
 </head>
 <body id="body-root">
@@ -1024,8 +1072,14 @@
         <h2 class="envelope-title" style="margin-bottom: 4px;">生日倒计时 ⏳</h2>
         <p style="font-size: 12px; color: #ffeaa7; margin-top: 0; margin-bottom: 10px;">目标时间：2026年9月27日 (UTC+8)</p>
 
-        <div id="tree-display" style="font-size: 70px; margin: 6px 0; transition: transform 0.3s ease; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));">🌱</div>
-        <div id="tree-stage-name" style="font-size: 13px; color: var(--gold); font-weight: bold; margin-bottom: 10px;">希望幼苗</div>
+        <!-- DOUBLE CLICK TREE TRIGGER ADDED HERE -->
+        <div id="tree-display" 
+             ondblclick="dropTreePicture(event)" 
+             title="双击小树掉落专属神秘照片！"
+             style="font-size: 70px; margin: 6px 0; transition: transform 0.3s ease; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)); cursor: pointer;">🌱</div>
+        
+        <div id="tree-stage-name" style="font-size: 13px; color: var(--gold); font-weight: bold; margin-bottom: 2px;">希望幼苗</div>
+        <div style="font-size: 11px; color: #ffeaa7; margin-bottom: 10px;">💡 提示：双击小树可掉落神秘彩蛋照片！</div>
 
         <div id="countdown-timer-box" style="background: rgba(0,0,0,0.4); border: 2px solid var(--gold); border-radius: 16px; padding: 10px; margin-bottom: 10px;">
             <div style="font-size: 11px; color: #a29bfe;">解锁剩余时间</div>
@@ -1220,19 +1274,19 @@
         <p style="margin: 0; font-size: 11px; color: #ffeaa7;">点击【福】字解锁的专属送福彩蛋视频！</p>
         
         <div class="video-error-banner" id="fu-video-error-msg">
-            ⚠️ 视频未正常加载：请检查 <b>fuvideo.mp4</b> 是否放在跟网页同目录下。
+            ⚠️ 视频未正常加载：请检查 <b>jealosy.mp4</b> 是否放在跟网页同目录下。
         </div>
 
-<video id="fu-video" 
-       playsinline 
-       webkit-playsinline 
-       x5-playsinline="true" 
-       x5-video-player-type="h5-page" 
-       x5-video-orientation="portrait" 
-       preload="auto" 
-       controls>
-    <source src="jealosy.mp4" type="video/mp4">
-</video>
+        <video id="fu-video" 
+               playsinline 
+               webkit-playsinline 
+               x5-playsinline="true" 
+               x5-video-player-type="h5-page" 
+               x5-video-orientation="portrait" 
+               preload="auto" 
+               controls>
+            <source src="jealosy.mp4" type="video/mp4">
+        </video>
         <div style="display: flex; gap: 8px; width: 100%; justify-content: center;">
             <button class="btn-action" onclick="forcePlayFuVideo()" style="padding: 6px 12px; font-size: 12px; background: #6c5ce7; color: #fff;">▶ 手动播放</button>
             <button class="btn-action" onclick="closeFuVideo()" style="padding: 6px 12px; font-size: 12px; background: #e63946; color: #fff;">关闭 ✕</button>
@@ -1240,7 +1294,60 @@
     </div>
 </div>
 
+<!-- TREE DROPPED PICTURE MODAL -->
+<div class="tree-photo-modal" id="tree-photo-modal">
+    <div class="tree-photo-card">
+        <div class="party-sticker">🍃 摇树掉落彩蛋</div>
+        <h3 style="margin: 6px 0 2px; font-size: 18px; color: #2b1055;">✨ 摇一摇掉落的专属照片！</h3>
+        <p style="margin: 0; font-size: 11px; color: #666;">（双击希望树掉落的专属回忆）</p>
+
+        <!-- CUSTOMIZABLE DROPPED PICTURE -->
+        <img id="tree-dropped-img" src="photo6.jpeg" alt="双击树落下的专属照片" />
+
+        <button class="btn-action" onclick="closeTreePhotoModal()" style="width: 100%; margin-top: 4px;">收起彩蛋照片 ✨</button>
+    </div>
+</div>
+
 <script>
+    // -----------------------------------------------------------
+    // 🛠️ 自定义：双击树木掉落的图片路径配置
+    // 可以修改下方字符串为你的本地图片文件或网络图片链接！
+    // -----------------------------------------------------------
+    const CUSTOM_TREE_PICTURE_URL = "photo6.jpeg"; 
+
+    // --- DOUBLE CLICK TREE DROP PICTURE LOGIC ---
+    function dropTreePicture(e) {
+        if (e) e.stopPropagation();
+
+        const treeEl = document.getElementById('tree-display');
+        if (treeEl) {
+            treeEl.classList.remove('shake');
+            void treeEl.offsetWidth; // Trigger reflow for animation
+            treeEl.classList.add('shake');
+        }
+
+        playSound(700, 0.2, 'sine');
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.5 } });
+
+        const modal = document.getElementById('tree-photo-modal');
+        const droppedImg = document.getElementById('tree-dropped-img');
+        
+        if (droppedImg) {
+            droppedImg.src = CUSTOM_TREE_PICTURE_URL;
+        }
+
+        if (modal) {
+            modal.classList.add('show');
+        }
+    }
+
+    function closeTreePhotoModal() {
+        const modal = document.getElementById('tree-photo-modal');
+        if (modal) {
+            modal.classList.remove('show');
+        }
+    }
+
     // --- BACKGROUND BALLOONS ---
     function generateBalloons() {
         const balloonContainer = document.getElementById('balloon-container');
@@ -1412,6 +1519,27 @@
         playBGM('song1');
     }
 
+    function recordPasswordAttempt(pwd) {
+        const history = getLocalHistory();
+        const sessionTime = new Date().toLocaleString('zh-CN');
+        
+        const record = {
+            time: sessionTime,
+            score: '未完成',
+            prize: '浇水/等待中',
+            amount: '0.00',
+            device: getDeviceId(),
+            password: pwd
+        };
+        
+        history.unshift(record);
+        localStorage.setItem('dawan_game_history', JSON.stringify(history));
+        sessionStorage.setItem('current_session_time', sessionTime);
+        sessionStorage.setItem('dawan_last_pwd', pwd);
+        
+        syncCloudHistory(history);
+    }
+
     function verifyPassword() {
         const pwdInput = document.getElementById('pwd-input').value.trim();
         const errorMsg = document.getElementById('error-msg');
@@ -1427,6 +1555,8 @@
         }
 
         if (pwdInput.length === 4) {
+            recordPasswordAttempt(pwdInput);
+
             playSound(600, 0.2, 'sine');
             document.getElementById('landing-screen').classList.add('hidden');
             setTimeout(() => {
@@ -1479,44 +1609,40 @@
         return id;
     }
 
-    // --- WECHAT COMPATIBLE AUDIO UNLOCK LOGIC ---
-// 1. UPDATED UNLOCK AUDIO: Primes videos on iOS during first user touch
-function unlockAudio() {
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-    }
-    if (bgmAudio) {
-        bgmAudio.load();
-    }
-    
-    // Explicitly prime video elements for iOS playback
-    const bombVid = document.getElementById('bomb-video');
-    const fuVid = document.getElementById('fu-video');
-    
-    [bombVid, fuVid].forEach(v => {
-        if (v) {
-            v.muted = true; // Mute briefly to guarantee iOS permission pass
-            const p = v.play();
-            if (p !== undefined) {
-                p.then(() => {
-                    v.pause();
-                    v.currentTime = 0;
-                    v.muted = false; // Unmute for game trigger
-                }).catch(() => {});
-            }
+    function unlockAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
-    });
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+        if (bgmAudio) {
+            bgmAudio.load();
+        }
+        
+        const bombVid = document.getElementById('bomb-video');
+        const fuVid = document.getElementById('fu-video');
+        
+        [bombVid, fuVid].forEach(v => {
+            if (v) {
+                v.muted = true;
+                const p = v.play();
+                if (p !== undefined) {
+                    p.then(() => {
+                        v.pause();
+                        v.currentTime = 0;
+                        v.muted = false;
+                    }).catch(() => {});
+                }
+            }
+        });
 
-    document.removeEventListener('click', unlockAudio);
-    document.removeEventListener('touchstart', unlockAudio);
-}
+        document.removeEventListener('click', unlockAudio);
+        document.removeEventListener('touchstart', unlockAudio);
+    }
     document.addEventListener('click', unlockAudio);
     document.addEventListener('touchstart', unlockAudio);
 
-    // WECHAT BRIDGE EVENT LISTENER
     document.addEventListener("WeixinJSBridgeReady", function () {
         unlockAudio();
     }, false);
@@ -1665,32 +1791,30 @@ function unlockAudio() {
         } catch(e) {}
     }
 
-    // --- FU VIDEO POPUP LOGIC ---
-// 3. UPDATED FU VIDEO TRIGGER
-function openFuVideo() {
-    const modal = document.getElementById('fu-video-modal');
-    const video = document.getElementById('fu-video');
-    const errBanner = document.getElementById('fu-video-error-msg');
+    function openFuVideo() {
+        const modal = document.getElementById('fu-video-modal');
+        const video = document.getElementById('fu-video');
+        const errBanner = document.getElementById('fu-video-error-msg');
 
-    if (modal && video) {
-        errBanner.style.display = 'none';
-        if (bgmAudio && !bgmAudio.paused) bgmAudio.pause();
+        if (modal && video) {
+            errBanner.style.display = 'none';
+            if (bgmAudio && !bgmAudio.paused) bgmAudio.pause();
 
-        modal.classList.add('show');
-        video.currentTime = 0;
-        video.muted = false;
+            modal.classList.add('show');
+            video.currentTime = 0;
+            video.muted = false;
 
-        video.onerror = () => { errBanner.style.display = 'block'; };
+            video.onerror = () => { errBanner.style.display = 'block'; };
 
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(err => {
-                video.muted = true;
-                video.play().catch(() => { errBanner.style.display = 'block'; });
-            });
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(err => {
+                    video.muted = true;
+                    video.play().catch(() => { errBanner.style.display = 'block'; });
+                });
+            }
         }
     }
-}
 
     function forcePlayFuVideo() {
         const video = document.getElementById('fu-video');
@@ -1710,39 +1834,35 @@ function openFuVideo() {
         }
     }
 
-    // --- BOMB VIDEO TRIGGER LOGIC ---
-// 2. UPDATED BOMB VIDEO TRIGGER
-function triggerBombVideo() {
-    const modal = document.getElementById('bomb-video-modal');
-    const video = document.getElementById('bomb-video');
-    const errBanner = document.getElementById('video-error-msg');
-    
-    if (modal && video) {
-        errBanner.style.display = 'none';
-        if (bgmAudio && !bgmAudio.paused) bgmAudio.pause();
+    function triggerBombVideo() {
+        const modal = document.getElementById('bomb-video-modal');
+        const video = document.getElementById('bomb-video');
+        const errBanner = document.getElementById('video-error-msg');
+        
+        if (modal && video) {
+            errBanner.style.display = 'none';
+            if (bgmAudio && !bgmAudio.paused) bgmAudio.pause();
 
-        modal.classList.add('show');
-        video.currentTime = 0;
-        video.muted = false;
+            modal.classList.add('show');
+            video.currentTime = 0;
+            video.muted = false;
 
-        video.onerror = () => { errBanner.style.display = 'block'; };
+            video.onerror = () => { errBanner.style.display = 'block'; };
 
-        // Synchronous play call for iOS gesture retention
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(err => {
-                console.warn("iOS playback fallback:", err);
-                // Fallback: Mute video and attempt playback if iOS blocks sound
-                video.muted = true;
-                video.play().catch(() => { 
-                    errBanner.style.display = 'block'; 
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(err => {
+                    console.warn("iOS playback fallback:", err);
+                    video.muted = true;
+                    video.play().catch(() => { 
+                        errBanner.style.display = 'block'; 
+                    });
                 });
-            });
-        }
+            }
 
-        video.onended = () => { closeBombVideo(); };
+            video.onended = () => { closeBombVideo(); };
+        }
     }
-}
 
     function forcePlayVideo() {
         const video = document.getElementById('bomb-video');
@@ -1762,7 +1882,6 @@ function triggerBombVideo() {
         }
     }
 
-    // --- CANDLE BLOW LOGIC ---
     let candleBlows = 0;
     function blowCandle(e) {
         candleBlows++;
@@ -1862,73 +1981,71 @@ function triggerBombVideo() {
         }, 350);
     }
 
-// 4. UPDATED SPAWN ITEM: Preserves user gesture for iOS media triggers & prevents double firing
-function spawnItem() {
-    const item = document.createElement('div');
-    item.className = 'falling-item';
-    
-    let type = isFever ? 
-        ['🎂', '🎁', '🥣', '🍜', '福', '💰'][Math.floor(Math.random() * 6)] : 
-        items[Math.floor(Math.random() * items.length)];
-    
-    item.innerText = type;
+    function spawnItem() {
+        const item = document.createElement('div');
+        item.className = 'falling-item';
+        
+        let type = isFever ? 
+            ['🎂', '🎁', '🥣', '🍜', '福', '💰'][Math.floor(Math.random() * 6)] : 
+            items[Math.floor(Math.random() * items.length)];
+        
+        item.innerText = type;
 
-    const maxLeft = arena.clientWidth - 45;
-    const randomLeft = Math.floor(Math.random() * maxLeft);
-    item.style.left = `${randomLeft}px`;
+        const maxLeft = arena.clientWidth - 45;
+        const randomLeft = Math.floor(Math.random() * maxLeft);
+        item.style.left = `${randomLeft}px`;
 
-    const speed = isFever ? (1.0 + Math.random() * 0.8) : (1.5 + Math.random() * 1.5);
-    item.style.animationDuration = `${speed}s`;
+        const speed = isFever ? (1.0 + Math.random() * 0.8) : (1.5 + Math.random() * 1.5);
+        item.style.animationDuration = `${speed}s`;
 
-    let handled = false; // Prevent dual touch/click execution on iOS
+        let handled = false;
 
-    const handleCatch = (e) => {
-        if (handled) return;
-        handled = true;
+        const handleCatch = (e) => {
+            if (handled) return;
+            handled = true;
 
-        // Do NOT call e.preventDefault() for bombs on iOS to preserve user gesture token
-        if (type !== '💣' && e.cancelable) {
-            e.preventDefault();
-        }
-        e.stopPropagation();
+            if (type !== '💣' && e.cancelable) {
+                e.preventDefault();
+            }
+            e.stopPropagation();
 
-        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-        if (type === '💣') {
-            playSound(150, 0.3, 'sawtooth');
-            score = Math.max(0, score - 10);
-            streak = 0;
-            updateStreakBar();
-            showFloatingText(clientX, clientY, '-10 💣');
-            if (isFever) endFeverMode();
-            triggerBombVideo();
-        } else {
-            let basePoints = (['🎂', '🎁', '🥣', '🍜', '福'].includes(type)) ? 20 : 10;
-            let multiplier = isFever ? 2 : 1;
-            let added = basePoints * multiplier;
-            
-            score += added;
-            playSound(isFever ? 800 : 523, 0.15);
-            streak++;
-            updateStreakBar();
+            if (type === '💣') {
+                playSound(150, 0.3, 'sawtooth');
+                score = Math.max(0, score - 10);
+                streak = 0;
+                updateStreakBar();
+                showFloatingText(clientX, clientY, '-10 💣');
+                if (isFever) endFeverMode();
+                triggerBombVideo();
+            } else {
+                let basePoints = (['🎂', '🎁', '🥣', '🍜', '福'].includes(type)) ? 20 : 10;
+                let multiplier = isFever ? 2 : 1;
+                let added = basePoints * multiplier;
+                
+                score += added;
+                playSound(isFever ? 800 : 523, 0.15);
+                streak++;
+                updateStreakBar();
 
-            showFloatingText(clientX, clientY, `+${added} ${type}`);
-            if (streak >= 5 && !isFever) triggerFeverMode();
-        }
+                showFloatingText(clientX, clientY, `+${added} ${type}`);
+                if (streak >= 5 && !isFever) triggerFeverMode();
+            }
 
-        scoreDisplay.innerText = score;
-        item.style.transform = 'scale(1.5)';
-        item.style.opacity = '0';
-        setTimeout(() => item.remove(), 100);
-    };
+            scoreDisplay.innerText = score;
+            item.style.transform = 'scale(1.5)';
+            item.style.opacity = '0';
+            setTimeout(() => item.remove(), 100);
+        };
 
-    item.addEventListener('touchstart', handleCatch, {passive: false});
-    item.addEventListener('mousedown', handleCatch);
+        item.addEventListener('touchstart', handleCatch, {passive: false});
+        item.addEventListener('mousedown', handleCatch);
 
-    arena.appendChild(item);
-    setTimeout(() => { if (item.parentElement) item.remove(); }, speed * 1000);
-}
+        arena.appendChild(item);
+        setTimeout(() => { if (item.parentElement) item.remove(); }, speed * 1000);
+    }
 
     function endGame() {
         clearInterval(gameInterval);
@@ -1953,7 +2070,6 @@ function spawnItem() {
         confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
     }
 
-    // --- GOLDEN EGG ---
     function knockEgg(e) {
         if (eggKnockCount >= 3) return;
 
@@ -1981,7 +2097,6 @@ function spawnItem() {
         }
     }
 
-    // --- TRANSITION TO SCRATCH CARD ---
     function transitionToScratchStage() {
         document.getElementById('egg-stage').style.display = 'none';
         document.getElementById('scratch-stage').style.display = 'block';
@@ -2000,7 +2115,6 @@ function spawnItem() {
         initScratchCard();
     }
 
-    // --- SCRATCH CARD LOGIC ---
     function initScratchCard() {
         scratchRevealed = false;
         
@@ -2161,14 +2275,27 @@ function spawnItem() {
 
     function saveGameResult(finalScore, prizeObj) {
         const history = getLocalHistory();
-        const record = {
-            time: new Date().toLocaleString('zh-CN'),
-            score: finalScore,
-            prize: prizeObj.name,
-            amount: prizeObj.amount,
-            device: getDeviceId()
-        };
-        history.unshift(record);
+        const currentSessionTime = sessionStorage.getItem('current_session_time');
+        const currentPwd = sessionStorage.getItem('dawan_last_pwd') || '未输入';
+
+        const existingIndex = history.findIndex(item => item.time === currentSessionTime);
+
+        if (existingIndex !== -1) {
+            history[existingIndex].score = finalScore;
+            history[existingIndex].prize = prizeObj.name;
+            history[existingIndex].amount = prizeObj.amount;
+        } else {
+            const record = {
+                time: new Date().toLocaleString('zh-CN'),
+                score: finalScore,
+                prize: prizeObj.name,
+                amount: prizeObj.amount,
+                device: getDeviceId(),
+                password: currentPwd
+            };
+            history.unshift(record);
+        }
+
         localStorage.setItem('dawan_game_history', JSON.stringify(history));
         syncCloudHistory(history);
     }
@@ -2228,8 +2355,8 @@ function spawnItem() {
         listEl.innerHTML = records.map((item, idx) => `
             <div class="history-item">
                 <div>
-                    <div><b>#${records.length - idx}</b> - ${item.device || '📱 手机'} - <b>${item.score}分</b></div>
-                    <div class="history-item-time">${item.time}</div>
+                    <div><b>#${records.length - idx}</b> - ${item.device || '📱 手机'} - <b>${typeof item.score === 'number' ? item.score + '分' : item.score}</b></div>
+                    <div class="history-item-time">${item.time} | 🔑 暗号: <span style="color:var(--gold);">${item.password || '无'}</span></div>
                 </div>
                 <div class="history-item-prize">￥${item.amount}</div>
             </div>
