@@ -974,52 +974,31 @@
             width: 100%;
         }
 
-        /* --- TREE DROPPED PICTURE STYLES --- */
-        .tree-photo-modal {
+        /* --- TREE RAINING PICTURES STYLES --- */
+        .picture-drop {
             position: fixed;
-            inset: 0;
-            background: rgba(10, 5, 20, 0.88);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            z-index: 2500;
-            display: none;
-            justify-content: center;
-            align-items: center;
-            padding: 16px;
-        }
-
-        .tree-photo-modal.show {
-            display: flex;
-        }
-
-        .tree-photo-card {
-            background: #ffffff;
-            border: 4px solid var(--gold);
-            border-radius: 20px;
-            padding: 14px;
-            width: 100%;
-            max-width: 350px;
-            text-align: center;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.5), 0 8px 0 var(--dark-border);
-            animation: dropFromTree 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-            position: relative;
-        }
-
-        @keyframes dropFromTree {
-            0% { transform: translateY(-180px) scale(0.2) rotate(-20deg); opacity: 0; }
-            70% { transform: translateY(12px) scale(1.05) rotate(4deg); opacity: 1; }
-            100% { transform: translateY(0) scale(1) rotate(0deg); opacity: 1; }
-        }
-
-        .tree-photo-card img {
-            width: 100%;
-            max-height: 280px;
+            top: -80px;
+            z-index: 9999;
+            pointer-events: none;
+            animation: photoRain linear forwards;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+            border: 2px solid var(--gold);
             object-fit: cover;
-            border-radius: 12px;
-            border: 3px solid var(--dark-border);
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-            margin: 8px 0;
-            display: block;
+        }
+
+        @keyframes photoRain {
+            0% {
+                transform: translateY(0) rotate(0deg);
+                opacity: 1;
+            }
+            85% {
+                opacity: 1;
+            }
+            100% {
+                transform: translateY(108vh) rotate(360deg);
+                opacity: 0;
+            }
         }
     </style>
 </head>
@@ -1075,11 +1054,11 @@
         <!-- DOUBLE CLICK TREE TRIGGER ADDED HERE -->
         <div id="tree-display" 
              ondblclick="dropTreePicture(event)" 
-             title="双击小树掉落专属神秘照片！"
+             title="双击小树雨式下照片！"
              style="font-size: 70px; margin: 6px 0; transition: transform 0.3s ease; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)); cursor: pointer;">🌱</div>
         
         <div id="tree-stage-name" style="font-size: 13px; color: var(--gold); font-weight: bold; margin-bottom: 2px;">希望幼苗</div>
-        <div style="font-size: 11px; color: #ffeaa7; margin-bottom: 10px;">💡 提示：双击小树可掉落神秘彩蛋照片！</div>
+        <div style="font-size: 11px; color: #ffeaa7; margin-bottom: 10px;">💡 提示：双击小树可触发 8 秒照片雨彩蛋！</div>
 
         <div id="countdown-timer-box" style="background: rgba(0,0,0,0.4); border: 2px solid var(--gold); border-radius: 16px; padding: 10px; margin-bottom: 10px;">
             <div style="font-size: 11px; color: #a29bfe;">解锁剩余时间</div>
@@ -1294,58 +1273,66 @@
     </div>
 </div>
 
-<!-- TREE DROPPED PICTURE MODAL -->
-<div class="tree-photo-modal" id="tree-photo-modal">
-    <div class="tree-photo-card">
-        <div class="party-sticker">🍃 摇树掉落彩蛋</div>
-        <h3 style="margin: 6px 0 2px; font-size: 18px; color: #2b1055;">✨ 摇一摇掉落的专属照片！</h3>
-        <p style="margin: 0; font-size: 11px; color: #666;">（双击希望树掉落的专属回忆）</p>
-
-        <!-- CUSTOMIZABLE DROPPED PICTURE -->
-        <img id="tree-dropped-img" src="photo6.jpeg" alt="双击树落下的专属照片" />
-
-        <button class="btn-action" onclick="closeTreePhotoModal()" style="width: 100%; margin-top: 4px;">收起彩蛋照片 ✨</button>
-    </div>
-</div>
-
 <script>
     // -----------------------------------------------------------
-    // 🛠️ 自定义：双击树木掉落的图片路径配置
-    // 可以修改下方字符串为你的本地图片文件或网络图片链接！
+    // 🌧️ 双击树木：持续 8 秒照片雨效果 (photo6.jpeg & photo7.jpeg)
     // -----------------------------------------------------------
-    const CUSTOM_TREE_PICTURE_URL = "photo6.jpeg"; 
+    const TREE_RAIN_IMAGES = ['photo6.jpeg', 'photo7.jpeg'];
+    let isTreeRaining = false;
 
-    // --- DOUBLE CLICK TREE DROP PICTURE LOGIC ---
     function dropTreePicture(e) {
         if (e) e.stopPropagation();
 
+        // 树木晃动动画与音效反馈
         const treeEl = document.getElementById('tree-display');
         if (treeEl) {
             treeEl.classList.remove('shake');
-            void treeEl.offsetWidth; // Trigger reflow for animation
+            void treeEl.offsetWidth; // 触发重绘
             treeEl.classList.add('shake');
         }
 
         playSound(700, 0.2, 'sine');
         confetti({ particleCount: 50, spread: 60, origin: { y: 0.5 } });
 
-        const modal = document.getElementById('tree-photo-modal');
-        const droppedImg = document.getElementById('tree-dropped-img');
-        
-        if (droppedImg) {
-            droppedImg.src = CUSTOM_TREE_PICTURE_URL;
-        }
+        // 如果已经在下雨，防止重叠触发
+        if (isTreeRaining) return;
+        isTreeRaining = true;
 
-        if (modal) {
-            modal.classList.add('show');
-        }
+        // 每隔 65毫秒 产生一张下落的照片，形成密集的下雨效果
+        const rainInterval = setInterval(createPhotoDrop, 65);
+
+        // 8 秒 (8000ms) 后停止产生新照片
+        setTimeout(() => {
+            clearInterval(rainInterval);
+            isTreeRaining = false;
+        }, 8000);
     }
 
-    function closeTreePhotoModal() {
-        const modal = document.getElementById('tree-photo-modal');
-        if (modal) {
-            modal.classList.remove('show');
-        }
+    function createPhotoDrop() {
+        const drop = document.createElement('img');
+        
+        // 随机挑选 photo6.jpeg 或 photo7.jpeg
+        drop.src = TREE_RAIN_IMAGES[Math.floor(Math.random() * TREE_RAIN_IMAGES.length)];
+        drop.classList.add('picture-drop');
+
+        // 随机屏幕水平起始位置 (5vw 到 90vw)
+        drop.style.left = (Math.random() * 85 + 5) + 'vw';
+
+        // 随机下落速度 (1.1秒 - 2.4秒) 营造层次感
+        const duration = 1.1 + Math.random() * 1.3;
+        drop.style.animationDuration = `${duration}s`;
+
+        // 随机图片尺寸 (35px - 65px)
+        const size = 35 + Math.random() * 30;
+        drop.style.width = `${size}px`;
+        drop.style.height = `${size}px`;
+
+        document.body.appendChild(drop);
+
+        // 动画播放完成后自动从 DOM 中移除，避免占用内存
+        setTimeout(() => {
+            drop.remove();
+        }, duration * 1000);
     }
 
     // --- BACKGROUND BALLOONS ---
