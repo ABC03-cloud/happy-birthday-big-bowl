@@ -1223,17 +1223,16 @@
             ⚠️ 视频未正常加载：请检查 <b>fuvideo.mp4</b> 是否放在跟网页同目录下。
         </div>
 
-        <video id="fu-video" 
-               playsinline 
-               webkit-playsinline 
-               x5-playsinline="true" 
-               x5-video-player-type="h5-page" 
-               x5-video-orientation="portrait" 
-               preload="auto" 
-               controls>
-            <source src="jealosy.mp4" type="video/mp4">
-        </video>
-
+<video id="fu-video" 
+       playsinline 
+       webkit-playsinline 
+       x5-playsinline="true" 
+       x5-video-player-type="h5-page" 
+       x5-video-orientation="portrait" 
+       preload="auto" 
+       controls>
+    <source src="jealosy.mp4" type="video/mp4">
+</video>
         <div style="display: flex; gap: 8px; width: 100%; justify-content: center;">
             <button class="btn-action" onclick="forcePlayFuVideo()" style="padding: 6px 12px; font-size: 12px; background: #6c5ce7; color: #fff;">▶ 手动播放</button>
             <button class="btn-action" onclick="closeFuVideo()" style="padding: 6px 12px; font-size: 12px; background: #e63946; color: #fff;">关闭 ✕</button>
@@ -1261,9 +1260,9 @@
 
     // --- POLAROID SLIDESHOW WITH PHOTO COVER REVEAL LOGIC ---
     const slides = [
-        { img: 'photo4.jpg', text: '回忆 1/3: 快乐每一天！' },
+        { img: 'photo4.jpeg', text: '回忆 1/3: 快乐每一天！' },
         { img: 'photo2.jpg', text: '回忆 2/3: 大碗福气无限！' },
-        { img: 'photo5.jpg', text: '回忆 3/3: 愿所有的美好如期而至！' }
+        { img: 'photo5.jpeg', text: '回忆 3/3: 愿所有的美好如期而至！' }
     ];
     let slideIdx = 0;
     let isPhotoRevealed = false;
@@ -1481,27 +1480,39 @@
     }
 
     // --- WECHAT COMPATIBLE AUDIO UNLOCK LOGIC ---
-    function unlockAudio() {
-        if (!audioCtx) {
-            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        }
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
-        if (bgmAudio) {
-            bgmAudio.load();
-        }
-        
-        // Pre-load videos silently to allow programmatic play in WeChat
-        const bombVid = document.getElementById('bomb-video');
-        const fuVid = document.getElementById('fu-video');
-        if (bombVid) bombVid.load();
-        if (fuVid) fuVid.load();
-
-        document.removeEventListener('click', unlockAudio);
-        document.removeEventListener('touchstart', unlockAudio);
+// 1. UPDATED UNLOCK AUDIO: Primes videos on iOS during first user touch
+function unlockAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+    if (bgmAudio) {
+        bgmAudio.load();
+    }
+    
+    // Explicitly prime video elements for iOS playback
+    const bombVid = document.getElementById('bomb-video');
+    const fuVid = document.getElementById('fu-video');
+    
+    [bombVid, fuVid].forEach(v => {
+        if (v) {
+            v.muted = true; // Mute briefly to guarantee iOS permission pass
+            const p = v.play();
+            if (p !== undefined) {
+                p.then(() => {
+                    v.pause();
+                    v.currentTime = 0;
+                    v.muted = false; // Unmute for game trigger
+                }).catch(() => {});
+            }
+        }
+    });
 
+    document.removeEventListener('click', unlockAudio);
+    document.removeEventListener('touchstart', unlockAudio);
+}
     document.addEventListener('click', unlockAudio);
     document.addEventListener('touchstart', unlockAudio);
 
@@ -1655,30 +1666,31 @@
     }
 
     // --- FU VIDEO POPUP LOGIC ---
-    function openFuVideo() {
-        const modal = document.getElementById('fu-video-modal');
-        const video = document.getElementById('fu-video');
-        const errBanner = document.getElementById('fu-video-error-msg');
+// 3. UPDATED FU VIDEO TRIGGER
+function openFuVideo() {
+    const modal = document.getElementById('fu-video-modal');
+    const video = document.getElementById('fu-video');
+    const errBanner = document.getElementById('fu-video-error-msg');
 
-        if (modal && video) {
-            errBanner.style.display = 'none';
-            if (bgmAudio && !bgmAudio.paused) bgmAudio.pause();
+    if (modal && video) {
+        errBanner.style.display = 'none';
+        if (bgmAudio && !bgmAudio.paused) bgmAudio.pause();
 
-            modal.classList.add('show');
-            video.currentTime = 0;
-            video.muted = false;
+        modal.classList.add('show');
+        video.currentTime = 0;
+        video.muted = false;
 
-            video.onerror = () => { errBanner.style.display = 'block'; };
+        video.onerror = () => { errBanner.style.display = 'block'; };
 
-            const playPromise = video.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(err => {
-                    video.muted = true;
-                    video.play().catch(() => { errBanner.style.display = 'block'; });
-                });
-            }
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(err => {
+                video.muted = true;
+                video.play().catch(() => { errBanner.style.display = 'block'; });
+            });
         }
     }
+}
 
     function forcePlayFuVideo() {
         const video = document.getElementById('fu-video');
@@ -1699,32 +1711,38 @@
     }
 
     // --- BOMB VIDEO TRIGGER LOGIC ---
-    function triggerBombVideo() {
-        const modal = document.getElementById('bomb-video-modal');
-        const video = document.getElementById('bomb-video');
-        const errBanner = document.getElementById('video-error-msg');
-        
-        if (modal && video) {
-            errBanner.style.display = 'none';
-            if (bgmAudio && !bgmAudio.paused) bgmAudio.pause();
+// 2. UPDATED BOMB VIDEO TRIGGER
+function triggerBombVideo() {
+    const modal = document.getElementById('bomb-video-modal');
+    const video = document.getElementById('bomb-video');
+    const errBanner = document.getElementById('video-error-msg');
+    
+    if (modal && video) {
+        errBanner.style.display = 'none';
+        if (bgmAudio && !bgmAudio.paused) bgmAudio.pause();
 
-            modal.classList.add('show');
-            video.currentTime = 0;
-            video.muted = false;
+        modal.classList.add('show');
+        video.currentTime = 0;
+        video.muted = false;
 
-            video.onerror = () => { errBanner.style.display = 'block'; };
+        video.onerror = () => { errBanner.style.display = 'block'; };
 
-            const playPromise = video.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(err => {
-                    video.muted = true;
-                    video.play().catch(e => { errBanner.style.display = 'block'; });
+        // Synchronous play call for iOS gesture retention
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(err => {
+                console.warn("iOS playback fallback:", err);
+                // Fallback: Mute video and attempt playback if iOS blocks sound
+                video.muted = true;
+                video.play().catch(() => { 
+                    errBanner.style.display = 'block'; 
                 });
-            }
-
-            video.onended = () => { closeBombVideo(); };
+            });
         }
+
+        video.onended = () => { closeBombVideo(); };
     }
+}
 
     function forcePlayVideo() {
         const video = document.getElementById('bomb-video');
@@ -1844,64 +1862,73 @@
         }, 350);
     }
 
-    function spawnItem() {
-        const item = document.createElement('div');
-        item.className = 'falling-item';
-        
-        let type = isFever ? 
-            ['🎂', '🎁', '🥣', '🍜', '福', '💰'][Math.floor(Math.random() * 6)] : 
-            items[Math.floor(Math.random() * items.length)];
-        
-        item.innerText = type;
+// 4. UPDATED SPAWN ITEM: Preserves user gesture for iOS media triggers & prevents double firing
+function spawnItem() {
+    const item = document.createElement('div');
+    item.className = 'falling-item';
+    
+    let type = isFever ? 
+        ['🎂', '🎁', '🥣', '🍜', '福', '💰'][Math.floor(Math.random() * 6)] : 
+        items[Math.floor(Math.random() * items.length)];
+    
+    item.innerText = type;
 
-        const maxLeft = arena.clientWidth - 45;
-        const randomLeft = Math.floor(Math.random() * maxLeft);
-        item.style.left = `${randomLeft}px`;
+    const maxLeft = arena.clientWidth - 45;
+    const randomLeft = Math.floor(Math.random() * maxLeft);
+    item.style.left = `${randomLeft}px`;
 
-        const speed = isFever ? (1.0 + Math.random() * 0.8) : (1.5 + Math.random() * 1.5);
-        item.style.animationDuration = `${speed}s`;
+    const speed = isFever ? (1.0 + Math.random() * 0.8) : (1.5 + Math.random() * 1.5);
+    item.style.animationDuration = `${speed}s`;
 
-        const handleCatch = (e) => {
-            if (e.cancelable) e.preventDefault();
-            e.stopPropagation();
+    let handled = false; // Prevent dual touch/click execution on iOS
 
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const handleCatch = (e) => {
+        if (handled) return;
+        handled = true;
 
-            if (type === '💣') {
-                playSound(150, 0.3, 'sawtooth');
-                score = Math.max(0, score - 10);
-                streak = 0;
-                updateStreakBar();
-                showFloatingText(clientX, clientY, '-10 💣');
-                if (isFever) endFeverMode();
-                triggerBombVideo();
-            } else {
-                let basePoints = (['🎂', '🎁', '🥣', '🍜', '福'].includes(type)) ? 20 : 10;
-                let multiplier = isFever ? 2 : 1;
-                let added = basePoints * multiplier;
-                
-                score += added;
-                playSound(isFever ? 800 : 523, 0.15);
-                streak++;
-                updateStreakBar();
+        // Do NOT call e.preventDefault() for bombs on iOS to preserve user gesture token
+        if (type !== '💣' && e.cancelable) {
+            e.preventDefault();
+        }
+        e.stopPropagation();
 
-                showFloatingText(clientX, clientY, `+${added} ${type}`);
-                if (streak >= 5 && !isFever) triggerFeverMode();
-            }
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
 
-            scoreDisplay.innerText = score;
-            item.style.transform = 'scale(1.5)';
-            item.style.opacity = '0';
-            setTimeout(() => item.remove(), 100);
-        };
+        if (type === '💣') {
+            playSound(150, 0.3, 'sawtooth');
+            score = Math.max(0, score - 10);
+            streak = 0;
+            updateStreakBar();
+            showFloatingText(clientX, clientY, '-10 💣');
+            if (isFever) endFeverMode();
+            triggerBombVideo();
+        } else {
+            let basePoints = (['🎂', '🎁', '🥣', '🍜', '福'].includes(type)) ? 20 : 10;
+            let multiplier = isFever ? 2 : 1;
+            let added = basePoints * multiplier;
+            
+            score += added;
+            playSound(isFever ? 800 : 523, 0.15);
+            streak++;
+            updateStreakBar();
 
-        item.addEventListener('touchstart', handleCatch, {passive: false});
-        item.addEventListener('mousedown', handleCatch);
+            showFloatingText(clientX, clientY, `+${added} ${type}`);
+            if (streak >= 5 && !isFever) triggerFeverMode();
+        }
 
-        arena.appendChild(item);
-        setTimeout(() => { if (item.parentElement) item.remove(); }, speed * 1000);
-    }
+        scoreDisplay.innerText = score;
+        item.style.transform = 'scale(1.5)';
+        item.style.opacity = '0';
+        setTimeout(() => item.remove(), 100);
+    };
+
+    item.addEventListener('touchstart', handleCatch, {passive: false});
+    item.addEventListener('mousedown', handleCatch);
+
+    arena.appendChild(item);
+    setTimeout(() => { if (item.parentElement) item.remove(); }, speed * 1000);
+}
 
     function endGame() {
         clearInterval(gameInterval);
