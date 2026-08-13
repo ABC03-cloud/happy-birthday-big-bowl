@@ -743,6 +743,169 @@
             box-shadow: 0 1px 0 var(--dark-border);
         }
 
+        /* --- SWIPE-TO-CUT RIBBON & WAX SEAL MODAL STYLES --- */
+        .ribbon-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 5, 25, 0.92);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 1400;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            transition: opacity 0.5s ease;
+        }
+
+        .ribbon-modal.show {
+            display: flex;
+        }
+
+        .ribbon-envelope-card {
+            background: linear-gradient(180deg, #3c1342 0%, #17041c 100%);
+            border: 4px solid var(--gold);
+            border-radius: 24px;
+            padding: 24px 16px;
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+            box-shadow: 0 0 35px rgba(255, 215, 0, 0.4), 0 8px 0 var(--dark-border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ribbon-interactive-zone {
+            position: relative;
+            width: 100%;
+            height: 120px;
+            margin: 18px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: none;
+            cursor: pointer;
+        }
+
+        .ribbon-band {
+            position: absolute;
+            height: 38px;
+            background: linear-gradient(180deg, #e74c3c 0%, #d63031 50%, #962d22 100%);
+            border-top: 2px solid var(--gold);
+            border-bottom: 2px solid var(--gold);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+            transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.6s ease;
+            top: 50%;
+            margin-top: -19px;
+            z-index: 5;
+        }
+
+        .ribbon-left-half {
+            left: 0;
+            width: 50%;
+            border-right: 2px dashed rgba(255,255,255,0.4);
+            transform-origin: left center;
+        }
+
+        .ribbon-right-half {
+            right: 0;
+            width: 50%;
+            border-left: 2px dashed rgba(255,255,255,0.4);
+            transform-origin: right center;
+        }
+
+        .ribbon-cut .ribbon-left-half {
+            transform: translateX(-110%) rotate(-12deg);
+            opacity: 0;
+        }
+
+        .ribbon-cut .ribbon-right-half {
+            transform: translateX(110%) rotate(12deg);
+            opacity: 0;
+        }
+
+        .wax-seal-box {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            z-index: 10;
+        }
+
+        .wax-seal-half {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle, #e74c3c 0%, #b22222 75%, #5c1410 100%);
+            border: 3px solid var(--gold);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 38px;
+            color: var(--gold);
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.6), inset 0 0 10px rgba(0,0,0,0.4);
+            text-shadow: 0 2px 4px rgba(0,0,0,0.8);
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.5s ease;
+        }
+
+        .seal-half-left {
+            clip-path: polygon(0 0, 52% 0, 48% 100%, 0 100%);
+        }
+
+        .seal-half-right {
+            clip-path: polygon(50% 0, 100% 0, 100% 100%, 46% 100%);
+        }
+
+        .ribbon-cut .seal-half-left {
+            transform: translateX(-45px) translateY(-10px) rotate(-25deg);
+            opacity: 0;
+        }
+
+        .ribbon-cut .seal-half-right {
+            transform: translateX(45px) translateY(10px) rotate(25deg);
+            opacity: 0;
+        }
+
+        .seal-crack-line {
+            position: absolute;
+            top: -5px;
+            left: 50%;
+            width: 4px;
+            height: 90px;
+            background: #ffffff;
+            box-shadow: 0 0 10px var(--gold);
+            transform: translateX(-50%) scaleY(0);
+            transition: transform 0.2s ease;
+            z-index: 12;
+            pointer-events: none;
+        }
+
+        .ribbon-cut .seal-crack-line {
+            transform: translateX(-50%) scaleY(1);
+        }
+
+        .swipe-scissors-trail {
+            position: absolute;
+            font-size: 28px;
+            pointer-events: none;
+            z-index: 20;
+            transform: translate(-50%, -50%);
+            transition: opacity 0.3s;
+            filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6));
+            display: none;
+        }
+
+        .swipe-instruction-banner {
+            background: rgba(255, 215, 0, 0.15);
+            border: 2px dashed var(--gold);
+            border-radius: 12px;
+            padding: 8px;
+            font-size: 13px;
+            color: var(--gold);
+            font-weight: bold;
+            animation: pulse 1.5s infinite;
+        }
+
         .result-modal {
             position: fixed;
             inset: 0;
@@ -1002,6 +1165,31 @@
                 opacity: 0;
             }
         }
+
+        /* --- SHAKE PETAL FALLING STYLES --- */
+        .petal-drop {
+            position: fixed;
+            top: -50px;
+            z-index: 9999;
+            pointer-events: none;
+            font-size: 26px;
+            animation: petalFall linear forwards;
+            filter: drop-shadow(0 2px 6px rgba(255, 105, 180, 0.5));
+        }
+
+        @keyframes petalFall {
+            0% {
+                transform: translateY(0) rotate(0deg) translateX(0);
+                opacity: 1;
+            }
+            50% {
+                transform: translateY(50vh) rotate(180deg) translateX(25px);
+            }
+            100% {
+                transform: translateY(105vh) rotate(360deg) translateX(-25px);
+                opacity: 0;
+            }
+        }
     </style>
 </head>
 <body id="body-root">
@@ -1053,14 +1241,14 @@
         <h2 class="envelope-title" style="margin-bottom: 4px;">生日倒计时 ⏳</h2>
         <p style="font-size: 12px; color: #ffeaa7; margin-top: 0; margin-bottom: 10px;">目标时间：2026年9月27日 (UTC+8)</p>
 
-        <!-- DOUBLE CLICK TREE TRIGGER ADDED HERE -->
+        <!-- DOUBLE CLICK TREE TRIGGER -->
         <div id="tree-display" 
              ondblclick="dropTreePicture(event)" 
              title="双击小树雨式下照片！"
              style="font-size: 70px; margin: 6px 0; transition: transform 0.3s ease; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)); cursor: pointer;">🌱</div>
         
         <div id="tree-stage-name" style="font-size: 13px; color: var(--gold); font-weight: bold; margin-bottom: 2px;">希望幼苗</div>
-        <div id="tree-days-info" style="font-size: 11px; color: #ffeaa7; margin-bottom: 10px;">距离树木完全解锁还剩: 计算中...</div>
+        <div id="tree-days-info" style="font-size: 11px; color: #ffeaa7; margin-bottom: 6px;">距离树木完全解锁还剩: 计算中...</div>
 
         <div id="countdown-timer-box" style="background: rgba(0,0,0,0.4); border: 2px solid var(--gold); border-radius: 16px; padding: 10px; margin-bottom: 10px;">
             <div style="font-size: 11px; color: #a29bfe;">实时解锁倒计时</div>
@@ -1078,7 +1266,8 @@
 
     <div class="cartoon-card header-card">
         <div class="header-sticker-left">🎈 Party Time!</div>
-        <div class="caishen-avatar" id="caishen-face" onclick="handleAvatarClick()">🧙‍♂️</div>
+        <!-- 5-TAP AVATAR ADMIN TRIGGER HERE -->
+        <div class="caishen-avatar" id="caishen-face" onclick="handleAvatarClick()" title="连续快速点击 5 次开启管理员面板">🧙‍♂️</div>
         
         <div class="avatar-bar">
             <div class="avatar-opt active" onclick="setAvatar('🧙‍♂️', this)">🧙‍♂️</div>
@@ -1101,14 +1290,15 @@
     <div class="bgm-card">
         <div class="bgm-title">🎵 HAPPY BIRTHDAY 🥣🎂🥳 背景音乐点歌台</div>
         <div class="bgm-btn-group">
-            <button class="bgm-btn" id="btn-song1" onclick="playBGM('song1')">🎤 《特别的人》</button>
-            <button class="bgm-btn" id="btn-song2" onclick="playBGM('song2')">☀️ 《两只老虎爱跳舞》</button>
-            <button class="bgm-btn" id="btn-song3" onclick="playBGM('song3')">🎂 《八音盒》</button>
+            <button class="bgm-btn" id="btn-song3" onclick="playBGM('song3')" style="flex: 1 1 100%;">🎂 《八音盒生日歌》</button>
             <button class="bgm-btn" id="btn-pause" onclick="pauseBGM()" style="background: #e63946; flex: 1 1 100%;">⏸️ 暂停播放</button>
         </div>
         <div class="audio-status-msg" id="audio-status"></div>
         <audio id="bgm-audio" loop playsinline webkit-playsinline></audio>
         <audio id="voice-audio" src="money.mp3" playsinline webkit-playsinline></audio>
+
+        <audio id="shake-song1" src="shake_song1.mp3" playsinline webkit-playsinline></audio>
+        <audio id="shake-song2" src="shake_song2.mp3" playsinline webkit-playsinline></audio>
     </div>
 
     <div class="game-stats">
@@ -1142,6 +1332,32 @@
         </div>
     </div>
 
+</div>
+
+<!-- SWIPE-TO-CUT RIBBON & WAX SEAL MODAL -->
+<div class="ribbon-modal" id="ribbon-modal">
+    <div class="ribbon-envelope-card">
+        <div class="party-sticker">✉️ 绝密生日喜函</div>
+        <h3 style="margin: 6px 0 2px; color: var(--gold); font-size: 20px;">🎉 拆封生日特快礼包 🎁</h3>
+        <p style="font-size: 12px; color: #ffeaa7; margin-bottom: 12px;">用手指划过金丝带，解封你的专属奖品卡！</p>
+
+        <div class="ribbon-interactive-zone" id="ribbon-zone">
+            <div class="ribbon-band ribbon-left-half" id="ribbon-left"></div>
+            <div class="ribbon-band ribbon-right-half" id="ribbon-right"></div>
+            
+            <div class="wax-seal-box" id="wax-seal-box">
+                <div class="wax-seal-half seal-half-left">福</div>
+                <div class="wax-seal-half seal-half-right">福</div>
+                <div class="seal-crack-line"></div>
+            </div>
+
+            <div class="swipe-scissors-trail" id="scissors-trail">✂️</div>
+        </div>
+
+        <div class="swipe-instruction-banner">
+            👈 滑动划断丝带 & 破拆火漆封印 ✂️👉
+        </div>
+    </div>
 </div>
 
 <!-- RESULT POP-UP MODAL -->
@@ -1212,22 +1428,23 @@
             <div><b>🏮 放飞愿望:</b> <span id="admin-total-wishes" style="color: var(--gold); font-weight: bold;">0</span> 条</div>
         </div>
 
+        <!-- DUAL TABS FOR HISTORY & WISHES -->
         <div style="display:flex; gap:6px; margin: 2px 0;">
-            <button id="tab-btn-history" onclick="switchAdminTab('history')" style="flex:1; padding:4px; font-size:11px; background:var(--gold); border:none; border-radius:6px; cursor:pointer; font-weight:bold;">🎮 战报记录</button>
-            <button id="tab-btn-wishes" onclick="switchAdminTab('wishes')" style="flex:1; padding:4px; font-size:11px; background:#6c5ce7; color:white; border:none; border-radius:6px; cursor:pointer; font-weight:bold;">🏮 愿望追踪</button>
+            <button id="tab-btn-history" onclick="switchAdminTab('history')" style="flex:1; padding:6px; font-size:12px; background:var(--gold); color:#2b1055; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">🎮 战报与暗号记录</button>
+            <button id="tab-btn-wishes" onclick="switchAdminTab('wishes')" style="flex:1; padding:6px; font-size:12px; background:#6c5ce7; color:white; border:none; border-radius:8px; cursor:pointer; font-weight:bold;">🏮 愿望追踪</button>
         </div>
 
         <div class="history-list" id="history-list"></div>
         <div class="history-list" id="wishes-list" style="display:none;"></div>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 6px;">
-            <button class="btn-clear" onclick="clearHistory()">清空记录</button>
+            <button class="btn-clear" onclick="clearHistory()">清空所有记录</button>
             <button class="btn-action" onclick="closeAdminPanel()" style="padding: 4px 14px; font-size: 13px;">关闭</button>
         </div>
     </div>
 </div>
 
-<!-- BOMB TRIGGER VIDEO MODAL (WECHAT OPTIMIZED) -->
+<!-- BOMB TRIGGER VIDEO MODAL -->
 <div class="bomb-video-modal" id="bomb-video-modal">
     <div class="bomb-video-card">
         <h3 style="margin: 0; color: #ff7675; font-size: 18px;">💣 踩雷惩罚 / 爆笑彩蛋视频 🎬</h3>
@@ -1255,7 +1472,7 @@
     </div>
 </div>
 
-<!-- FU WORD POPUP VIDEO MODAL (WECHAT OPTIMIZED) -->
+<!-- FU WORD POPUP VIDEO MODAL -->
 <div class="bomb-video-modal" id="fu-video-modal">
     <div class="bomb-video-card" style="border-color: var(--gold); box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);">
         <h3 style="margin: 0; color: var(--gold); font-size: 18px;">🧧 福气满满 · 专属视频 🎬</h3>
@@ -1284,7 +1501,131 @@
 
 <script>
     // -----------------------------------------------------------
-    // 🌧️ 双击树木：持续 8 秒照片雨效果 (photo6.jpeg & photo7.jpeg)
+    // 🌸 摇一摇手机：触发唯美花瓣雨 & 自动连续顺序播放 2 首隐藏彩蛋歌曲
+    // -----------------------------------------------------------
+    let isPetalRaining = false;
+    let lastX = null, lastY = null, lastZ = null;
+    let lastShakeTime = 0;
+    const SHAKE_THRESHOLD = 20;
+
+    function triggerPetalFall() {
+        const treeEl = document.getElementById('tree-display');
+        if (treeEl) {
+            treeEl.classList.remove('shake');
+            void treeEl.offsetWidth; 
+            treeEl.classList.add('shake');
+        }
+
+        playSound(750, 0.3, 'sine');
+        confetti({ particleCount: 50, spread: 70, origin: { y: 0.5 } });
+
+        if (isPetalRaining) return;
+        isPetalRaining = true;
+
+        const petals = ['🌸', '🌺', '🏵️', '🌷', '✨', '🌸'];
+        const rainInterval = setInterval(() => {
+            const petal = document.createElement('div');
+            petal.className = 'petal-drop';
+            petal.innerText = petals[Math.floor(Math.random() * petals.length)];
+            petal.style.left = (Math.random() * 90 + 5) + 'vw';
+            
+            const duration = 2.5 + Math.random() * 2.5;
+            petal.style.animationDuration = `${duration}s`;
+            petal.style.fontSize = `${20 + Math.random() * 20}px`;
+
+            document.body.appendChild(petal);
+            setTimeout(() => petal.remove(), duration * 1000);
+        }, 80);
+
+        setTimeout(() => {
+            clearInterval(rainInterval);
+            isPetalRaining = false;
+        }, 6000);
+    }
+
+    function playSequentialShakeSongs() {
+        pauseBGM();
+
+        const song1 = document.getElementById('shake-song1');
+        const song2 = document.getElementById('shake-song2');
+
+        if (!song1 || !song2) return;
+
+        song1.pause();
+        song1.currentTime = 0;
+        song2.pause();
+        song2.currentTime = 0;
+
+        song1.onended = function() {
+            song2.currentTime = 0;
+            const playPromise2 = song2.play();
+            if (playPromise2 !== undefined) {
+                playPromise2.catch(err => {
+                    console.warn("Shake Song 2 autoplay blocked or missing:", err);
+                });
+            }
+        };
+
+        const playPromise1 = song1.play();
+        if (playPromise1 !== undefined) {
+            playPromise1.catch(err => {
+                console.warn("Shake Song 1 autoplay blocked or missing:", err);
+            });
+        }
+    }
+
+    function initShakeDetection() {
+        if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+            DeviceMotionEvent.requestPermission()
+                .then(permissionState => {
+                    if (permissionState === 'granted') {
+                        window.addEventListener('devicemotion', handleMotion);
+                    }
+                })
+                .catch(console.error);
+        } else if (window.DeviceMotionEvent) {
+            window.addEventListener('devicemotion', handleMotion);
+        }
+    }
+
+    function handleMotion(event) {
+        const countdownScreen = document.getElementById('countdown-screen');
+        if (!countdownScreen || countdownScreen.classList.contains('hidden')) return;
+
+        const current = event.accelerationIncludingGravity;
+        if (!current) return;
+
+        if (lastX !== null) {
+            const deltaX = Math.abs(current.x - lastX);
+            const deltaY = Math.abs(current.y - lastY);
+            const deltaZ = Math.abs(current.z - lastZ);
+
+            if ((deltaX + deltaY + deltaZ) > SHAKE_THRESHOLD) {
+                const now = Date.now();
+                if (now - lastShakeTime > 3000) {
+                    lastShakeTime = now;
+                    onPhoneShake();
+                }
+            }
+        }
+
+        lastX = current.x;
+        lastY = current.y;
+        lastZ = current.z;
+    }
+
+    function onPhoneShake() {
+        triggerPetalFall();
+        playSequentialShakeSongs();
+
+        const waterMsg = document.getElementById('water-msg');
+        if (waterMsg) {
+            waterMsg.innerText = "🌸 摇一摇成功！唯美花瓣雨与隐藏彩蛋音乐已开启 🎵";
+        }
+    }
+
+    // -----------------------------------------------------------
+    // 🌧️ 双击树木：持续 8 秒照片雨效果
     // -----------------------------------------------------------
     const TREE_RAIN_IMAGES = ['photo6.jpeg', 'photo7.jpeg'];
     let isTreeRaining = false;
@@ -1292,25 +1633,21 @@
     function dropTreePicture(e) {
         if (e) e.stopPropagation();
 
-        // 树木晃动动画与音效反馈
         const treeEl = document.getElementById('tree-display');
         if (treeEl) {
             treeEl.classList.remove('shake');
-            void treeEl.offsetWidth; // 触发重绘
+            void treeEl.offsetWidth; 
             treeEl.classList.add('shake');
         }
 
         playSound(700, 0.2, 'sine');
         confetti({ particleCount: 50, spread: 60, origin: { y: 0.5 } });
 
-        // 如果已经在下雨，防止重叠触发
         if (isTreeRaining) return;
         isTreeRaining = true;
 
-        // 每隔 65毫秒 产生一张下落的照片，形成密集的下雨效果
         const rainInterval = setInterval(createPhotoDrop, 65);
 
-        // 8 秒 (8000ms) 后停止产生新照片
         setTimeout(() => {
             clearInterval(rainInterval);
             isTreeRaining = false;
@@ -1319,26 +1656,20 @@
 
     function createPhotoDrop() {
         const drop = document.createElement('img');
-        
-        // 随机挑选 photo6.jpeg 或 photo7.jpeg
         drop.src = TREE_RAIN_IMAGES[Math.floor(Math.random() * TREE_RAIN_IMAGES.length)];
         drop.classList.add('picture-drop');
 
-        // 随机屏幕水平起始位置 (5vw 到 90vw)
         drop.style.left = (Math.random() * 85 + 5) + 'vw';
 
-        // 随机下落速度 (1.1秒 - 2.4秒) 营造层次感
         const duration = 1.1 + Math.random() * 1.3;
         drop.style.animationDuration = `${duration}s`;
 
-        // 随机图片尺寸 (35px - 65px)
         const size = 35 + Math.random() * 30;
         drop.style.width = `${size}px`;
         drop.style.height = `${size}px`;
 
         document.body.appendChild(drop);
 
-        // 动画播放完成后自动从 DOM 中移除，避免占用内存
         setTimeout(() => {
             drop.remove();
         }, duration * 1000);
@@ -1361,7 +1692,7 @@
     }
     generateBalloons();
 
-    // --- POLAROID SLIDESHOW WITH PHOTO COVER REVEAL LOGIC ---
+    // --- POLAROID SLIDESHOW ---
     const slides = [
         { img: 'photo4.jpeg', text: '回忆 1/3: 快乐每一天！' },
         { img: 'photo2.jpg', text: '回忆 2/3: 大碗福气无限！' },
@@ -1387,7 +1718,7 @@
         document.getElementById('polaroid-text').innerText = slides[slideIdx].text;
     }
 
-    // --- SKY LANTERN & WISH TRACKING LOGIC ---
+    // --- SKY LANTERN & WISH TRACKING LOGIC (WITH INSTANT SYNC) ---
     function saveWishRecord(wishText) {
         const wishes = getSavedWishes();
         const record = {
@@ -1404,14 +1735,17 @@
         return data ? JSON.parse(data) : [];
     }
 
-    function sendWishLantern() {
+    async function sendWishLantern() {
         const input = document.getElementById('wish-input');
         const text = input.value.trim() || "大碗生日快乐！";
         
-        // 1. 保存愿望追踪记录
+        // 1. Save locally
         saveWishRecord(text);
 
-        // 2. 动画效果
+        // 2. Instant Cloud Sync
+        await syncCloudHistory(getLocalHistory());
+
+        // 3. Visual lantern floating effect
         const lantern = document.createElement('div');
         lantern.className = 'sky-lantern';
         lantern.innerHTML = `🏮 <span>${text}</span>`;
@@ -1423,8 +1757,11 @@
         setTimeout(() => lantern.remove(), 12000);
     }
 
-    // --- AVATAR DRESS UP ---
+    // --- AVATAR DRESS UP & 5-TAP ADMIN TRIGGER ---
     let currentAvatarEmoji = '🧙‍♂️';
+    let avatarClickCount = 0;
+    let avatarTimer = null;
+
     function setAvatar(emoji, el) {
         currentAvatarEmoji = emoji;
         document.getElementById('caishen-face').innerText = emoji;
@@ -1432,7 +1769,25 @@
         if(el) el.classList.add('active');
     }
 
-    // --- COUNTDOWN & ACCURATE TREE DAYS REMAINING LOGIC ---
+    function handleAvatarClick() {
+        avatarClickCount++;
+        playSound(300 + avatarClickCount * 100, 0.1);
+        
+        const caishenFace = document.getElementById('caishen-face');
+        caishenFace.style.transform = 'scale(1.3) rotate(15deg)';
+        setTimeout(() => caishenFace.style.transform = 'scale(1) rotate(0deg)', 150);
+
+        clearTimeout(avatarTimer);
+        avatarTimer = setTimeout(() => { avatarClickCount = 0; }, 3000);
+
+        // 5-Tap Trigger for Admin Modal
+        if (avatarClickCount >= 5) {
+            avatarClickCount = 0;
+            openAdminPanel();
+        }
+    }
+
+    // --- COUNTDOWN & TREE LOGIC ---
     const BIRTHDAY_TARGET = new Date('2026-09-27T00:00:00+08:00').getTime();
     let bonusDays = parseInt(localStorage.getItem('dawan_bonus_days')) || 0;
     let lastWateredDate = localStorage.getItem('dawan_last_watered_date') || "";
@@ -1464,7 +1819,6 @@
         }
     }
 
-    // 精确计算剩余天数与实时倒计时
     function updateCountdownTimer() {
         const now = new Date().getTime();
         const effectiveTarget = BIRTHDAY_TARGET - (bonusDays * 24 * 60 * 60 * 1000);
@@ -1490,7 +1844,6 @@
         const mins = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
         const secs = Math.floor((timeLeft % (1000 * 60)) / 1000);
 
-        // 精确显示树木解锁所需天数计算结果 (考虑浇水加速)
         daysInfoEl.innerText = `⏳ 距离小树解密还剩: ${days} 天 ${hours} 小时 (计算加速: -${bonusDays}天)`;
         digitsEl.innerText = `${days}天 ${hours}时 ${mins}分 ${secs}秒`;
     }
@@ -1514,6 +1867,8 @@
     }
 
     function waterPlant() {
+        initShakeDetection();
+
         const today = getTodayString();
         if (lastWateredDate !== today) {
             bonusDays += 2;
@@ -1544,6 +1899,7 @@
         playBGM('song3');
     }
 
+    // --- LOGIN PASSWORD TRACKING ---
     function recordPasswordAttempt(pwd) {
         const history = getLocalHistory();
         const sessionTime = new Date().toLocaleString('zh-CN');
@@ -1566,8 +1922,9 @@
     }
 
     function verifyPassword() {
+        initShakeDetection();
+
         const pwdInput = document.getElementById('pwd-input').value.trim();
-        const errorMsg = document.getElementById('error-msg');
         const envelopeCard = document.getElementById('envelope-card');
 
         if (pwdInput.toUpperCase() === 'ADMIN23') {
@@ -1576,10 +1933,12 @@
             const countdownScreen = document.getElementById('countdown-screen');
             if (countdownScreen) countdownScreen.style.display = 'none';
             playBGM('song3');
+            openAdminPanel();
             return;
         }
 
         if (pwdInput.length === 4) {
+            // Track password attempt
             recordPasswordAttempt(pwdInput);
 
             playSound(600, 0.2, 'sine');
@@ -1607,19 +1966,14 @@
         }
     }
 
+    // --- AUDIO & CLOUD STORAGE PARAMS ---
     const JSONBIN_BIN_ID = "6a77b481f5f4af5e29fcd624"; 
     const JSONBIN_API_KEY = "$2a$10$gs19IghnkwnYX5kB9olXU.9qx34bAPY6.kY4zATAD1lVgQnAB49Uy"; 
 
-    const playlist = {
-        song1: "song1.mp3",
-        song2: "song2.mp3",
-        song3: "synth"
-    };
-
+    const playlist = { song3: "synth" };
     let currentTrack = null;
     const bgmAudio = document.getElementById('bgm-audio');
     const audioStatus = document.getElementById('audio-status');
-
     let audioCtx = null;
     let synthInterval = null;
 
@@ -1640,10 +1994,13 @@
         if (audioCtx.state === 'suspended') {
             audioCtx.resume();
         }
-        if (bgmAudio) {
-            bgmAudio.load();
-        }
-        
+        if (bgmAudio) bgmAudio.load();
+
+        const shakeSong1 = document.getElementById('shake-song1');
+        const shakeSong2 = document.getElementById('shake-song2');
+        if (shakeSong1) shakeSong1.load();
+        if (shakeSong2) shakeSong2.load();
+
         const bombVid = document.getElementById('bomb-video');
         const fuVid = document.getElementById('fu-video');
         
@@ -1684,9 +2041,7 @@
         stopSynth();
         initAudio();
 
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
+        if (audioCtx.state === 'suspended') audioCtx.resume();
 
         const notes = [
             { f: 261.63, d: 0.3 }, { f: 261.63, d: 0.3 }, { f: 293.66, d: 0.6 }, { f: 261.63, d: 0.6 }, { f: 349.23, d: 0.6 }, { f: 329.63, d: 1.2 },
@@ -1731,6 +2086,11 @@
     }
 
     function playBGM(songKey) {
+        const song1 = document.getElementById('shake-song1');
+        const song2 = document.getElementById('shake-song2');
+        if (song1) song1.pause();
+        if (song2) song2.pause();
+
         if (!playlist[songKey]) return;
         initAudio();
 
@@ -1763,7 +2123,7 @@
                 console.warn("Autoplay blocked or network error:", err);
                 audioStatus.style.display = 'block';
                 audioStatus.style.color = '#ffd700';
-                audioStatus.innerText = `⚠️ 提示：请点击页面任意处激活播放，或检查音频地址`;
+                audioStatus.innerText = `⚠️ 提示：请点击页面任意处激活播放`;
             });
         }
     }
@@ -1771,6 +2131,12 @@
     function pauseBGM() {
         stopSynth();
         bgmAudio.pause();
+
+        const song1 = document.getElementById('shake-song1');
+        const song2 = document.getElementById('shake-song2');
+        if (song1) song1.pause();
+        if (song2) song2.pause();
+
         currentTrack = null;
         document.querySelectorAll('.bgm-btn').forEach(btn => btn.classList.remove('active'));
     }
@@ -1779,8 +2145,6 @@
     let timeLeft = 10;
     let gameInterval = null;
     let spawnInterval = null;
-    let avatarClickCount = 0;
-    let avatarTimer = null;
 
     let streak = 0;
     let isFever = false;
@@ -1794,7 +2158,6 @@
     const scoreDisplay = document.getElementById('score');
     const timerDisplay = document.getElementById('timer');
     const resultModal = document.getElementById('result-modal');
-    const caishenFace = document.getElementById('caishen-face');
 
     const items = ['🎂', '🎁', '🎈', '🥳', '🧁', '🥣', '🍜', '💰', '福', '💣'];
 
@@ -1813,6 +2176,58 @@
             osc.start();
             osc.stop(audioCtx.currentTime + duration);
         } catch(e) {}
+    }
+
+    function playPaperTearSound() {
+        try {
+            initAudio();
+            if (!audioCtx) return;
+            const now = audioCtx.currentTime;
+
+            const bufferSize = audioCtx.sampleRate * 0.35;
+            const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+            const output = buffer.getChannelData(0);
+            for (let i = 0; i < bufferSize; i++) {
+                output[i] = Math.random() * 2 - 1;
+            }
+
+            const noise = audioCtx.createBufferSource();
+            noise.buffer = buffer;
+
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(1400, now);
+            filter.Q.setValueAtTime(2.5, now);
+
+            const gain = audioCtx.createGain();
+            gain.gain.setValueAtTime(0.01, now);
+            gain.gain.linearRampToValueAtTime(0.6, now + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+
+            noise.connect(filter);
+            filter.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            noise.start(now);
+            noise.stop(now + 0.35);
+
+            const osc = audioCtx.createOscillator();
+            const oscGain = audioCtx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(900, now + 0.08);
+            osc.frequency.exponentialRampToValueAtTime(120, now + 0.25);
+
+            oscGain.gain.setValueAtTime(0.7, now + 0.08);
+            oscGain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+
+            osc.connect(oscGain);
+            oscGain.connect(audioCtx.destination);
+
+            osc.start(now + 0.08);
+            osc.stop(now + 0.25);
+        } catch(e) {
+            console.warn(e);
+        }
     }
 
     function openFuVideo() {
@@ -1924,22 +2339,6 @@
             const startBtn = document.getElementById('start-btn');
             startBtn.style.display = 'inline-block';
             startBtn.classList.add('shake');
-        }
-    }
-
-    function handleAvatarClick() {
-        avatarClickCount++;
-        playSound(300 + avatarClickCount * 100, 0.1);
-        
-        caishenFace.style.transform = 'scale(1.3) rotate(15deg)';
-        setTimeout(() => caishenFace.style.transform = 'scale(1) rotate(0deg)', 150);
-
-        clearTimeout(avatarTimer);
-        avatarTimer = setTimeout(() => { avatarClickCount = 0; }, 3000);
-
-        if (avatarClickCount >= 5) {
-            avatarClickCount = 0;
-            openAdminPanel();
         }
     }
 
@@ -2071,6 +2470,106 @@
         setTimeout(() => { if (item.parentElement) item.remove(); }, speed * 1000);
     }
 
+    let isRibbonCut = false;
+    let isSwipingRibbon = false;
+    let swipeStartX = 0;
+
+    function initRibbonCutStage() {
+        isRibbonCut = false;
+        isSwipingRibbon = false;
+
+        const ribbonModal = document.getElementById('ribbon-modal');
+        const ribbonZone = document.getElementById('ribbon-zone');
+        const scissorsTrail = document.getElementById('scissors-trail');
+
+        ribbonZone.classList.remove('ribbon-cut');
+        scissorsTrail.style.display = 'none';
+
+        ribbonModal.classList.add('show');
+
+        function handleSwipeStart(e) {
+            if (isRibbonCut) return;
+            isSwipingRibbon = true;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            swipeStartX = clientX;
+
+            updateScissorsPos(clientX, clientY);
+            scissorsTrail.style.display = 'block';
+        }
+
+        function handleSwipeMove(e) {
+            if (!isSwipingRibbon || isRibbonCut) return;
+            if (e.cancelable) e.preventDefault();
+
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+            updateScissorsPos(clientX, clientY);
+
+            const dist = Math.abs(clientX - swipeStartX);
+
+            if (dist > 75) {
+                executeRibbonCut();
+            }
+        }
+
+        function handleSwipeEnd() {
+            isSwipingRibbon = false;
+            scissorsTrail.style.display = 'none';
+        }
+
+        function updateScissorsPos(x, y) {
+            const rect = ribbonZone.getBoundingClientRect();
+            scissorsTrail.style.left = `${x - rect.left}px`;
+            scissorsTrail.style.top = `${y - rect.top}px`;
+        }
+
+        ribbonZone.ontouchstart = handleSwipeStart;
+        ribbonZone.ontouchmove = handleSwipeMove;
+        ribbonZone.ontouchend = handleSwipeEnd;
+
+        ribbonZone.onmousedown = handleSwipeStart;
+        ribbonZone.onmousemove = handleSwipeMove;
+        ribbonZone.onmouseup = handleSwipeEnd;
+    }
+
+    function executeRibbonCut() {
+        if (isRibbonCut) return;
+        isRibbonCut = true;
+        isSwipingRibbon = false;
+
+        const ribbonZone = document.getElementById('ribbon-zone');
+        const scissorsTrail = document.getElementById('scissors-trail');
+
+        scissorsTrail.style.display = 'none';
+        ribbonZone.classList.add('ribbon-cut');
+
+        playPaperTearSound();
+
+        confetti({
+            particleCount: 80,
+            spread: 90,
+            origin: { y: 0.5 },
+            colors: ['#ffd700', '#ff7675', '#ffffff', '#e74c3c']
+        });
+
+        setTimeout(() => {
+            const ribbonModal = document.getElementById('ribbon-modal');
+            ribbonModal.classList.remove('show');
+
+            eggKnockCount = 0;
+            document.getElementById('egg-stage').style.display = 'block';
+            document.getElementById('scratch-stage').style.display = 'none';
+            document.getElementById('egg-knock-txt').innerText = '0';
+            document.getElementById('golden-egg').innerText = '🥚';
+            document.getElementById('golden-egg').style.transform = 'scale(1)';
+
+            resultModal.classList.add('show');
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        }, 800);
+    }
+
     function endGame() {
         clearInterval(gameInterval);
         clearInterval(spawnInterval);
@@ -2083,15 +2582,7 @@
         const currentPrize = calculatePrize(score);
         saveGameResult(score, currentPrize);
 
-        eggKnockCount = 0;
-        document.getElementById('egg-stage').style.display = 'block';
-        document.getElementById('scratch-stage').style.display = 'none';
-        document.getElementById('egg-knock-txt').innerText = '0';
-        document.getElementById('golden-egg').innerText = '🥚';
-        document.getElementById('golden-egg').style.transform = 'scale(1)';
-
-        resultModal.classList.add('show');
-        confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+        initRibbonCutStage();
     }
 
     function knockEgg(e) {
@@ -2329,6 +2820,7 @@
         return data ? JSON.parse(data) : [];
     }
 
+    // --- FULL CLOUD SYNC FOR BOTH GAME HISTORY AND WISH LANTERNS ---
     async function syncCloudHistory(localHistory) {
         if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return;
         try {
@@ -2339,7 +2831,7 @@
                     'X-Master-Key': JSONBIN_API_KEY
                 },
                 body: JSON.stringify({ 
-                    records: localHistory,
+                    records: localHistory || getLocalHistory(),
                     wishes: getSavedWishes()
                 })
             });
@@ -2349,7 +2841,7 @@
     }
 
     async function fetchCloudHistory() {
-        if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return getLocalHistory();
+        if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return { records: getLocalHistory(), wishes: getSavedWishes() };
         try {
             const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
                 headers: { 'X-Master-Key': JSONBIN_API_KEY }
@@ -2358,14 +2850,18 @@
             if (data && data.record) {
                 if (data.record.records) localStorage.setItem('dawan_game_history', JSON.stringify(data.record.records));
                 if (data.record.wishes) localStorage.setItem('dawan_saved_wishes', JSON.stringify(data.record.wishes));
-                return data.record.records;
+                return {
+                    records: data.record.records || getLocalHistory(),
+                    wishes: data.record.wishes || getSavedWishes()
+                };
             }
         } catch(e) {
             console.warn("Cloud fetch failed, fallback to local:", e);
         }
-        return getLocalHistory();
+        return { records: getLocalHistory(), wishes: getSavedWishes() };
     }
 
+    // --- ADMIN PANEL TAB SWITCHING & POPULATION ---
     function switchAdminTab(tab) {
         const historyList = document.getElementById('history-list');
         const wishesList = document.getElementById('wishes-list');
@@ -2394,38 +2890,38 @@
         const listEl = document.getElementById('history-list');
         const wishesEl = document.getElementById('wishes-list');
 
-        listEl.innerHTML = '<div style="text-align:center; padding:10px;">⏳ 正在同步全设备战报...</div>';
+        listEl.innerHTML = '<div style="text-align:center; padding:10px;">⏳ 正在同步全设备战报与愿望...</div>';
+        wishesEl.innerHTML = '<div style="text-align:center; padding:10px;">⏳ 正在同步全设备愿望...</div>';
         modal.classList.add('show');
 
-        const records = await fetchCloudHistory();
-        const wishes = getSavedWishes();
+        const { records, wishes } = await fetchCloudHistory();
 
         document.getElementById('admin-total-plays').innerText = records.length;
         document.getElementById('admin-total-wishes').innerText = wishes.length;
 
-        // 战报列表
+        // Render Game/Password History
         if (records.length === 0) {
-            listEl.innerHTML = '<div style="text-align:center; color:#aaa; padding:10px;">暂无战报记录</div>';
+            listEl.innerHTML = '<div style="text-align:center; color:#aaa; padding:10px;">暂无战报与暗号记录</div>';
         } else {
             listEl.innerHTML = records.map((item, idx) => `
                 <div class="history-item">
                     <div>
                         <div><b>#${records.length - idx}</b> - ${item.device || '📱 手机'} - <b>${typeof item.score === 'number' ? item.score + '分' : item.score}</b></div>
-                        <div class="history-item-time">${item.time} | 🔑 暗号: <span style="color:var(--gold);">${item.password || '无'}</span></div>
+                        <div class="history-item-time">${item.time} | 🔑 暗号: <span style="color:var(--gold); font-weight:bold;">${item.password || '无'}</span></div>
                     </div>
                     <div class="history-item-prize">￥${item.amount}</div>
                 </div>
             `).join('');
         }
 
-        // 愿望记录列表
+        // Render Wish Lantern Tracking
         if (wishes.length === 0) {
             wishesEl.innerHTML = '<div style="text-align:center; color:#aaa; padding:10px;">暂无许愿记录</div>';
         } else {
             wishesEl.innerHTML = wishes.map((item, idx) => `
                 <div class="history-item">
                     <div>
-                        <div style="color:var(--gold); font-weight:bold;">🏮 ${item.wish}</div>
+                        <div style="color:var(--gold); font-weight:bold; font-size:13px;">🏮 ${item.wish}</div>
                         <div class="history-item-time">${item.time} | ${item.device || '📱 手机'}</div>
                     </div>
                 </div>
