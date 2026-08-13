@@ -1067,8 +1067,8 @@
             <div id="countdown-digits" style="font-size: 20px; font-weight: bold; color: var(--gold); margin-top: 2px;">计算中...</div>
         </div>
 
-        <button class="btn-action" id="water-tree-btn" onclick="waterPlant()" style="width: 100%; margin-bottom: 6px;">💧 浇水养树 (-10天)</button>
-        <div id="water-msg" style="font-size: 11px; color: #ffeaa7; min-height: 16px; margin-bottom: 10px;">每天可浇水 1 次，加速 10 天解锁！</div>
+        <button class="btn-action" id="water-tree-btn" onclick="waterPlant()" style="width: 100%; margin-bottom: 6px;">💧 浇水养树 (-1天)</button>
+        <div id="water-msg" style="font-size: 11px; color: #ffeaa7; min-height: 16px; margin-bottom: 10px;">每天可浇水 1 次，加速 1 天解锁！</div>
 
         <button class="btn-action" id="enter-game-btn" onclick="enterGameFromCountdown()" style="width: 100%; display: none; background: linear-gradient(180deg, #22c55e 0%, #15803d 100%); color: white;">🎉 开启生日抢宝大作战 🚀</button>
     </div>
@@ -1508,15 +1508,15 @@
         } else {
             btn.disabled = false;
             btn.style.opacity = '1';
-            btn.innerText = '💧 浇水养树 (-10天)';
-            msg.innerText = '每天可浇水 1 次，加速 10 天解锁！';
+            btn.innerText = '💧 浇水养树 (-1天)';
+            msg.innerText = '每天可浇水 1 次，加速 1 天解锁！';
         }
     }
 
     function waterPlant() {
         const today = getTodayString();
         if (lastWateredDate !== today) {
-            bonusDays += 10;
+            bonusDays += 1;
             lastWateredDate = today;
 
             localStorage.setItem('dawan_bonus_days', bonusDays);
