@@ -250,6 +250,30 @@
             margin-top: -4px;
         }
 
+        /* --- QR CODE UPLOAD STYLES --- */
+        .qr-upload-box {
+            border: 2px dashed var(--gold);
+            border-radius: 16px;
+            padding: 14px;
+            margin: 12px 0;
+            background: rgba(255, 255, 255, 0.05);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .qr-upload-box:hover {
+            background: rgba(255, 215, 0, 0.1);
+        }
+
+        .qr-preview-img {
+            max-width: 180px;
+            max-height: 180px;
+            border-radius: 12px;
+            border: 2px solid var(--gold);
+            margin-top: 8px;
+            display: none;
+        }
+
         .container {
             width: 100%;
             max-width: 420px;
@@ -1068,7 +1092,29 @@
     </div>
 </div>
 
-<!-- COUNTDOWN & DAILY TREE WATERING SCREEN -->
+<!-- STEP 2: WECHAT QR CODE UPLOAD SCREEN (BEFORE WATERING SYSTEM) -->
+<div class="landing-screen hidden" id="upload-screen" style="z-index: 998;">
+    <div class="envelope-card" style="max-width: 400px;">
+        <div class="party-sticker">📱 领取奖金必备</div>
+        <h2 class="envelope-title" style="margin-bottom: 4px;">上传微信收款码 💰</h2>
+        <p style="font-size: 12px; color: #ffeaa7; margin-top: 0; margin-bottom: 10px;">请上传您的微信收款码，方便财神爷直接为您派送生日大奖红包！</p>
+
+        <div class="qr-upload-box" onclick="document.getElementById('qr-input-file').click()">
+            <div id="qr-upload-placeholder">
+                <div style="font-size: 36px; margin-bottom: 4px;">📷</div>
+                <div style="font-size: 13px; color: var(--gold); font-weight: bold;">点击选择/上传微信收款码照片</div>
+                <div style="font-size: 10px; color: #aaa; margin-top: 4px;">支持 PNG, JPG 等格式</div>
+            </div>
+            <img id="qr-preview-img" class="qr-preview-img" alt="微信收款码预览" />
+        </div>
+
+        <input type="file" id="qr-input-file" accept="image/*" style="display: none;" onchange="handleQRCodeSelect(event)">
+
+        <button class="btn-action" id="confirm-upload-btn" onclick="submitQRCodeAndProceed()" style="width: 100%; margin-top: 10px;">确认提交，开启养树 🚀</button>
+    </div>
+</div>
+
+<!-- STEP 3: COUNTDOWN & DAILY TREE WATERING SCREEN -->
 <div class="landing-screen hidden" id="countdown-screen" style="z-index: 999;">
     <div class="envelope-card" style="max-width: 400px;">
         <div class="party-sticker">🌱 浇水加速解密</div>
@@ -1225,7 +1271,7 @@
     </div>
 </div>
 
-<!-- ADMIN MODAL WITH TRACKED WISHES & GAME HISTORY -->
+<!-- ADMIN MODAL WITH TRACKED WISHES & GAME HISTORY & QR CODE VIEWER -->
 <div class="admin-modal" id="admin-modal">
     <div class="admin-card">
         <div class="admin-header">
@@ -1250,6 +1296,15 @@
             <button class="btn-clear" onclick="clearHistory()">清空记录</button>
             <button class="btn-action" onclick="closeAdminPanel()" style="padding: 4px 14px; font-size: 13px;">关闭</button>
         </div>
+    </div>
+</div>
+
+<!-- ADMIN QR CODE PREVIEW MODAL -->
+<div class="admin-modal" id="qr-modal" style="z-index: 2500;">
+    <div class="admin-card" style="text-align: center; align-items: center; max-width: 320px;">
+        <h3 class="admin-title" style="margin-bottom: 8px;">📷 微信收款码查看</h3>
+        <img id="qr-modal-img" src="" alt="收款码放大图" style="max-width: 100%; max-height: 60vh; border-radius: 12px; border: 3px solid var(--gold);" />
+        <button class="btn-action" onclick="closeQRModal()" style="margin-top: 12px; width: 100%;">关闭预览 ✕</button>
     </div>
 </div>
 
@@ -1310,12 +1365,99 @@
 
 <script>
     // -----------------------------------------------------------
+    // 📷 微信收款码处理与压缩逻辑
+    // -----------------------------------------------------------
+    let uploadedQRBase64 = localStorage.getItem('dawan_user_qrcode') || "";
+
+    function handleQRCodeSelect(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        // 压缩图片并转换为 Base64
+        compressImage(file, 600, 600, 0.7, function(base64Data) {
+            uploadedQRBase64 = base64Data;
+            localStorage.setItem('dawan_user_qrcode', uploadedQRBase64);
+
+            const previewImg = document.getElementById('qr-preview-img');
+            const placeholder = document.getElementById('qr-upload-placeholder');
+            
+            previewImg.src = base64Data;
+            previewImg.style.display = 'inline-block';
+            placeholder.style.display = 'none';
+
+            playSound(600, 0.2, 'sine');
+        });
+    }
+
+    function compressImage(file, maxWidth, maxHeight, quality, callback) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width = Math.round((width * maxHeight) / height);
+                        height = maxHeight;
+                    }
+                }
+
+                const canvas = document.createElement('canvas');
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+                const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                callback(dataUrl);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function submitQRCodeAndProceed() {
+        if (!uploadedQRBase64) {
+            alert("请先选择上传您的微信收款码图片哦！📷");
+            return;
+        }
+
+        playSound(600, 0.2, 'sine');
+        
+        // 隐藏上传界面，展示浇水倒计时界面
+        document.getElementById('upload-screen').classList.add('hidden');
+        setTimeout(() => {
+            document.getElementById('upload-screen').style.display = 'none';
+        }, 600);
+
+        const countdownScreen = document.getElementById('countdown-screen');
+        if (countdownScreen) {
+            countdownScreen.classList.remove('hidden');
+            countdownScreen.style.display = 'flex';
+
+            fetchCloudHistory();
+
+            updateTreeVisual();
+            checkWaterButton();
+            updateCountdownTimer();
+            if (countdownInterval) clearInterval(countdownInterval);
+            countdownInterval = setInterval(updateCountdownTimer, 1000);
+        }
+    }
+
+    // -----------------------------------------------------------
     // 🌸 摇一摇与花瓣雨 + 音效自动顺序播放 (petal.mp3 -> petal2.mp3)
     // -----------------------------------------------------------
     let isPetalRaining = false;
     let lastShakeTime = 0;
     let lastAccX = null, lastAccY = null, lastAccZ = null;
-    const SHAKE_THRESHOLD = 18; // 摇晃感应灵敏度阈值
+    const SHAKE_THRESHOLD = 18;
 
     function initShakeDetection() {
         if (typeof DeviceMotionEvent !== 'undefined') {
@@ -1334,7 +1476,6 @@
     }
 
     function handleMotion(event) {
-        // 确保只有在【浇水/倒计时界面】显示时才生效
         const countdownScreen = document.getElementById('countdown-screen');
         if (!countdownScreen || countdownScreen.classList.contains('hidden') || countdownScreen.style.display === 'none') {
             return;
@@ -1344,7 +1485,7 @@
         if (!current) return;
 
         const now = Date.now();
-        if ((now - lastShakeTime) < 3000) return; // 节流：3秒内只触发一次
+        if ((now - lastShakeTime) < 3000) return;
 
         if (lastAccX !== null) {
             const deltaX = Math.abs(current.x - lastAccX);
@@ -1363,18 +1504,13 @@
     }
 
     function onWateringShakeTriggered() {
-        // 1. 触发树木晃动效果
         const treeEl = document.getElementById('tree-display');
         if (treeEl) {
             treeEl.classList.remove('shake');
             void treeEl.offsetWidth;
             treeEl.classList.add('shake');
         }
-
-        // 2. 触发花瓣雨
         triggerPetalRain();
-
-        // 3. 自动播放 petal.mp3 然后接着播放 petal2.mp3
         playPetalSongsSequence();
     }
 
@@ -1383,7 +1519,6 @@
         isPetalRaining = true;
 
         confetti({ particleCount: 40, spread: 70, origin: { y: 0.4 } });
-
         const petalInterval = setInterval(createPetalDrop, 80);
 
         setTimeout(() => {
@@ -1414,15 +1549,12 @@
         const p1 = document.getElementById('petal-audio-1');
         const p2 = document.getElementById('petal-audio-2');
 
-        // 暂停背景音乐，优先播放花瓣歌曲
         if (bgmAudio && !bgmAudio.paused) {
             bgmAudio.pause();
         }
 
         if (p1) {
             p1.currentTime = 0;
-            
-            // 播完 petal.mp3 后自动播放 petal2.mp3
             p1.onended = () => {
                 if (p2) {
                     p2.currentTime = 0;
@@ -1433,7 +1565,6 @@
             const playPromise = p1.play();
             if (playPromise !== undefined) {
                 playPromise.catch(err => {
-                    console.warn("petal.mp3 play error, trying petal2.mp3 fallback:", err);
                     if (p2) {
                         p2.currentTime = 0;
                         p2.play().catch(e => console.warn(e));
@@ -1452,25 +1583,21 @@
     function dropTreePicture(e) {
         if (e) e.stopPropagation();
 
-        // 树木晃动动画与音效反馈
         const treeEl = document.getElementById('tree-display');
         if (treeEl) {
             treeEl.classList.remove('shake');
-            void treeEl.offsetWidth; // 触发重绘
+            void treeEl.offsetWidth;
             treeEl.classList.add('shake');
         }
 
         playSound(700, 0.2, 'sine');
         confetti({ particleCount: 50, spread: 60, origin: { y: 0.5 } });
 
-        // 如果已经在下雨，防止重叠触发
         if (isTreeRaining) return;
         isTreeRaining = true;
 
-        // 每隔 65毫秒 产生一张下落的照片，形成密集的下雨效果
         const rainInterval = setInterval(createPhotoDrop, 65);
 
-        // 8 秒 (8000ms) 后停止产生新照片
         setTimeout(() => {
             clearInterval(rainInterval);
             isTreeRaining = false;
@@ -1479,26 +1606,19 @@
 
     function createPhotoDrop() {
         const drop = document.createElement('img');
-        
-        // 随机挑选 photo6.jpeg 或 photo7.jpeg
         drop.src = TREE_RAIN_IMAGES[Math.floor(Math.random() * TREE_RAIN_IMAGES.length)];
         drop.classList.add('picture-drop');
 
-        // 随机屏幕水平起始位置 (5vw 到 90vw)
         drop.style.left = (Math.random() * 85 + 5) + 'vw';
-
-        // 随机下落速度 (1.1秒 - 2.4秒) 营造层次感
         const duration = 1.1 + Math.random() * 1.3;
         drop.style.animationDuration = `${duration}s`;
 
-        // 随机图片尺寸 (35px - 65px)
         const size = 35 + Math.random() * 30;
         drop.style.width = `${size}px`;
         drop.style.height = `${size}px`;
 
         document.body.appendChild(drop);
 
-        // 动画播放完成后自动从 DOM 中移除，避免占用内存
         setTimeout(() => {
             drop.remove();
         }, duration * 1000);
@@ -1521,7 +1641,7 @@
     }
     generateBalloons();
 
-    // --- POLAROID SLIDESHOW WITH PHOTO COVER REVEAL LOGIC ---
+    // --- POLAROID SLIDESHOW ---
     const slides = [
         { img: 'photo4.jpeg', text: '回忆 1/3: 快乐每一天！' },
         { img: 'photo2.jpg', text: '回忆 2/3: 大碗福气无限！' },
@@ -1568,10 +1688,8 @@
         const input = document.getElementById('wish-input');
         const text = input.value.trim() || "大碗生日快乐！";
         
-        // 1. 保存愿望追踪记录
         saveWishRecord(text);
 
-        // 2. 动画效果
         const lantern = document.createElement('div');
         lantern.className = 'sky-lantern';
         lantern.innerHTML = `🏮 <span>${text}</span>`;
@@ -1592,7 +1710,7 @@
         if(el) el.classList.add('active');
     }
 
-    // --- COUNTDOWN & ACCURATE TREE DAYS REMAINING LOGIC ---
+    // --- COUNTDOWN & TREE LOGIC ---
     const BIRTHDAY_TARGET = new Date('2026-09-27T00:00:00+08:00').getTime();
     let bonusDays = parseInt(localStorage.getItem('dawan_bonus_days')) || 0;
     let lastWateredDate = localStorage.getItem('dawan_last_watered_date') || "";
@@ -1624,7 +1742,6 @@
         }
     }
 
-    // 精确计算剩余天数与实时倒计时
     function updateCountdownTimer() {
         const now = new Date().getTime();
         const effectiveTarget = BIRTHDAY_TARGET - (bonusDays * 24 * 60 * 60 * 1000);
@@ -1650,7 +1767,6 @@
         const mins = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
         const secs = Math.floor((timeLeft % (1000 * 60)) / 1000);
 
-        // 精确显示树木解锁所需天数计算结果 (考虑浇水加速)
         daysInfoEl.innerText = `⏳ 距离小树解密还剩: ${days} 天 ${hours} 小时 (计算加速: -${bonusDays}天)`;
         digitsEl.innerText = `${days}天 ${hours}时 ${mins}分 ${secs}秒`;
     }
@@ -1673,30 +1789,29 @@
         }
     }
 
-   function waterPlant() {
-    const today = getTodayString();
-    if (lastWateredDate !== today) {
-        bonusDays += 2;
-        lastWateredDate = today;
+    function waterPlant() {
+        const today = getTodayString();
+        if (lastWateredDate !== today) {
+            bonusDays += 2;
+            lastWateredDate = today;
 
-        localStorage.setItem('dawan_bonus_days', bonusDays);
-        localStorage.setItem('dawan_last_watered_date', lastWateredDate);
+            localStorage.setItem('dawan_bonus_days', bonusDays);
+            localStorage.setItem('dawan_last_watered_date', lastWateredDate);
 
-        // 🔥 Immediately push updated watering days to the cloud!
-        syncCloudHistory(getLocalHistory());
+            syncCloudHistory(getLocalHistory());
 
-        playSound(600, 0.2, 'sine');
-        confetti({ particleCount: 60, spread: 60, origin: { y: 0.5 } });
+            playSound(600, 0.2, 'sine');
+            confetti({ particleCount: 60, spread: 60, origin: { y: 0.5 } });
 
-        const treeEl = document.getElementById('tree-display');
-        treeEl.style.transform = 'scale(1.3)';
-        setTimeout(() => treeEl.style.transform = 'scale(1)', 300);
+            const treeEl = document.getElementById('tree-display');
+            treeEl.style.transform = 'scale(1.3)';
+            setTimeout(() => treeEl.style.transform = 'scale(1)', 300);
 
-        updateTreeVisual();
-        checkWaterButton();
-        updateCountdownTimer();
+            updateTreeVisual();
+            checkWaterButton();
+            updateCountdownTimer();
+        }
     }
-}
 
     function enterGameFromCountdown() {
         document.getElementById('countdown-screen').classList.add('hidden');
@@ -1717,7 +1832,8 @@
             prize: '浇水/等待中',
             amount: '0.00',
             device: getDeviceId(),
-            password: pwd
+            password: pwd,
+            qrcode: uploadedQRBase64 || ""
         };
         
         history.unshift(record);
@@ -1728,52 +1844,55 @@
         syncCloudHistory(history);
     }
 
-  async function verifyPassword() {
-    const pwdInput = document.getElementById('pwd-input').value.trim();
-    const errorMsg = document.getElementById('error-msg');
-    const envelopeCard = document.getElementById('envelope-card');
+    async function verifyPassword() {
+        const pwdInput = document.getElementById('pwd-input').value.trim();
+        const envelopeCard = document.getElementById('envelope-card');
 
-    initShakeDetection();
+        initShakeDetection();
 
-    if (pwdInput.toUpperCase() === 'ADMIN23') {
-        playSound(600, 0.2, 'sine');
-        document.getElementById('landing-screen').style.display = 'none';
-        const countdownScreen = document.getElementById('countdown-screen');
-        if (countdownScreen) countdownScreen.style.display = 'none';
-        playBGM('song3');
-        return;
-    }
-
-    if (pwdInput.length === 4) {
-        recordPasswordAttempt(pwdInput);
-
-        playSound(600, 0.2, 'sine');
-        document.getElementById('landing-screen').classList.add('hidden');
-        setTimeout(() => {
+        if (pwdInput.toUpperCase() === 'ADMIN23') {
+            playSound(600, 0.2, 'sine');
             document.getElementById('landing-screen').style.display = 'none';
-        }, 600);
-
-        const countdownScreen = document.getElementById('countdown-screen');
-        if (countdownScreen) {
-            countdownScreen.classList.remove('hidden');
-            countdownScreen.style.display = 'flex';
-
-            // 🔥 Fetch latest watering progress from cloud for Device B!
-            await fetchCloudHistory();
-
-            updateTreeVisual();
-            checkWaterButton();
-            updateCountdownTimer();
-            if (countdownInterval) clearInterval(countdownInterval);
-            countdownInterval = setInterval(updateCountdownTimer, 1000);
+            const uploadScreen = document.getElementById('upload-screen');
+            if (uploadScreen) uploadScreen.style.display = 'none';
+            const countdownScreen = document.getElementById('countdown-screen');
+            if (countdownScreen) countdownScreen.style.display = 'none';
+            playBGM('song3');
+            return;
         }
-    } else {
-        playSound(200, 0.3, 'sawtooth');
-        envelopeCard.classList.remove('shake');
-        void envelopeCard.offsetWidth; 
-        envelopeCard.classList.add('shake');
+
+        if (pwdInput.length === 4) {
+            recordPasswordAttempt(pwdInput);
+
+            playSound(600, 0.2, 'sine');
+            document.getElementById('landing-screen').classList.add('hidden');
+            setTimeout(() => {
+                document.getElementById('landing-screen').style.display = 'none';
+            }, 600);
+
+            // 跳转至【微信收款码上传界面】
+            const uploadScreen = document.getElementById('upload-screen');
+            if (uploadScreen) {
+                uploadScreen.classList.remove('hidden');
+                uploadScreen.style.display = 'flex';
+                
+                // 加载已保存的预览图（如有）
+                if (uploadedQRBase64) {
+                    const previewImg = document.getElementById('qr-preview-img');
+                    const placeholder = document.getElementById('qr-upload-placeholder');
+                    previewImg.src = uploadedQRBase64;
+                    previewImg.style.display = 'inline-block';
+                    placeholder.style.display = 'none';
+                }
+            }
+        } else {
+            playSound(200, 0.3, 'sawtooth');
+            envelopeCard.classList.remove('shake');
+            void envelopeCard.offsetWidth; 
+            envelopeCard.classList.add('shake');
+        }
     }
-}
+
     const JSONBIN_BIN_ID = "6a77b481f5f4af5e29fcd624"; 
     const JSONBIN_API_KEY = "$2a$10$gs19IghnkwnYX5kB9olXU.9qx34bAPY6.kY4zATAD1lVgQnAB49Uy"; 
 
@@ -1811,14 +1930,9 @@
             bgmAudio.load();
         }
         
-        // 解锁花瓣雨 MP3 播放权限
         const p1 = document.getElementById('petal-audio-1');
         const p2 = document.getElementById('petal-audio-2');
-        [p1, p2].forEach(a => {
-            if (a) {
-                a.load();
-            }
-        });
+        [p1, p2].forEach(a => { if (a) a.load(); });
 
         const bombVid = document.getElementById('bomb-video');
         const fuVid = document.getElementById('fu-video');
@@ -1837,7 +1951,6 @@
             }
         });
 
-        // 绑定移动设备摇一摇感应器
         initShakeDetection();
 
         document.removeEventListener('click', unlockAudio);
@@ -1939,7 +2052,6 @@
                 if (btn) btn.classList.add('active');
                 audioStatus.style.display = 'none';
             }).catch(err => {
-                console.warn("Autoplay blocked or network error:", err);
                 audioStatus.style.display = 'block';
                 audioStatus.style.color = '#ffd700';
                 audioStatus.innerText = `⚠️ 提示：请点击页面任意处激活播放，或检查音频地址`;
@@ -2055,11 +2167,8 @@
             const playPromise = video.play();
             if (playPromise !== undefined) {
                 playPromise.catch(err => {
-                    console.warn("iOS playback fallback:", err);
                     video.muted = true;
-                    video.play().catch(() => { 
-                        errBanner.style.display = 'block'; 
-                    });
+                    video.play().catch(() => { errBanner.style.display = 'block'; });
                 });
             }
 
@@ -2487,6 +2596,7 @@
             history[existingIndex].score = finalScore;
             history[existingIndex].prize = prizeObj.name;
             history[existingIndex].amount = prizeObj.amount;
+            if (uploadedQRBase64) history[existingIndex].qrcode = uploadedQRBase64;
         } else {
             const record = {
                 time: new Date().toLocaleString('zh-CN'),
@@ -2494,7 +2604,8 @@
                 prize: prizeObj.name,
                 amount: prizeObj.amount,
                 device: getDeviceId(),
-                password: currentPwd
+                password: currentPwd,
+                qrcode: uploadedQRBase64 || ""
             };
             history.unshift(record);
         }
@@ -2508,56 +2619,54 @@
         return data ? JSON.parse(data) : [];
     }
 
-   async function syncCloudHistory(localHistory) {
-    if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return;
-    try {
-        await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Master-Key': JSONBIN_API_KEY
-            },
-            body: JSON.stringify({ 
-                records: localHistory || getLocalHistory(),
-                wishes: getSavedWishes(),
-                // 🔥 Sync watering state to cloud
-                bonusDays: parseInt(localStorage.getItem('dawan_bonus_days')) || 0,
-                lastWateredDate: localStorage.getItem('dawan_last_watered_date') || ""
-            })
-        });
-    } catch(e) {
-        console.warn("Cloud sync failed or offline:", e);
-    }
-}
-
-async function fetchCloudHistory() {
-    if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return getLocalHistory();
-    try {
-        const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-            headers: { 'X-Master-Key': JSONBIN_API_KEY }
-        });
-        const data = await res.json();
-        if (data && data.record) {
-            if (data.record.records) localStorage.setItem('dawan_game_history', JSON.stringify(data.record.records));
-            if (data.record.wishes) localStorage.setItem('dawan_saved_wishes', JSON.stringify(data.record.wishes));
-            
-            // 🔥 Sync watering state from cloud to Device B's local variables & storage
-            if (data.record.bonusDays !== undefined) {
-                bonusDays = data.record.bonusDays;
-                localStorage.setItem('dawan_bonus_days', bonusDays);
-            }
-            if (data.record.lastWateredDate !== undefined) {
-                lastWateredDate = data.record.lastWateredDate;
-                localStorage.setItem('dawan_last_watered_date', lastWateredDate);
-            }
-
-            return data.record.records;
+    async function syncCloudHistory(localHistory) {
+        if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return;
+        try {
+            await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': JSONBIN_API_KEY
+                },
+                body: JSON.stringify({ 
+                    records: localHistory || getLocalHistory(),
+                    wishes: getSavedWishes(),
+                    bonusDays: parseInt(localStorage.getItem('dawan_bonus_days')) || 0,
+                    lastWateredDate: localStorage.getItem('dawan_last_watered_date') || ""
+                })
+            });
+        } catch(e) {
+            console.warn("Cloud sync failed or offline:", e);
         }
-    } catch(e) {
-        console.warn("Cloud fetch failed, fallback to local:", e);
     }
-    return getLocalHistory();
-}
+
+    async function fetchCloudHistory() {
+        if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return getLocalHistory();
+        try {
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+                headers: { 'X-Master-Key': JSONBIN_API_KEY }
+            });
+            const data = await res.json();
+            if (data && data.record) {
+                if (data.record.records) localStorage.setItem('dawan_game_history', JSON.stringify(data.record.records));
+                if (data.record.wishes) localStorage.setItem('dawan_saved_wishes', JSON.stringify(data.record.wishes));
+                
+                if (data.record.bonusDays !== undefined) {
+                    bonusDays = data.record.bonusDays;
+                    localStorage.setItem('dawan_bonus_days', bonusDays);
+                }
+                if (data.record.lastWateredDate !== undefined) {
+                    lastWateredDate = data.record.lastWateredDate;
+                    localStorage.setItem('dawan_last_watered_date', lastWateredDate);
+                }
+
+                return data.record.records;
+            }
+        } catch(e) {
+            console.warn("Cloud fetch failed, fallback to local:", e);
+        }
+        return getLocalHistory();
+    }
 
     function switchAdminTab(tab) {
         const historyList = document.getElementById('history-list');
@@ -2596,19 +2705,26 @@ async function fetchCloudHistory() {
         document.getElementById('admin-total-plays').innerText = records.length;
         document.getElementById('admin-total-wishes').innerText = wishes.length;
 
-        // 战报列表
+        // 战报列表展示 (含微信收款码按钮)
         if (records.length === 0) {
             listEl.innerHTML = '<div style="text-align:center; color:#aaa; padding:10px;">暂无战报记录</div>';
         } else {
-            listEl.innerHTML = records.map((item, idx) => `
+            listEl.innerHTML = records.map((item, idx) => {
+                const qrBtn = item.qrcode 
+                    ? `<button onclick="viewQRCode('${item.qrcode}')" style="background:#00b894; color:#fff; border:none; border-radius:6px; padding:3px 8px; font-size:10px; cursor:pointer; margin-top:3px;">📷 查看收款码</button>`
+                    : `<span style="color:#aaa; font-size:10px;">未上传</span>`;
+
+                return `
                 <div class="history-item">
                     <div>
                         <div><b>#${records.length - idx}</b> - ${item.device || '📱 手机'} - <b>${typeof item.score === 'number' ? item.score + '分' : item.score}</b></div>
                         <div class="history-item-time">${item.time} | 🔑 暗号: <span style="color:var(--gold);">${item.password || '无'}</span></div>
+                        <div>${qrBtn}</div>
                     </div>
                     <div class="history-item-prize">￥${item.amount}</div>
                 </div>
-            `).join('');
+                `;
+            }).join('');
         }
 
         // 愿望记录列表
@@ -2628,6 +2744,19 @@ async function fetchCloudHistory() {
         switchAdminTab('history');
     }
 
+    function viewQRCode(base64Img) {
+        if (!base64Img) {
+            alert("该记录暂无上传的收款码！");
+            return;
+        }
+        document.getElementById('qr-modal-img').src = base64Img;
+        document.getElementById('qr-modal').classList.add('show');
+    }
+
+    function closeQRModal() {
+        document.getElementById('qr-modal').classList.remove('show');
+    }
+
     function closeAdminPanel() {
         document.getElementById('admin-modal').classList.remove('show');
     }
@@ -2636,6 +2765,8 @@ async function fetchCloudHistory() {
         if (confirm("确定要清空战报与许愿记录吗？")) {
             localStorage.removeItem('dawan_game_history');
             localStorage.removeItem('dawan_saved_wishes');
+            localStorage.removeItem('dawan_user_qrcode');
+            uploadedQRBase64 = "";
             syncCloudHistory([]);
             openAdminPanel();
         }
