@@ -1294,15 +1294,12 @@
     <div class="bgm-card">
         <div class="bgm-title">🎵 HAPPY BIRTHDAY 🥣🎂🥳 背景音乐点歌台</div>
         <div class="bgm-btn-group">
-            <button class="bgm-btn" id="btn-song1" onclick="playBGM('song1')">🎤 《特别的人》</button>
-            <button class="bgm-btn" id="btn-song2" onclick="playBGM('song2')">☀️ 《两只老虎爱跳舞》</button>
-            <button class="bgm-btn" id="btn-song3" onclick="playBGM('song3')">🎂 《八音盒》</button>
+            <button class="bgm-btn" id="btn-song3" onclick="playBGM('song3')" style="flex: 1 1 100%;">🎂 《八音盒生日歌》</button>
             <button class="bgm-btn" id="btn-pause" onclick="pauseBGM()" style="background: #e63946; flex: 1 1 100%;">⏸️ 暂停播放</button>
         </div>
         <div class="audio-status-msg" id="audio-status"></div>
         <audio id="bgm-audio" loop playsinline webkit-playsinline></audio>
         <audio id="voice-audio" src="money.mp3" playsinline webkit-playsinline></audio>
-    </div>
 
         <!-- SHAKE FEATURE CUSTOMIZED AUDIO FILES (PLAYED SEQUENTIALLY: petal.mp3 -> petal2.mp3) -->
         <audio id="shake-song1" src="petal.mp3" playsinline webkit-playsinline></audio>
@@ -1554,39 +1551,40 @@
         }, 6000);
     }
 
- function playSequentialShakeSongs() {
-    pauseBGM(); // 暂停背景音乐
+    // 摇一摇播放 2 首自定义歌曲 (petal.mp3 -> petal2.mp3 顺序连续播放)
+    function playSequentialShakeSongs() {
+        pauseBGM(); // 暂停背景音乐
 
-    const song1 = document.getElementById('shake-song1'); // petal.mp3
-    const song2 = document.getElementById('shake-song2'); // petal2.mp3
+        const song1 = document.getElementById('shake-song1'); // petal.mp3
+        const song2 = document.getElementById('shake-song2'); // petal2.mp3
 
-    if (!song1 || !song2) return;
+        if (!song1 || !song2) return;
 
-    // 清除并重置两首歌曲
-    song1.pause();
-    song1.currentTime = 0;
-    song2.pause();
-    song2.currentTime = 0;
-
-    // 设置第一首播放完毕后自动接续第二首
-    song1.onended = function() {
+        // 重置两首歌曲播放进度
+        song1.pause();
+        song1.currentTime = 0;
+        song2.pause();
         song2.currentTime = 0;
-        const playPromise2 = song2.play();
-        if (playPromise2 !== undefined) {
-            playPromise2.catch(err => {
-                console.warn("petal2.mp3 自动播放受限或未找到文件:", err);
+
+        // 设置第一首 (petal.mp3) 播放完毕后，自动开始播放第二首 (petal2.mp3)
+        song1.onended = function() {
+            song2.currentTime = 0;
+            const playPromise2 = song2.play();
+            if (playPromise2 !== undefined) {
+                playPromise2.catch(err => {
+                    console.warn("petal2.mp3 自动播放受限或未找到文件:", err);
+                });
+            }
+        };
+
+        // 开始播放第一首歌曲 (petal.mp3)
+        const playPromise1 = song1.play();
+        if (playPromise1 !== undefined) {
+            playPromise1.catch(err => {
+                console.warn("petal.mp3 自动播放受限或未找到文件:", err);
             });
         }
-    };
-
-    // 开始播放第一首
-    const playPromise1 = song1.play();
-    if (playPromise1 !== undefined) {
-        playPromise1.catch(err => {
-            console.warn("petal.mp3 自动播放受限或未找到文件:", err);
-        });
     }
-}
 
     // 摇一摇动作监听初始化
     function initShakeDetection() {
@@ -1966,8 +1964,6 @@
     const JSONBIN_API_KEY = "$2a$10$gs19IghnkwnYX5kB9olXU.9qx34bAPY6.kY4zATAD1lVgQnAB49Uy"; 
 
     const playlist = {
-        song1: "song1.mp3",
-        song2: "song2.mp3",
         song3: "synth"
     };
 
@@ -1988,55 +1984,42 @@
         return id;
     }
 
-function unlockAudio() {
-    if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-    if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-    }
-    if (bgmAudio) {
-        bgmAudio.load();
-    }
-
-    // 预解锁摇一摇两首歌曲 (petal.mp3 & petal2.mp3) 的移动端播放权限
-    const shakeSong1 = document.getElementById('shake-song1');
-    const shakeSong2 = document.getElementById('shake-song2');
-    
-    [shakeSong1, shakeSong2].forEach(a => {
-        if (a) {
-            a.muted = true;
-            const p = a.play();
-            if (p !== undefined) {
-                p.then(() => {
-                    a.pause();
-                    a.currentTime = 0;
-                    a.muted = false;
-                }).catch(() => {});
-            }
+    function unlockAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
-    });
-
-    const bombVid = document.getElementById('bomb-video');
-    const fuVid = document.getElementById('fu-video');
-    
-    [bombVid, fuVid].forEach(v => {
-        if (v) {
-            v.muted = true;
-            const p = v.play();
-            if (p !== undefined) {
-                p.then(() => {
-                    v.pause();
-                    v.currentTime = 0;
-                    v.muted = false;
-                }).catch(() => {});
-            }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
         }
-    });
+        if (bgmAudio) {
+            bgmAudio.load();
+        }
 
-    document.removeEventListener('click', unlockAudio);
-    document.removeEventListener('touchstart', unlockAudio);
-}
+        // 预加载 petal.mp3 和 petal2.mp3
+        const shakeSong1 = document.getElementById('shake-song1');
+        const shakeSong2 = document.getElementById('shake-song2');
+        if (shakeSong1) shakeSong1.load();
+        if (shakeSong2) shakeSong2.load();
+
+        const bombVid = document.getElementById('bomb-video');
+        const fuVid = document.getElementById('fu-video');
+        
+        [bombVid, fuVid].forEach(v => {
+            if (v) {
+                v.muted = true;
+                const p = v.play();
+                if (p !== undefined) {
+                    p.then(() => {
+                        v.pause();
+                        v.currentTime = 0;
+                        v.muted = false;
+                    }).catch(() => {});
+                }
+            }
+        });
+
+        document.removeEventListener('click', unlockAudio);
+        document.removeEventListener('touchstart', unlockAudio);
     }
     document.addEventListener('click', unlockAudio);
     document.addEventListener('touchstart', unlockAudio);
