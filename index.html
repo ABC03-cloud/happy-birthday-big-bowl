@@ -1090,7 +1090,7 @@
         </div>
 
         <button class="btn-action" id="water-tree-btn" onclick="waterPlant()" style="width: 100%; margin-bottom: 6px;">💧 浇水养树 (-2天)</button>
-        <div id="water-msg" style="font-size: 11px; color: #ffeaa7; min-height: 16px; margin-bottom: 10px;">💡 提示：摇晃手机触发花瓣雨与专属歌曲 🌸</div>
+        <div id="water-msg" style="font-size: 11px; color: #ffeaa7; min-height: 16px; margin-bottom: 10px;"></div>
 
         <button class="btn-action" id="enter-game-btn" onclick="enterGameFromCountdown()" style="width: 100%; display: none; background: linear-gradient(180deg, #22c55e 0%, #15803d 100%); color: white;">🎉 开启生日抢宝大作战 🚀</button>
     </div>
@@ -1664,12 +1664,12 @@
             btn.disabled = true;
             btn.style.opacity = '0.6';
             btn.innerText = '🚿 今日已浇水 (明天再来)';
-            msg.innerText = `今天已经给小树浇过水啦！累计已加速 ${bonusDays} 天 | 💡 摇晃手机开彩蛋！`;
+            msg.innerText = `今天已经给小树浇过水啦！累计已加速 ${bonusDays} 天`;
         } else {
             btn.disabled = false;
             btn.style.opacity = '1';
             btn.innerText = '💧 浇水养树 (-2天)';
-            msg.innerText = '每天可浇水 1 次，加速 2 天解锁！| 💡 摇晃手机触发花瓣雨 🌸';
+            msg.innerText = '每天可浇水 1 次，加速 2 天解锁！';
         }
     }
 
