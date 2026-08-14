@@ -1294,12 +1294,15 @@
     <div class="bgm-card">
         <div class="bgm-title">🎵 HAPPY BIRTHDAY 🥣🎂🥳 背景音乐点歌台</div>
         <div class="bgm-btn-group">
-            <button class="bgm-btn" id="btn-song3" onclick="playBGM('song3')" style="flex: 1 1 100%;">🎂 《八音盒生日歌》</button>
+            <button class="bgm-btn" id="btn-song1" onclick="playBGM('song1')">🎤 《特别的人》</button>
+            <button class="bgm-btn" id="btn-song2" onclick="playBGM('song2')">☀️ 《两只老虎爱跳舞》</button>
+            <button class="bgm-btn" id="btn-song3" onclick="playBGM('song3')">🎂 《八音盒》</button>
             <button class="bgm-btn" id="btn-pause" onclick="pauseBGM()" style="background: #e63946; flex: 1 1 100%;">⏸️ 暂停播放</button>
         </div>
         <div class="audio-status-msg" id="audio-status"></div>
         <audio id="bgm-audio" loop playsinline webkit-playsinline></audio>
         <audio id="voice-audio" src="money.mp3" playsinline webkit-playsinline></audio>
+    </div>
 
         <!-- SHAKE FEATURE CUSTOMIZED AUDIO FILES (PLAYED SEQUENTIALLY: petal.mp3 -> petal2.mp3) -->
         <audio id="shake-song1" src="petal.mp3" playsinline webkit-playsinline></audio>
@@ -1867,9 +1870,6 @@
             localStorage.setItem('dawan_bonus_days', bonusDays);
             localStorage.setItem('dawan_last_watered_date', lastWateredDate);
 
-            // Sync watering data to cloud immediately
-            syncCloudHistory(getLocalHistory());
-
             playSound(600, 0.2, 'sine');
             confetti({ particleCount: 60, spread: 60, origin: { y: 0.5 } });
 
@@ -1913,7 +1913,7 @@
         syncCloudHistory(history);
     }
 
-    async function verifyPassword() {
+    function verifyPassword() {
         initShakeDetection();
 
         const pwdInput = document.getElementById('pwd-input').value.trim();
@@ -1930,9 +1930,6 @@
         }
 
         if (pwdInput.length === 4) {
-            // Synchronize cloud data before entering the screen so Device B gets updated bonusDays
-            await fetchCloudHistory();
-
             recordPasswordAttempt(pwdInput);
 
             playSound(600, 0.2, 'sine');
@@ -1964,8 +1961,11 @@
     const JSONBIN_API_KEY = "$2a$10$gs19IghnkwnYX5kB9olXU.9qx34bAPY6.kY4zATAD1lVgQnAB49Uy"; 
 
     const playlist = {
+        song1: "song1.mp3",
+        song2: "song2.mp3",
         song3: "synth"
     };
+
 
     let currentTrack = null;
     const bgmAudio = document.getElementById('bgm-audio');
@@ -2852,10 +2852,8 @@
                     'X-Master-Key': JSONBIN_API_KEY
                 },
                 body: JSON.stringify({ 
-                    records: localHistory || getLocalHistory(),
-                    wishes: getSavedWishes(),
-                    bonusDays: bonusDays,
-                    lastWateredDate: lastWateredDate
+                    records: localHistory,
+                    wishes: getSavedWishes()
                 })
             });
         } catch(e) {
@@ -2873,17 +2871,6 @@
             if (data && data.record) {
                 if (data.record.records) localStorage.setItem('dawan_game_history', JSON.stringify(data.record.records));
                 if (data.record.wishes) localStorage.setItem('dawan_saved_wishes', JSON.stringify(data.record.wishes));
-                
-                // Read bonusDays and lastWateredDate from cloud sync
-                if (typeof data.record.bonusDays !== 'undefined') {
-                    bonusDays = data.record.bonusDays;
-                    localStorage.setItem('dawan_bonus_days', bonusDays);
-                }
-                if (typeof data.record.lastWateredDate !== 'undefined') {
-                    lastWateredDate = data.record.lastWateredDate;
-                    localStorage.setItem('dawan_last_watered_date', lastWateredDate);
-                }
-
                 return data.record.records;
             }
         } catch(e) {
