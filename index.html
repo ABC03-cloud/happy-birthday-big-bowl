@@ -2123,24 +2123,30 @@
 
 function waterPlant() {
     const today = getTodayString();
-    if (lastWateredDate !== today) {
-        bonusDays += 2; 
-        lastWateredDate = today;
-        
-        localStorage.setItem('dawan_bonus_days', bonusDays); 
-        localStorage.setItem('dawan_last_watered_date', lastWateredDate);
-        
-        // Sync full state payload to cloud
-        syncCloudData({
-            history: getLocalHistory(),
-            bonusDays: bonusDays,
-            lastWateredDate: lastWateredDate
-        });
-        
-        updateTreeVisual(); 
-        checkWaterButton(); 
-        updateCountdownTimer();
+    if (lastWateredDate === today) {
+        alert("今天已经浇过水啦，明天再来吧！");
+        return;
     }
+
+    bonusDays += 2;
+    lastWateredDate = today;
+
+    localStorage.setItem('dawan_bonus_days', bonusDays);
+    localStorage.setItem('dawan_last_watered_date', lastWateredDate);
+
+    updateTreeVisual();
+    checkWaterButton();
+    updateCountdownTimer();
+
+    // 🚀 NEW: Immediately sync watering progress to JSONBin cloud
+    syncCloudHistory();
+
+    // Visual celebration effects
+    confetti({
+        particleCount: 50,
+        spread: 60,
+        origin: { y: 0.7 }
+    });
 }
 
     function enterGameFromCountdown() {
@@ -2663,36 +2669,87 @@ function waterPlant() {
         return data ? JSON.parse(data) : [];
     }
 
-    function syncCloudHistory(historyData) {
-        fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+async function syncCloudHistory(records = null, wishes = null) {
+    if (!JSONBIN_API_KEY || JSONBIN_API_KEY.includes('YOUR_')) return;
+    try {
+        const getRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+            headers: { 'X-Master-Key': JSONBIN_API_KEY }
+        });
+        let cloudData = { records: [], wishes: [] };
+        if (getRes.ok) {
+            const json = await getRes.json();
+            if (json.record) cloudData = json.record;
+        }
+
+        let finalRecords = records !== null ? records : (cloudData.records || []);
+        let finalWishes = wishes !== null ? wishes : (cloudData.wishes || []);
+
+        await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
                 'X-Master-Key': JSONBIN_API_KEY
             },
-            body: JSON.stringify({ records: historyData, wishes: getSavedWishes(), bonusDays: bonusDays })
-        }).catch(e => console.warn("Cloud sync warning:", e));
+            // 🚀 NEW: Include bonusDays and lastWateredDate in the cloud storage
+            body: JSON.stringify({
+                records: finalRecords,
+                wishes: finalWishes,
+                bonusDays: bonusDays,
+                lastWateredDate: lastWateredDate
+            })
+        });
+    } catch (e) {
+        console.error("云端同步失败", e);
     }
+}
 
 async function fetchCloudHistory() {
-    // Fetch data from server / JsonBin
-    const cloudData = await getCloudRecord(); 
+    if (!JSONBIN_API_KEY || JSONBIN_API_KEY.includes('YOUR_')) return;
+    try {
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+            headers: { 'X-Master-Key': JSONBIN_API_KEY }
+        });
+        if (res.ok) {
+            const json = await res.json();
+            if (json.record) {
+                if (Array.isArray(json.record.records)) {
+                    localStorage.setItem('dawan_game_history', JSON.stringify(json.record.records));
+                }
+                if (Array.isArray(json.record.wishes)) {
+                    localStorage.setItem('dawan_saved_wishes', JSON.stringify(json.record.wishes));
+                }
 
-    if (cloudData) {
-        // Hydrate local variables from cloud data
-        if (cloudData.bonusDays !== undefined) {
-            bonusDays = cloudData.bonusDays;
-            localStorage.setItem('dawan_bonus_days', bonusDays);
-        }
-        if (cloudData.lastWateredDate) {
-            lastWateredDate = cloudData.lastWateredDate;
-            localStorage.setItem('dawan_last_watered_date', lastWateredDate);
-        }
+                // 🚀 NEW: Retrieve watering progress from cloud
+                if (json.record.bonusDays !== undefined) {
+                    const cloudBonus = parseInt(json.record.bonusDays || 0);
+                    const cloudWateredDate = json.record.lastWateredDate || '';
 
-        // Refresh UI components across devices
-        updateTreeVisual();
-        checkWaterButton();
-        updateCountdownTimer();
+                    // If cloud has equal or higher bonus days, sync local to cloud
+                    if (cloudBonus >= bonusDays) {
+                        bonusDays = cloudBonus;
+                        lastWateredDate = cloudWateredDate;
+                        localStorage.setItem('dawan_bonus_days', bonusDays);
+                        localStorage.setItem('dawan_last_watered_date', lastWateredDate);
+                    } 
+                    // If local device has higher bonus days (watered previously on Device A), push to cloud
+                    else if (bonusDays > cloudBonus) {
+                        syncCloudHistory();
+                    }
+
+                    // Refresh UI countdown and plant status
+                    updateTreeVisual();
+                    checkWaterButton();
+                    updateCountdownTimer();
+                }
+
+                if (document.getElementById('admin-modal').classList.contains('show')) {
+                    renderAdminHistory();
+                    renderAdminWishes();
+                }
+            }
+        }
+    } catch (e) {
+        console.error("云端拉取失败", e);
     }
 }
 
