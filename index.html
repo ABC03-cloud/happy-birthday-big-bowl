@@ -2121,18 +2121,27 @@
         }
     }
 
-    function waterPlant() {
-        const today = getTodayString();
-        if (lastWateredDate !== today) {
-            bonusDays += 2; lastWateredDate = today;
-            localStorage.setItem('dawan_bonus_days', bonusDays); localStorage.setItem('dawan_last_watered_date', lastWateredDate);
-            syncCloudHistory(getLocalHistory()); playSound(600, 0.2, 'sine');
-            confetti({ particleCount: 60, spread: 60, origin: { y: 0.5 } });
-            const treeEl = document.getElementById('tree-display');
-            treeEl.style.transform = 'scale(1.3)'; setTimeout(() => treeEl.style.transform = 'scale(1)', 300);
-            updateTreeVisual(); checkWaterButton(); updateCountdownTimer();
-        }
+function waterPlant() {
+    const today = getTodayString();
+    if (lastWateredDate !== today) {
+        bonusDays += 2; 
+        lastWateredDate = today;
+        
+        localStorage.setItem('dawan_bonus_days', bonusDays); 
+        localStorage.setItem('dawan_last_watered_date', lastWateredDate);
+        
+        // Sync full state payload to cloud
+        syncCloudData({
+            history: getLocalHistory(),
+            bonusDays: bonusDays,
+            lastWateredDate: lastWateredDate
+        });
+        
+        updateTreeVisual(); 
+        checkWaterButton(); 
+        updateCountdownTimer();
     }
+}
 
     function enterGameFromCountdown() {
         document.getElementById('countdown-screen').classList.add('hidden');
@@ -2665,18 +2674,27 @@
         }).catch(e => console.warn("Cloud sync warning:", e));
     }
 
-    function fetchCloudHistory() {
-        fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-            headers: { 'X-Master-Key': JSONBIN_API_KEY }
-        }).then(res => res.json()).then(data => {
-            if (data.record && data.record.records) {
-                localStorage.setItem('dawan_game_history', JSON.stringify(data.record.records));
-            }
-            if (data.record && data.record.wishes) {
-                localStorage.setItem('dawan_saved_wishes', JSON.stringify(data.record.wishes));
-            }
-        }).catch(e => console.warn("Cloud fetch warning:", e));
+async function fetchCloudHistory() {
+    // Fetch data from server / JsonBin
+    const cloudData = await getCloudRecord(); 
+
+    if (cloudData) {
+        // Hydrate local variables from cloud data
+        if (cloudData.bonusDays !== undefined) {
+            bonusDays = cloudData.bonusDays;
+            localStorage.setItem('dawan_bonus_days', bonusDays);
+        }
+        if (cloudData.lastWateredDate) {
+            lastWateredDate = cloudData.lastWateredDate;
+            localStorage.setItem('dawan_last_watered_date', lastWateredDate);
+        }
+
+        // Refresh UI components across devices
+        updateTreeVisual();
+        checkWaterButton();
+        updateCountdownTimer();
     }
+}
 
     function openAdminPanel() {
         document.getElementById('admin-modal').classList.add('show');
