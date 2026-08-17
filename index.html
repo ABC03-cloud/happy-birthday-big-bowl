@@ -1322,12 +1322,12 @@
     <video id="webcam-video" autoplay playsinline class="webcam-preview"></video>
     <div id="three-canvas-container" style="position: absolute; inset: 0; z-index: 5000;"></div>
     
-    <div class="hologram-ui">
-        <h2 style="color: var(--gold); text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 6px;">🎂 HAPPY BIRTHDAY </h2>
-        <div class="hand-status-badge" id="hand-status">📷 正在启动红外传感器... 请允许摄像头权限</div>
-        <p style="font-size: 12px; color: #ffeaa7; text-shadow: 0 1px 2px #000; margin-bottom: 12px;">张开并合拢双手，隔空控制粒子蛋糕爆炸与收缩！</p>
-        <button class="btn-action" onclick="close3DHologramCake()" style="font-size: 14px; padding: 6px 16px;">退出全息模式 ✕</button>
-    </div>
+<div class="hologram-ui">
+    <h2 style="color: var(--gold); text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 6px;">🎂 HAPPY BIRTHDAY </h2>
+    <div class="hand-status-badge" id="hand-status">📷 正在启动红外传感器... 请允许摄像头权限</div>
+    <!-- UPDATE THIS LINE: -->
+    <p style="font-size: 12px; color: #ffeaa7; text-shadow: 0 1px 2px #000; margin-bottom: 12px;">使用单手【大拇指与食指】捏合与张开，隔空控制粒子蛋糕爆炸与收缩！</p>
+    <button class="btn-action" onclick="close3DHologramCake()" style="font-size: 14px; padding: 6px 16px;">退出全息模式 ✕</button>
 </div>
 
 <!-- ADMIN MODALS AND VIDEO OVERLAYS REMAIN THE SAME... -->
@@ -1519,59 +1519,63 @@
     }
 
     function initHandTracking() {
-        const videoElement = document.getElementById('webcam-video');
-        const statusBadge = document.getElementById('hand-status');
-        
-        const hands = new Hands({locateFile: (file) => {
-            return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
-        }});
-        
-        hands.setOptions({
-            maxNumHands: 2,
-            modelComplexity: 1,
-            minDetectionConfidence: 0.5,
-            minTrackingConfidence: 0.5
-        });
-        
-        hands.onResults((results) => {
-            if (results.multiHandLandmarks && results.multiHandLandmarks.length === 2) {
-                // Dual hand tracked: Calculate distance between wrists for "Tension/Expansion"
-                const hand1 = results.multiHandLandmarks[0][0];
-                const hand2 = results.multiHandLandmarks[1][0];
-                
-                const dx = hand1.x - hand2.x;
-                const dy = hand1.y - hand2.y;
-                const dz = hand1.z - hand2.z;
-                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
-                
-                // Map distance to a 3D particle scale multiplier
-                let mappedScale = 1.0 + (dist - 0.15) * 3.5;
-                mappedScale = Math.max(0.5, Math.min(mappedScale, 3.5)); // Cap scaling
-                targetScale = mappedScale;
-                
-                statusBadge.innerText = `🖐 红外张力检测中... 爆炸系数: ${mappedScale.toFixed(1)}x`;
-                statusBadge.style.background = "rgba(0, 184, 148, 0.8)";
-            } else if (results.multiHandLandmarks && results.multiHandLandmarks.length === 1) {
-                targetScale = 1.0;
-                statusBadge.innerText = "✋ 请举起【双手】隔空操控爆炸特效！";
-                statusBadge.style.background = "rgba(255, 159, 26, 0.8)";
-            } else {
-                targetScale = 1.0;
-                statusBadge.innerText = "🚫 红外雷达寻找双手...";
-                statusBadge.style.background = "rgba(255, 118, 117, 0.8)";
-            }
-        });
-        
-        mediapipeCamera = new Camera(videoElement, {
-            onFrame: async () => {
-                await hands.send({image: videoElement});
-            },
-            width: 320,
-            height: 240
-        });
-        mediapipeCamera.start();
-    }
-
+    const videoElement = document.getElementById('webcam-video');
+    const statusBadge = document.getElementById('hand-status');
+    
+    const hands = new Hands({locateFile: (file) => {
+        return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+    }});
+    
+    hands.setOptions({
+        maxNumHands: 1, // Only tracking one hand now for the pinch gesture
+        modelComplexity: 1,
+        minDetectionConfidence: 0.5,
+        minTrackingConfidence: 0.5
+    });
+    
+    hands.onResults((results) => {
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+            // Single hand tracked: Get landmarks for the first detected hand
+            const handLandmarks = results.multiHandLandmarks[0];
+            
+            // MediaPipe Landmarks: 4 is Thumb Tip, 8 is Index Finger Tip
+            const thumbTip = handLandmarks[4];
+            const indexTip = handLandmarks[8];
+            
+            // Calculate 3D Euclidean distance between thumb and index finger
+            const dx = thumbTip.x - indexTip.x;
+            const dy = thumbTip.y - indexTip.y;
+            const dz = thumbTip.z - indexTip.z;
+            const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+            
+            // Map the pinch distance to a 3D particle scale multiplier
+            // A typical pinch distance ranges from ~0.02 (closed) to ~0.20 (wide open)
+            let mappedScale = 1.0 + (dist - 0.04) * 15.0; 
+            
+            // Cap the scaling between 0.5x and 3.5x
+            mappedScale = Math.max(0.5, Math.min(mappedScale, 3.5)); 
+            targetScale = mappedScale;
+            
+            statusBadge.innerText = `🤏 单手双指捏合中... 爆炸系数: ${mappedScale.toFixed(1)}x`;
+            statusBadge.style.background = "rgba(0, 184, 148, 0.8)";
+            
+        } else {
+            // No hands detected, reset scale
+            targetScale = 1.0;
+            statusBadge.innerText = "✋ 请伸出一只手，使用【大拇指和食指】捏合控制！";
+            statusBadge.style.background = "rgba(255, 118, 117, 0.8)";
+        }
+    });
+    
+    mediapipeCamera = new Camera(videoElement, {
+        onFrame: async () => {
+            await hands.send({image: videoElement});
+        },
+        width: 320,
+        height: 240
+    });
+    mediapipeCamera.start();
+}
     function close3DHologramCake() {
         document.getElementById('hologram-container').style.display = 'none';
         cancelAnimationFrame(animationId);
