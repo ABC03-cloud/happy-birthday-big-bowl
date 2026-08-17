@@ -1598,6 +1598,17 @@
 
                 // 阶段 1：拖拽放置蜡烛
                 if (!candlePlaced) {
+                  if (Math.abs(candleSystem.position.x) < 2.5 && candleSystem.position.y > -1.0 && candleSystem.position.y < 4.0) {
+    candlePlaced = true;
+    candleSystem.position.set(0, -2, 0); // Snap candle to cake center
+    candleSystem.rotation.y = cakeSystem.rotation.y; // Sync rotation
+    
+    statusBadge.innerText = "🎂 蜡烛点燃！现在捏合可控制蛋糕大小！";
+    statusBadge.style.background = "rgba(0, 184, 148, 0.9)";
+    
+    // Execute ignition flash flare & confetti cannon
+    triggerSnapEffect();
+}
                     if (isPinching) {
                         isHoldingCandle = true;
                         statusBadge.innerText = "🤏 拖动蜡烛放到正中蛋糕顶部！";
@@ -1657,6 +1668,33 @@
         });
         mediapipeCamera.start();
     }
+
+    function triggerSnapEffect() {
+    // 1. Multi-Angle Confetti Blast
+    confetti({ particleCount: 100, spread: 100, origin: { y: 0.55 }, colors: ['#ffd700', '#ff7675', '#ffffff', '#6c5ce7'] });
+    setTimeout(() => confetti({ particleCount: 50, angle: 60, spread: 55, origin: { x: 0, y: 0.6 } }), 120);
+    setTimeout(() => confetti({ particleCount: 50, angle: 120, spread: 55, origin: { x: 1, y: 0.6 } }), 240);
+
+    // 2. Ascending Audio Chime Sweep
+    playSound(784, 0.2, 'sine'); // G5
+    setTimeout(() => playSound(987.77, 0.25, 'sine'), 80); // B5
+    setTimeout(() => playSound(1318.51, 0.4, 'sine'), 160); // E6
+
+    // 3. 3D Flame Ignition Flash
+    let flashTicks = 0;
+    const baseParticleSize = candleSystem.material.size;
+    
+    const flashInterval = setInterval(() => {
+        flashTicks++;
+        // Pulse the particle size outward to mimic a bright glow flash
+        candleSystem.material.size = baseParticleSize * (1 + Math.sin((flashTicks / 10) * Math.PI) * 2.2);
+        
+        if (flashTicks >= 10) {
+            clearInterval(flashInterval);
+            candleSystem.material.size = baseParticleSize; // Smoothly restore standard particle size
+        }
+    }, 25);
+}
 
     function close3DHologramCake() {
         document.getElementById('hologram-container').style.display = 'none';
