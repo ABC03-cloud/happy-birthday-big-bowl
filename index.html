@@ -5,8 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>财神到·大碗生日抢宝大作战 🥣💰🎉</title>
     <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    
+    <!-- 引入游戏原有的库 -->
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    
+    <!-- ✨ 新增：引入 MediaPipe 手势识别库，用于“隔空操作” -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+
     <style>
         :root {
             --gold: #ffd700;
@@ -1048,9 +1055,39 @@
                 opacity: 0;
             }
         }
+
+        /* --- ✨ 新增：隔空操作专有样式 --- */
+        #air-cursor {
+            position: fixed;
+            font-size: 40px;
+            pointer-events: none;
+            z-index: 9999;
+            display: none;
+            transform: translate(-50%, -50%);
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
+
+        .air-camera-preview {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            width: 100px;
+            height: 75px;
+            border-radius: 8px;
+            border: 2px solid var(--gold);
+            z-index: 1000;
+            background: #000;
+            transform: scaleX(-1); /* 镜像显示 */
+            display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+        }
     </style>
 </head>
 <body id="body-root">
+
+<!-- 虚拟隔空指针 -->
+<div id="air-cursor">🖐️</div>
+<video id="air-video" class="air-camera-preview" autoplay playsinline></video>
 
 <!-- BACKGROUND FLOATING CARTOON BALLOONS -->
 <div class="balloon-container" id="balloon-container"></div>
@@ -1092,7 +1129,7 @@
     </div>
 </div>
 
-<!-- STEP 2: WECHAT QR CODE UPLOAD SCREEN (BEFORE WATERING SYSTEM) -->
+<!-- STEP 2: WECHAT QR CODE UPLOAD SCREEN -->
 <div class="landing-screen hidden" id="upload-screen" style="z-index: 998;">
     <div class="envelope-card" style="max-width: 400px;">
         <div class="party-sticker">📱 领取奖金必备</div>
@@ -1121,7 +1158,6 @@
         <h2 class="envelope-title" style="margin-bottom: 4px;">生日倒计时 ⏳</h2>
         <p style="font-size: 12px; color: #ffeaa7; margin-top: 0; margin-bottom: 10px;">目标时间：2026年9月27日 (UTC+8)</p>
 
-        <!-- DOUBLE CLICK TREE TRIGGER ADDED HERE -->
         <div id="tree-display" 
              ondblclick="dropTreePicture(event)" 
              title="双击小树雨式下照片！"
@@ -1173,6 +1209,9 @@
             <button class="bgm-btn" id="btn-song2" onclick="playBGM('song2')">☀️ 《两只老虎爱跳舞》</button>
             <button class="bgm-btn" id="btn-song3" onclick="playBGM('song3')">🎂 《八音盒》</button>
             <button class="bgm-btn" id="btn-pause" onclick="pauseBGM()" style="background: #e63946; flex: 1 1 100%;">⏸️ 暂停播放</button>
+            
+            <!-- ✨ 新增：隔空操作开启按钮 -->
+            <button class="bgm-btn" id="btn-air" onclick="toggleAirGesture()" style="background: #0984e3; flex: 1 1 100%;">🖐️ 开启隔空操作(摄像头抓取)</button>
         </div>
         <div class="audio-status-msg" id="audio-status"></div>
         <audio id="bgm-audio" loop playsinline webkit-playsinline></audio>
@@ -1216,10 +1255,11 @@
 
 </div>
 
+<!-- 下方所有 Modal 逻辑保持不变（精简显示以专注核心变化，完整代码直接保留）-->
+
 <!-- RESULT POP-UP MODAL -->
 <div class="result-modal" id="result-modal">
     <div class="result-card" id="result-card">
-        
         <!-- PHASE 1: GOLDEN EGG -->
         <div id="egg-stage" style="text-align: center;">
             <div class="party-sticker">🔨 砸金蛋环节</div>
@@ -1267,11 +1307,10 @@
                 <button class="btn-action" onclick="resetGame()" style="width: 100%;">再吹一次蜡烛 🔄</button>
             </div>
         </div>
-
     </div>
 </div>
 
-<!-- ADMIN MODAL WITH TRACKED WISHES & GAME HISTORY & QR CODE VIEWER -->
+<!-- ADMIN MODAL... (省略中间没改动的Admin和弹窗相关代码以保持简洁，但结构完整) -->
 <div class="admin-modal" id="admin-modal">
     <div class="admin-card">
         <div class="admin-header">
@@ -1299,7 +1338,6 @@
     </div>
 </div>
 
-<!-- ADMIN QR CODE PREVIEW MODAL -->
 <div class="admin-modal" id="qr-modal" style="z-index: 2500;">
     <div class="admin-card" style="text-align: center; align-items: center; max-width: 320px;">
         <h3 class="admin-title" style="margin-bottom: 8px;">📷 微信收款码查看</h3>
@@ -1308,7 +1346,7 @@
     </div>
 </div>
 
-<!-- BOMB TRIGGER VIDEO MODAL (WECHAT OPTIMIZED) -->
+<!-- BOMB TRIGGER VIDEO MODAL -->
 <div class="bomb-video-modal" id="bomb-video-modal">
     <div class="bomb-video-card">
         <h3 style="margin: 0; color: #ff7675; font-size: 18px;">💣 踩雷惩罚 / 爆笑彩蛋视频 🎬</h3>
@@ -1318,14 +1356,7 @@
             ⚠️ 视频未正常加载：请检查 <b>bigboom.mp4</b> 是否存在且编码为 H.264 AAC 的 MP4。
         </div>
 
-        <video id="bomb-video" 
-               playsinline 
-               webkit-playsinline 
-               x5-playsinline="true" 
-               x5-video-player-type="h5-page" 
-               x5-video-orientation="portrait" 
-               preload="auto" 
-               controls>
+        <video id="bomb-video" playsinline webkit-playsinline x5-playsinline="true" x5-video-player-type="h5-page" x5-video-orientation="portrait" preload="auto" controls>
             <source src="bigboom.mp4" type="video/mp4">
         </video>
 
@@ -1336,7 +1367,6 @@
     </div>
 </div>
 
-<!-- FU WORD POPUP VIDEO MODAL (WECHAT OPTIMIZED) -->
 <div class="bomb-video-modal" id="fu-video-modal">
     <div class="bomb-video-card" style="border-color: var(--gold); box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);">
         <h3 style="margin: 0; color: var(--gold); font-size: 18px;">🧧 福气满满 · 专属视频 🎬</h3>
@@ -1346,14 +1376,7 @@
             ⚠️ 视频未正常加载：请检查 <b>jealosy.mp4</b> 是否放在跟网页同目录下。
         </div>
 
-        <video id="fu-video" 
-               playsinline 
-               webkit-playsinline 
-               x5-playsinline="true" 
-               x5-video-player-type="h5-page" 
-               x5-video-orientation="portrait" 
-               preload="auto" 
-               controls>
+        <video id="fu-video" playsinline webkit-playsinline x5-playsinline="true" x5-video-player-type="h5-page" x5-video-orientation="portrait" preload="auto" controls>
             <source src="jealosy.mp4" type="video/mp4">
         </video>
         <div style="display: flex; gap: 8px; width: 100%; justify-content: center;">
@@ -1364,6 +1387,113 @@
 </div>
 
 <script>
+    // --- ✨ 新增：隔空操作逻辑 (MediaPipe Hands API) ---
+    let airGestureEnabled = false;
+    let hands = null;
+    let camera = null;
+    let lastCatchTime = 0;
+
+    function toggleAirGesture() {
+        const btn = document.getElementById('btn-air');
+        if (airGestureEnabled) {
+            airGestureEnabled = false;
+            document.getElementById('air-cursor').style.display = 'none';
+            document.getElementById('air-video').style.display = 'none';
+            if (camera) camera.stop();
+            btn.style.background = '#0984e3';
+            btn.innerText = '🖐️ 开启隔空操作(摄像头抓取)';
+        } else {
+            airGestureEnabled = true;
+            document.getElementById('air-cursor').style.display = 'block';
+            document.getElementById('air-video').style.display = 'block';
+            btn.style.background = 'var(--gold)';
+            btn.style.color = 'var(--dark-border)';
+            btn.innerText = '🎥 正在加载摄像头...';
+            initMediaPipe();
+        }
+    }
+
+    function initMediaPipe() {
+        if (hands) {
+            camera.start();
+            document.getElementById('btn-air').innerText = '🖐️ 隔空操作已开启(点击关闭)';
+            return;
+        }
+        const videoElement = document.getElementById('air-video');
+        
+        hands = new Hands({locateFile: (file) => {
+            return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+        }});
+        
+        hands.setOptions({
+            maxNumHands: 1,
+            modelComplexity: 0,
+            minDetectionConfidence: 0.5,
+            minTrackingConfidence: 0.5
+        });
+        
+        hands.onResults(onAirGestureResults);
+        
+        camera = new Camera(videoElement, {
+            onFrame: async () => {
+                if (airGestureEnabled) await hands.send({image: videoElement});
+            },
+            width: 320,
+            height: 240
+        });
+        
+        camera.start().then(() => {
+            document.getElementById('btn-air').innerText = '🖐️ 隔空操作已开启(点击关闭)';
+        }).catch(err => {
+            alert("⚠️ 摄像头访问失败！请确保网页运行在 https 环境或 localhost，并已授予摄像头权限！");
+            toggleAirGesture();
+        });
+    }
+
+    function onAirGestureResults(results) {
+        if (!airGestureEnabled) return;
+        const cursor = document.getElementById('air-cursor');
+        
+        if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+            const landmarks = results.multiHandLandmarks[0];
+            const indexFinger = landmarks[8]; // 获取食指尖坐标
+            
+            // 因为前置摄像头是镜像的，所以 X 轴要反转
+            const x = (1 - indexFinger.x) * window.innerWidth;
+            const y = indexFinger.y * window.innerHeight;
+            
+            cursor.style.left = `${x}px`;
+            cursor.style.top = `${y}px`;
+            
+            detectAirCollision(x, y);
+        }
+    }
+
+    function detectAirCollision(x, y) {
+        const now = Date.now();
+        if (now - lastCatchTime < 80) return; // 防抖时间限制，避免短时间重复触发
+        
+        const items = document.querySelectorAll('.falling-item, .cake-candle-area, .golden-egg');
+        items.forEach(item => {
+            const rect = item.getBoundingClientRect();
+            // 判断食指指针是否进入了元素的区域内
+            if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+                // 模拟一次触摸/点击事件，交给原有的 handleCatch 或事件监听去处理
+                const event = new MouseEvent('mousedown', {
+                    view: window,
+                    bubbles: true,
+                    cancelable: true,
+                    clientX: x,
+                    clientY: y
+                });
+                item.dispatchEvent(event);
+                lastCatchTime = now;
+            }
+        });
+    }
+
+    // --- 以下是原有的所有业务逻辑代码 ---
+    
     // -----------------------------------------------------------
     // 📷 微信收款码处理与压缩逻辑
     // -----------------------------------------------------------
@@ -1373,7 +1503,6 @@
         const file = e.target.files[0];
         if (!file) return;
 
-        // 压缩图片并转换为 Base64
         compressImage(file, 600, 600, 0.7, function(base64Data) {
             uploadedQRBase64 = base64Data;
             localStorage.setItem('dawan_user_qrcode', uploadedQRBase64);
@@ -1430,7 +1559,6 @@
 
         playSound(600, 0.2, 'sine');
         
-        // 隐藏上传界面，展示浇水倒计时界面
         document.getElementById('upload-screen').classList.add('hidden');
         setTimeout(() => {
             document.getElementById('upload-screen').style.display = 'none';
@@ -1452,7 +1580,7 @@
     }
 
     // -----------------------------------------------------------
-    // 🌸 摇一摇与花瓣雨 + 音效自动顺序播放 (petal.mp3 -> petal2.mp3)
+    // 🌸 摇一摇与花瓣雨 + 音效自动顺序播放 
     // -----------------------------------------------------------
     let isPetalRaining = false;
     let lastShakeTime = 0;
@@ -1575,7 +1703,7 @@
     }
 
     // -----------------------------------------------------------
-    // 🌧️ 双击树木：持续 8 秒照片雨效果 (photo6.jpeg & photo7.jpeg)
+    // 🌧️ 双击树木：持续 8 秒照片雨效果 
     // -----------------------------------------------------------
     const TREE_RAIN_IMAGES = ['photo6.jpeg', 'photo7.jpeg'];
     let isTreeRaining = false;
@@ -1870,13 +1998,11 @@
                 document.getElementById('landing-screen').style.display = 'none';
             }, 600);
 
-            // 跳转至【微信收款码上传界面】
             const uploadScreen = document.getElementById('upload-screen');
             if (uploadScreen) {
                 uploadScreen.classList.remove('hidden');
                 uploadScreen.style.display = 'flex';
                 
-                // 加载已保存的预览图（如有）
                 if (uploadedQRBase64) {
                     const previewImg = document.getElementById('qr-preview-img');
                     const placeholder = document.getElementById('qr-upload-placeholder');
@@ -2705,7 +2831,6 @@
         document.getElementById('admin-total-plays').innerText = records.length;
         document.getElementById('admin-total-wishes').innerText = wishes.length;
 
-        // 战报列表展示 (含微信收款码按钮)
         if (records.length === 0) {
             listEl.innerHTML = '<div style="text-align:center; color:#aaa; padding:10px;">暂无战报记录</div>';
         } else {
@@ -2727,7 +2852,6 @@
             }).join('');
         }
 
-        // 愿望记录列表
         if (wishes.length === 0) {
             wishesEl.innerHTML = '<div style="text-align:center; color:#aaa; padding:10px;">暂无许愿记录</div>';
         } else {
