@@ -1117,26 +1117,6 @@
             margin-bottom: 4px;
             animation: pulse 0.8s infinite alternate;
         }
-
-        /* 插蜡烛完成提示弹窗 */
-        .candle-complete-banner {
-            display: none;
-            position: absolute;
-            top: 15%;
-            left: 50%;
-            transform: translateX(-50%);
-            background: linear-gradient(135deg, #ffd700, #ff7675);
-            color: #2b1055;
-            padding: 12px 24px;
-            border-radius: 30px;
-            border: 3px solid #ffffff;
-            font-size: 18px;
-            font-weight: bold;
-            box-shadow: 0 0 25px rgba(255, 215, 0, 0.9);
-            z-index: 5005;
-            animation: popIn 0.4s ease forwards;
-            text-align: center;
-        }
     </style>
 </head>
 <body id="body-root">
@@ -1358,10 +1338,11 @@
     <video id="webcam-video" autoplay playsinline class="webcam-preview"></video>
     <div id="three-canvas-container" style="position: absolute; inset: 0; z-index: 5000;"></div>
     
-    <!-- 插蜡烛完成提示横幅 -->
-    <div class="candle-complete-banner" id="candle-complete-banner">
-        🎉 蜡烛已成功插好！蛋糕环节圆满结束！🎂<br>
-        <span style="font-size:13px; font-weight:normal;">漫天气球已为您放飞，捏合可继续互动！</span>
+    <!-- 蛋糕插蜡烛完成提示信号 -->
+    <div id="cake-completion-toast" style="display:none; position:absolute; top:18%; left:50%; transform:translateX(-50%); background:rgba(20, 10, 35, 0.92); border:3px solid var(--gold); border-radius:20px; padding:16px 24px; text-align:center; z-index:5005; box-shadow:0 0 35px var(--gold); animation: popIn 0.5s ease;">
+        <h2 style="color:var(--gold); margin:0 0 6px; font-size:22px; text-shadow:0 0 10px rgba(255,215,0,0.8);">🎉 蜡烛摆放成功！</h2>
+        <p style="color:#ffffff; margin:0 0 8px; font-size:13px; line-height:1.4;">生日蛋糕仪式圆满完成！漫天飞舞的气球已为你升起 🎈<br>你可以继续用捏合手势缩放蛋糕，或点击下方按钮退出。</p>
+        <div style="font-size:26px;">🎂✨🥳🎈</div>
     </div>
 
     <div class="hologram-ui">
@@ -1465,17 +1446,17 @@
     function init3DHologramCake() {
         const container = document.getElementById('hologram-container');
         const canvasWrapper = document.getElementById('three-canvas-container');
-        const completeBanner = document.getElementById('candle-complete-banner');
-        if (completeBanner) completeBanner.style.display = 'none';
-
         container.style.display = 'flex';
         
         pauseBGM();
 
-        // 重置倒计时状态
+        // 重置提示及倒计时状态
         countdownStep = 3;
         countdownFinished = false;
         lastStepTime = Date.now();
+
+        const toast = document.getElementById('cake-completion-toast');
+        if (toast) toast.style.display = 'none';
 
         const gestureBox = document.getElementById('countdown-gesture-box');
         const numDisplay = document.getElementById('gesture-num-display');
@@ -1654,7 +1635,20 @@
 
     // 蜡烛归位后爆发升起海量彩色气球特效 🎈
     function triggerCandlePlacedBalloons() {
-        generateBalloons(); // 触发全屏气球飞升效果
+        const balloonContainer = document.getElementById('balloon-container');
+        const balloonEmojis = ['🎈', '🎈', '🎉', '✨', '🎂', '🥳', '🧁', '💖', '🌟', '🎈'];
+        for (let i = 0; i < 40; i++) {
+            setTimeout(() => {
+                const balloon = document.createElement('div');
+                balloon.className = 'cartoon-balloon';
+                balloon.innerText = balloonEmojis[Math.floor(Math.random() * balloonEmojis.length)];
+                balloon.style.left = `${Math.random() * 95}%`;
+                balloon.style.animationDuration = `${3.5 + Math.random() * 4}s`;
+                balloon.style.fontSize = `${28 + Math.random() * 24}px`;
+                balloonContainer.appendChild(balloon);
+                setTimeout(() => balloon.remove(), 8000);
+            }, i * 120);
+        }
     }
 
     function initHandTracking() {
@@ -1663,8 +1657,7 @@
         const numDisplay = document.getElementById('gesture-num-display');
         const gestureBox = document.getElementById('countdown-gesture-box');
         const hologramInstr = document.getElementById('hologram-instruction');
-        const completeBanner = document.getElementById('candle-complete-banner');
-
+        
         const hands = new Hands({locateFile: (file) => {
             return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
         }});
@@ -1748,14 +1741,17 @@
                                 candleSystem.position.set(0, -2, 0); 
                                 candleSystem.rotation.y = cakeSystem.rotation.y; 
                                 
-                                statusBadge.innerText = "🎂 放置成功！蛋糕仪式完成！漫天气球为你升起！";
-                                statusBadge.style.background = "rgba(0, 184, 148, 0.9)";
+                                statusBadge.innerText = "🎂 放置成功！蛋糕仪式完成，漫天气球升起！";
+                                statusBadge.style.background = "rgba(0, 184, 148, 0.95)";
                                 
-                                // 显示明确的插蜡烛完成信号横幅
-                                if (completeBanner) completeBanner.style.display = 'block';
+                                // 1. 弹出完成信号提示 Toast
+                                const toast = document.getElementById('cake-completion-toast');
+                                if (toast) toast.style.display = 'block';
 
+                                // 2. 触发放飞气球特效
+                                generateBalloons();
                                 triggerSnapEffect();
-                                triggerCandlePlacedBalloons(); // 放飞结尾漫天气球特效 🎈
+                                triggerCandlePlacedBalloons();
                             } else {
                                 statusBadge.innerText = "✋ 请将蜡烛放置到蛋糕正上方~";
                                 statusBadge.style.background = "rgba(255, 118, 117, 0.8)";
@@ -1774,8 +1770,8 @@
                         statusBadge.innerText = `🤏 粒子爆炸系数: ${mappedScale.toFixed(1)}x`;
                         statusBadge.style.background = "rgba(0, 184, 148, 0.8)";
                     } else {
-                        statusBadge.innerText = "✋ 插蜡烛完成！张开与捏合手指可控制大小！";
-                        statusBadge.style.background = "rgba(0, 184, 148, 0.8)";
+                        statusBadge.innerText = "✋ 张开与捏合手指来控制大小！";
+                        statusBadge.style.background = "rgba(255, 118, 117, 0.8)";
                     }
                 }
             } else {
@@ -2008,21 +2004,19 @@
         setTimeout(() => { drop.remove(); }, duration * 1000);
     }
 
-    // 气球生成函数（已在初始化阶段取消自动调用，只在蛋糕插蜡烛环节结束后触发）
+    // 升起飘飞气球动画函数 (在蛋糕环节结束后触发)
     function generateBalloons() {
         const balloonContainer = document.getElementById('balloon-container');
         const balloonEmojis = ['🎈', '🎁', '✨', '🎂', '🎉', '🥳', '🧁'];
-        for (let i = 0; i < 25; i++) {
-            setTimeout(() => {
-                const balloon = document.createElement('div');
-                balloon.className = 'cartoon-balloon';
-                balloon.innerText = balloonEmojis[Math.floor(Math.random() * balloonEmojis.length)];
-                balloon.style.left = `${Math.random() * 92}%`;
-                balloon.style.animationDuration = `${5 + Math.random() * 5}s`;
-                balloon.style.fontSize = `${24 + Math.random() * 20}px`;
-                balloonContainer.appendChild(balloon);
-                setTimeout(() => balloon.remove(), 8000);
-            }, i * 150);
+        for (let i = 0; i < 20; i++) {
+            const balloon = document.createElement('div');
+            balloon.className = 'cartoon-balloon';
+            balloon.innerText = balloonEmojis[Math.floor(Math.random() * balloonEmojis.length)];
+            balloon.style.left = `${Math.random() * 92}%`;
+            balloon.style.animationDuration = `${6 + Math.random() * 6}s`;
+            balloon.style.animationDelay = `${Math.random() * 3}s`;
+            balloon.style.fontSize = `${24 + Math.random() * 18}px`;
+            balloonContainer.appendChild(balloon);
         }
     }
 
@@ -2371,8 +2365,425 @@
     }
 
     function startGame() {
-        score = 0; timeLeft = 10;
-        // Game Start logic...
+        score = 0;
+        timeLeft = 10;
+        streak = 0;
+        isFever = false;
+        
+        scoreDisplay.innerText = score;
+        timerDisplay.innerText = timeLeft;
+        overlay.style.display = 'none';
+        
+        updateStreakBar();
+        
+        if (gameInterval) clearInterval(gameInterval);
+        if (spawnInterval) clearInterval(spawnInterval);
+        
+        gameInterval = setInterval(() => {
+            timeLeft--;
+            timerDisplay.innerText = timeLeft;
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }, 1000);
+        
+        spawnInterval = setInterval(() => {
+            spawnItem();
+        }, isFever ? 250 : 450);
+    }
+
+    function spawnItem() {
+        const item = document.createElement('div');
+        item.className = 'falling-item';
+        const isBomb = Math.random() < 0.15;
+        const emoji = isBomb ? '💣' : items[Math.floor(Math.random() * (items.length - 1))];
+        item.innerText = emoji;
+        item.style.left = `${Math.random() * 85 + 5}%`;
+        
+        const speed = isFever ? (1.2 + Math.random() * 0.8) : (2.0 + Math.random() * 1.5);
+        item.style.animationDuration = `${speed}s`;
+        
+        const handleTouch = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const rect = item.getBoundingClientRect();
+            const clickX = rect.left + rect.width / 2;
+            const clickY = rect.top;
+            
+            if (emoji === '💣') {
+                playSound(150, 0.4, 'sawtooth');
+                streak = 0;
+                updateStreakBar();
+                endFeverMode();
+                showFloatingText(clickX, clickY, "💣 踩雷!");
+                item.remove();
+                triggerBombVideo();
+            } else {
+                let pts = 10;
+                if (['🎂', '🎁', '🥣', '🍜', '福'].includes(emoji)) pts = 20;
+                if (isFever) pts *= 2;
+                
+                score += pts;
+                scoreDisplay.innerText = score;
+                streak++;
+                
+                playSound(500 + streak * 50, 0.15, 'sine');
+                showFloatingText(clickX, clickY, `+${pts}`);
+                
+                updateStreakBar();
+                if (streak >= 5 && !isFever) {
+                    triggerFeverMode();
+                }
+                item.remove();
+            }
+        };
+        
+        item.addEventListener('touchstart', handleTouch, { passive: false });
+        item.addEventListener('click', handleTouch);
+        
+        arena.appendChild(item);
+        setTimeout(() => { if (item.parentNode) item.remove(); }, speed * 1000);
+    }
+
+    function endGame() {
+        clearInterval(gameInterval);
+        clearInterval(spawnInterval);
+        document.querySelectorAll('.falling-item').forEach(el => el.remove());
+        
+        endFeverMode();
+        
+        resultModal.classList.add('show');
+        document.getElementById('egg-stage').style.display = 'block';
+        document.getElementById('scratch-stage').style.display = 'none';
+        eggKnockCount = 0;
+        document.getElementById('egg-knock-txt').innerText = eggKnockCount;
+        document.getElementById('golden-egg').innerText = '🥚';
+        
+        let prizeStr = "￥388.88";
+        let titleStr = "🥉 纳福奖";
+        let descStr = "祝大碗生日快乐！福气满满，好运连连！";
+        
+        if (score >= 200) {
+            prizeStr = "￥988.88";
+            titleStr = "🥇 金碗福气大奖";
+            descStr = "太厉害啦！大碗手速惊人！把财神爷的金碗、生日蛋糕与福气装得满满当当，祝大碗生日快乐、福气满满、财源滚滚！";
+            document.getElementById('tier-grand').classList.add('won');
+            document.getElementById('tier-mid').classList.remove('won');
+            document.getElementById('tier-small').classList.remove('won');
+        } else if (score >= 100) {
+            prizeStr = "￥688.88";
+            titleStr = "🥈 聚财奖";
+            descStr = "太棒啦！碗里装满了财富、蛋糕与福气！祝大碗生日快乐，新的一岁事事顺心、天天吃大碗美味";
+            document.getElementById('tier-mid').classList.add('won');
+            document.getElementById('tier-grand').classList.remove('won');
+            document.getElementById('tier-small').classList.remove('won');
+        } else {
+            prizeStr = "￥388.88";
+            titleStr = "🥉 纳福奖";
+            descStr = "恭喜大碗！为你解锁专属生日红包，祝你生日快乐、金碗常满、福气连连、健康平安";
+            document.getElementById('tier-small').classList.add('won');
+            document.getElementById('tier-grand').classList.remove('won');
+            document.getElementById('tier-mid').classList.remove('won');
+        }
+        
+        document.getElementById('prize-amount').innerText = prizeStr;
+        document.getElementById('prize-title').innerText = `🎉 恭喜获得 ${titleStr}!`;
+        document.getElementById('prize-desc').innerText = descStr;
+        
+        saveGameHistory(score, titleStr, prizeStr);
+    }
+
+    function knockEgg(e) {
+        if (eggKnockCount >= 3) return;
+        
+        eggKnockCount++;
+        document.getElementById('egg-knock-txt').innerText = eggKnockCount;
+        
+        const egg = document.getElementById('golden-egg');
+        const hammer = document.getElementById('hammer');
+        
+        hammer.classList.remove('hammer-swing');
+        void hammer.offsetWidth;
+        hammer.classList.add('hammer-swing');
+        
+        egg.classList.remove('egg-crack');
+        void egg.offsetWidth;
+        egg.classList.add('egg-crack');
+        
+        playSound(300 + eggKnockCount * 150, 0.2, 'square');
+        
+        if (eggKnockCount === 1) egg.innerText = '🥚';
+        else if (eggKnockCount === 2) egg.innerText = '🐣';
+        else if (eggKnockCount >= 3) {
+            egg.innerText = '💥';
+            confetti({ particleCount: 80, spread: 80, origin: { y: 0.6 } });
+            playSound(800, 0.3, 'sine');
+            
+            setTimeout(() => {
+                document.getElementById('egg-stage').style.display = 'none';
+                document.getElementById('scratch-stage').style.display = 'block';
+                initScratchCanvas();
+            }, 600);
+        }
+    }
+
+    function initScratchCanvas() {
+        const canvas = document.getElementById('scratch-canvas');
+        const ctx = canvas.getContext('2d');
+        const box = canvas.parentElement;
+        
+        canvas.width = box.clientWidth;
+        canvas.height = box.clientHeight;
+        
+        ctx.fillStyle = '#b2bec3';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.fillStyle = '#636e72';
+        ctx.font = 'bold 16px "ZCOOL KuaiLe", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🎁 刮开此图层 🎁', canvas.width / 2, canvas.height / 2);
+        
+        document.getElementById('prize-amount').style.opacity = '1';
+        
+        let isDrawing = false;
+        scratchRevealed = false;
+        
+        function scratch(x, y) {
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.arc(x, y, 18, 0, Math.PI * 2);
+            ctx.fill();
+            
+            checkScratchPercent();
+        }
+        
+        function checkScratchPercent() {
+            if (scratchRevealed) return;
+            
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let clearedPixels = 0;
+            for (let i = 3; i < imgData.data.length; i += 4) {
+                if (imgData.data[i] === 0) clearedPixels++;
+            }
+            
+            const totalPixels = canvas.width * canvas.height;
+            if (clearedPixels / totalPixels > 0.35) {
+                scratchRevealed = true;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                confetti({ particleCount: 100, spread: 100, origin: { y: 0.5 } });
+                playSound(900, 0.4, 'sine');
+                document.getElementById('scratch-result-details').style.display = 'block';
+            }
+        }
+        
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
+        
+        canvas.onmousedown = (e) => { isDrawing = true; const pos = getPos(e); scratch(pos.x, pos.y); };
+        canvas.onmousemove = (e) => { if (isDrawing) { const pos = getPos(e); scratch(pos.x, pos.y); } };
+        canvas.onmouseup = () => { isDrawing = false; };
+        
+        canvas.ontouchstart = (e) => { isDrawing = true; const pos = getPos(e); scratch(pos.x, pos.y); };
+        canvas.ontouchmove = (e) => { if (isDrawing) { const pos = getPos(e); scratch(pos.x, pos.y); } };
+        canvas.ontouchend = () => { isDrawing = false; };
+    }
+
+    function playVoiceWish() {
+        const voice = document.getElementById('voice-audio');
+        if (voice) {
+            voice.currentTime = 0;
+            voice.play().catch(e => { alert("🔊 语音播放受阻，请点击允许网页播放音频！"); });
+        }
+    }
+
+    function exportPoster() {
+        const card = document.getElementById('result-card');
+        html2canvas(card, { backgroundColor: '#1b0826' }).then(canvas => {
+            const link = document.createElement('a');
+            link.download = '大碗生日抢宝纪念卡.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+    }
+
+    function resetGame() {
+        resultModal.classList.remove('show');
+        overlay.style.display = 'flex';
+        candleBlows = 0;
+        document.getElementById('candle-flame').style.display = 'block';
+        document.getElementById('candle-flame').style.transform = 'none';
+        document.getElementById('start-btn').style.display = 'none';
+        scoreDisplay.innerText = 0;
+        timerDisplay.innerText = 10;
+    }
+
+    function saveGameHistory(scoreVal, prizeName, amountVal) {
+        const history = getLocalHistory();
+        const sessionTime = sessionStorage.getItem('current_session_time') || new Date().toLocaleString('zh-CN');
+        const lastPwd = sessionStorage.getItem('dawan_last_pwd') || '未知';
+        
+        const existingIndex = history.findIndex(item => item.time === sessionTime);
+        const record = {
+            time: sessionTime,
+            score: scoreVal,
+            prize: prizeName,
+            amount: amountVal,
+            device: getDeviceId(),
+            password: lastPwd,
+            qrcode: uploadedQRBase64 || ""
+        };
+        
+        if (existingIndex >= 0) {
+            history[existingIndex] = record;
+        } else {
+            history.unshift(record);
+        }
+        
+        localStorage.setItem('dawan_game_history', JSON.stringify(history));
+        syncCloudHistory(history);
+    }
+
+    function getLocalHistory() {
+        const data = localStorage.getItem('dawan_game_history');
+        return data ? JSON.parse(data) : [];
+    }
+
+    function syncCloudHistory(historyData) {
+        fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': JSONBIN_API_KEY
+            },
+            body: JSON.stringify({ records: historyData, wishes: getSavedWishes(), bonusDays: bonusDays })
+        }).catch(e => console.warn("Cloud sync warning:", e));
+    }
+
+    function fetchCloudHistory() {
+        fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+            headers: { 'X-Master-Key': JSONBIN_API_KEY }
+        }).then(res => res.json()).then(data => {
+            if (data.record && data.record.records) {
+                localStorage.setItem('dawan_game_history', JSON.stringify(data.record.records));
+            }
+            if (data.record && data.record.wishes) {
+                localStorage.setItem('dawan_saved_wishes', JSON.stringify(data.record.wishes));
+            }
+        }).catch(e => console.warn("Cloud fetch warning:", e));
+    }
+
+    function openAdminPanel() {
+        document.getElementById('admin-modal').classList.add('show');
+        switchAdminTab('history');
+    }
+
+    function closeAdminPanel() {
+        document.getElementById('admin-modal').classList.remove('show');
+    }
+
+    function switchAdminTab(tab) {
+        const histList = document.getElementById('history-list');
+        const wishList = document.getElementById('wishes-list');
+        const btnHist = document.getElementById('tab-btn-history');
+        const btnWish = document.getElementById('tab-btn-wishes');
+        
+        if (tab === 'history') {
+            histList.style.display = 'flex';
+            wishList.style.display = 'none';
+            btnHist.style.background = 'var(--gold)';
+            btnHist.style.color = '#2b1055';
+            btnWish.style.background = '#6c5ce7';
+            btnWish.style.color = '#ffffff';
+            renderAdminHistory();
+        } else {
+            histList.style.display = 'none';
+            wishList.style.display = 'flex';
+            btnWish.style.background = 'var(--gold)';
+            btnWish.style.color = '#2b1055';
+            btnHist.style.background = '#6c5ce7';
+            btnHist.style.color = '#ffffff';
+            renderAdminWishes();
+        }
+    }
+
+    function renderAdminHistory() {
+        const history = getLocalHistory();
+        document.getElementById('admin-total-plays').innerText = history.length;
+        const container = document.getElementById('history-list');
+        container.innerHTML = '';
+        
+        if (history.length === 0) {
+            container.innerHTML = '<div style="font-size:12px; color:#aaa; text-align:center; padding:10px;">暂无战报数据</div>';
+            return;
+        }
+        
+        history.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            
+            let qrBtnHtml = item.qrcode ? `<button onclick="showQRModal('${item.qrcode}')" style="background:var(--gold); border:none; border-radius:4px; font-size:10px; cursor:pointer; padding:2px 6px; font-weight:bold;">📷 收款码</button>` : '';
+            
+            div.innerHTML = `
+                <div>
+                    <div class="history-item-time">${item.time} (${item.device || '未知设备'})</div>
+                    <div style="font-size:11px; color:#ffeaa7;">🔑 口令: ${item.password || '无'} | 🎯 得分: ${item.score}</div>
+                </div>
+                <div style="text-align:right;">
+                    <div class="history-item-prize">${item.prize}</div>
+                    ${qrBtnHtml}
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function renderAdminWishes() {
+        const wishes = getSavedWishes();
+        document.getElementById('admin-total-wishes').innerText = wishes.length;
+        const container = document.getElementById('wishes-list');
+        container.innerHTML = '';
+        
+        if (wishes.length === 0) {
+            container.innerHTML = '<div style="font-size:12px; color:#aaa; text-align:center; padding:10px;">暂无许愿数据</div>';
+            return;
+        }
+        
+        wishes.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            div.innerHTML = `
+                <div>
+                    <div class="history-item-time">${item.time} (${item.device || '未知设备'})</div>
+                    <div style="font-size:12px; color:var(--gold); font-weight:bold; margin-top:2px;">🏮 ${item.wish}</div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
+
+    function clearHistory() {
+        if (confirm("确定要清空所有记录吗？")) {
+            localStorage.removeItem('dawan_game_history');
+            localStorage.removeItem('dawan_saved_wishes');
+            renderAdminHistory();
+            renderAdminWishes();
+            syncCloudHistory([]);
+        }
+    }
+
+    function showQRModal(qrBase64) {
+        document.getElementById('qr-modal-img').src = qrBase64;
+        document.getElementById('qr-modal').classList.add('show');
+    }
+
+    function closeQRModal() {
+        document.getElementById('qr-modal').classList.remove('show');
     }
 </script>
 </body>
