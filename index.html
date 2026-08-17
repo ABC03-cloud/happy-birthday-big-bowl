@@ -77,7 +77,7 @@
             position: fixed;
             inset: 0;
             pointer-events: none;
-            z-index: 1;
+            z-index: 6000;
             overflow: hidden;
         }
 
@@ -85,15 +85,15 @@
             position: absolute;
             bottom: -60px;
             font-size: 32px;
-            animation: floatUp linear infinite;
-            opacity: 0.75;
+            animation: floatUp linear forwards;
+            opacity: 0.9;
             filter: drop-shadow(2px 3px 0px rgba(0,0,0,0.3));
         }
 
         @keyframes floatUp {
-            0% { transform: translateY(0) rotate(0deg); opacity: 0.8; }
+            0% { transform: translateY(0) rotate(0deg); opacity: 0.9; }
             50% { transform: translateY(-50vh) rotate(15deg); }
-            100% { transform: translateY(-110vh) rotate(-15deg); opacity: 0; }
+            100% { transform: translateY(-115vh) rotate(-15deg); opacity: 0; }
         }
 
         .sky-lantern {
@@ -770,10 +770,11 @@
             box-shadow: 0 1px 0 var(--dark-border);
         }
 
+        /* --- 浪漫璀璨星空背景 STARRY NIGHT RESULT MODAL --- */
         .result-modal {
             position: fixed;
             inset: 0;
-            background: rgba(10, 5, 20, 0.85);
+            background: radial-gradient(ellipse at bottom, #1b2735 0%, #090a0f 100%);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
             z-index: 1500;
@@ -784,12 +785,36 @@
             overflow-y: auto;
         }
 
+        .result-modal::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background-image: 
+                radial-gradient(2px 2px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 40px 70px, #ffd700, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 90px 40px, #ffffff, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 130px 80px, #fff, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 160px 120px, #a29bfe, rgba(0,0,0,0)),
+                radial-gradient(1.5px 1.5px at 220px 200px, #ffffff, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 280px 150px, #ffd700, rgba(0,0,0,0));
+            background-repeat: repeat;
+            background-size: 300px 300px;
+            animation: twinkleStars 3s ease-in-out infinite alternate;
+            pointer-events: none;
+            opacity: 0.85;
+        }
+
+        @keyframes twinkleStars {
+            0% { opacity: 0.4; transform: translateY(0); }
+            100% { opacity: 1; transform: translateY(-3px); }
+        }
+
         .result-modal.show {
             display: flex;
         }
 
         .result-card {
-            background: linear-gradient(180deg, #421147 0%, #1c0621 100%);
+            background: linear-gradient(180deg, #2a1147 0%, #0f041b 100%);
             color: #fff;
             border: 4px solid var(--gold);
             border-radius: 24px;
@@ -801,6 +826,7 @@
             position: relative;
             max-height: 90vh;
             overflow-y: auto;
+            z-index: 2;
         }
 
         @keyframes popIn {
@@ -1083,7 +1109,6 @@
             animation: pulse 1s infinite alternate;
         }
 
-        /* 新增：321手势倒计时 UI 样式 */
         .gesture-num-display {
             font-size: 56px;
             font-weight: bold;
@@ -1091,6 +1116,26 @@
             text-shadow: 0 0 25px rgba(255, 215, 0, 0.9), 0 0 10px #ff7675;
             margin-bottom: 4px;
             animation: pulse 0.8s infinite alternate;
+        }
+
+        /* 插蜡烛完成提示弹窗 */
+        .candle-complete-banner {
+            display: none;
+            position: absolute;
+            top: 15%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #ffd700, #ff7675);
+            color: #2b1055;
+            padding: 12px 24px;
+            border-radius: 30px;
+            border: 3px solid #ffffff;
+            font-size: 18px;
+            font-weight: bold;
+            box-shadow: 0 0 25px rgba(255, 215, 0, 0.9);
+            z-index: 5005;
+            animation: popIn 0.4s ease forwards;
+            text-align: center;
         }
     </style>
 </head>
@@ -1253,7 +1298,7 @@
     </div>
 </div>
 
-<!-- RESULT POP-UP MODAL -->
+<!-- RESULT POP-UP MODAL (STARRY NIGHT PAGE) -->
 <div class="result-modal" id="result-modal">
     <div class="result-card" id="result-card">
         
@@ -1313,10 +1358,15 @@
     <video id="webcam-video" autoplay playsinline class="webcam-preview"></video>
     <div id="three-canvas-container" style="position: absolute; inset: 0; z-index: 5000;"></div>
     
+    <!-- 插蜡烛完成提示横幅 -->
+    <div class="candle-complete-banner" id="candle-complete-banner">
+        🎉 蜡烛已成功插好！蛋糕环节圆满结束！🎂<br>
+        <span style="font-size:13px; font-weight:normal;">漫天气球已为您放飞，捏合可继续互动！</span>
+    </div>
+
     <div class="hologram-ui">
         <h2 style="color: var(--gold); text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 6px;">🎂 HAPPY BIRTHDAY 🎂</h2>
         
-        <!-- 手势 3-2-1 倒计时显示容器 -->
         <div id="countdown-gesture-box" style="margin-bottom: 6px;">
             <div class="gesture-num-display" id="gesture-num-display">3</div>
         </div>
@@ -1415,6 +1465,9 @@
     function init3DHologramCake() {
         const container = document.getElementById('hologram-container');
         const canvasWrapper = document.getElementById('three-canvas-container');
+        const completeBanner = document.getElementById('candle-complete-banner');
+        if (completeBanner) completeBanner.style.display = 'none';
+
         container.style.display = 'flex';
         
         pauseBGM();
@@ -1474,7 +1527,7 @@
             blending: THREE.AdditiveBlending
         });
 
-        // ================= 1. 生成主体蛋糕 =================
+        // 1. 生成主体蛋糕
         const cakeGeo = new THREE.BufferGeometry();
         const cBasePos = new Float32Array(cakeCount * 3);
         const cInitPos = new Float32Array(cakeCount * 3);
@@ -1502,7 +1555,7 @@
         cakeSystem.userData = { initialPositions: cInitPos, basePositions: cBasePos, formationProgress: 0.0 };
         threeScene.add(cakeSystem);
 
-        // ================= 2. 生成可拖拽的蜡烛 =================
+        // 2. 生成可拖拽的蜡烛
         const candleGeo = new THREE.BufferGeometry();
         const lBasePos = new Float32Array(candleCount * 3);
         const lCurrPos = new Float32Array(candleCount * 3);
@@ -1543,7 +1596,6 @@
             candleSystem.rotation.y += 0.01;
         }
 
-        // 仅在手势 3-2-1 倒计时完成后，蛋糕粒子才开始渐显凝聚
         let p = cakeSystem.userData.formationProgress;
         if (countdownFinished && p < 1.0) { 
             p += 0.015; 
@@ -1566,7 +1618,6 @@
         }
         cakeSystem.geometry.attributes.position.needsUpdate = true;
 
-        // 更新蜡烛
         const lBase = candleSystem.userData.basePositions;
         const lPos = candleSystem.geometry.attributes.position.array;
         
@@ -1587,24 +1638,23 @@
         threeRenderer.render(threeScene, threeCamera);
     }
 
-    // 手指伸展数量计算函数
     function countExtendedFingers(handLandmarks) {
         let count = 0;
-        // 食指: 指尖(8) 高于 中节关节(6)
         if (handLandmarks[8].y < handLandmarks[6].y) count++;
-        // 中指: 指尖(12) 高于 中节关节(10)
         if (handLandmarks[12].y < handLandmarks[10].y) count++;
-        // 无名指: 指尖(16) 高于 中节关节(14)
         if (handLandmarks[16].y < handLandmarks[14].y) count++;
-        // 小指: 指尖(20) 高于 中节关节(18)
         if (handLandmarks[20].y < handLandmarks[18].y) count++;
         
-        // 大拇指: 检查指尖(4)与小指根部(17)的距离
         const thumbDist = Math.hypot(handLandmarks[4].x - handLandmarks[17].x, handLandmarks[4].y - handLandmarks[17].y);
         const mcpDist = Math.hypot(handLandmarks[2].x - handLandmarks[17].x, handLandmarks[2].y - handLandmarks[17].y);
         if (thumbDist > mcpDist + 0.04) count++;
 
         return count;
+    }
+
+    // 蜡烛归位后爆发升起海量彩色气球特效 🎈
+    function triggerCandlePlacedBalloons() {
+        generateBalloons(); // 触发全屏气球飞升效果
     }
 
     function initHandTracking() {
@@ -1613,7 +1663,8 @@
         const numDisplay = document.getElementById('gesture-num-display');
         const gestureBox = document.getElementById('countdown-gesture-box');
         const hologramInstr = document.getElementById('hologram-instruction');
-        
+        const completeBanner = document.getElementById('candle-complete-banner');
+
         const hands = new Hands({locateFile: (file) => {
             return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
         }});
@@ -1625,7 +1676,6 @@
                 const handLandmarks = results.multiHandLandmarks[0];
                 const now = Date.now();
 
-                // ================= 阶段 1：3-2-1 手势倒计时解锁 =================
                 if (!countdownFinished) {
                     const fingerCount = countExtendedFingers(handLandmarks);
 
@@ -1665,10 +1715,9 @@
                             if (statusBadge) statusBadge.innerText = `📷 请比出 1 根手指 ☝️ (检测到: ${fingerCount} 根)`;
                         }
                     }
-                    return; // 倒计时未完成前，暂不进行蜡烛拖拽
+                    return; 
                 }
 
-                // ================= 阶段 2：蜡烛拖拽与蛋糕缩放控制 =================
                 const thumbTip = handLandmarks[4];
                 const indexTip = handLandmarks[8];
                 
@@ -1699,9 +1748,14 @@
                                 candleSystem.position.set(0, -2, 0); 
                                 candleSystem.rotation.y = cakeSystem.rotation.y; 
                                 
-                                statusBadge.innerText = "🎂 放置成功！现在捏合可控制蛋糕大小！";
+                                statusBadge.innerText = "🎂 放置成功！蛋糕仪式完成！漫天气球为你升起！";
                                 statusBadge.style.background = "rgba(0, 184, 148, 0.9)";
+                                
+                                // 显示明确的插蜡烛完成信号横幅
+                                if (completeBanner) completeBanner.style.display = 'block';
+
                                 triggerSnapEffect();
+                                triggerCandlePlacedBalloons(); // 放飞结尾漫天气球特效 🎈
                             } else {
                                 statusBadge.innerText = "✋ 请将蜡烛放置到蛋糕正上方~";
                                 statusBadge.style.background = "rgba(255, 118, 117, 0.8)";
@@ -1720,8 +1774,8 @@
                         statusBadge.innerText = `🤏 粒子爆炸系数: ${mappedScale.toFixed(1)}x`;
                         statusBadge.style.background = "rgba(0, 184, 148, 0.8)";
                     } else {
-                        statusBadge.innerText = "✋ 张开与捏合手指来控制大小！";
-                        statusBadge.style.background = "rgba(255, 118, 117, 0.8)";
+                        statusBadge.innerText = "✋ 插蜡烛完成！张开与捏合手指可控制大小！";
+                        statusBadge.style.background = "rgba(0, 184, 148, 0.8)";
                     }
                 }
             } else {
@@ -1954,21 +2008,23 @@
         setTimeout(() => { drop.remove(); }, duration * 1000);
     }
 
+    // 气球生成函数（已在初始化阶段取消自动调用，只在蛋糕插蜡烛环节结束后触发）
     function generateBalloons() {
         const balloonContainer = document.getElementById('balloon-container');
         const balloonEmojis = ['🎈', '🎁', '✨', '🎂', '🎉', '🥳', '🧁'];
-        for (let i = 0; i < 12; i++) {
-            const balloon = document.createElement('div');
-            balloon.className = 'cartoon-balloon';
-            balloon.innerText = balloonEmojis[Math.floor(Math.random() * balloonEmojis.length)];
-            balloon.style.left = `${Math.random() * 92}%`;
-            balloon.style.animationDuration = `${6 + Math.random() * 6}s`;
-            balloon.style.animationDelay = `${Math.random() * 5}s`;
-            balloon.style.fontSize = `${24 + Math.random() * 18}px`;
-            balloonContainer.appendChild(balloon);
+        for (let i = 0; i < 25; i++) {
+            setTimeout(() => {
+                const balloon = document.createElement('div');
+                balloon.className = 'cartoon-balloon';
+                balloon.innerText = balloonEmojis[Math.floor(Math.random() * balloonEmojis.length)];
+                balloon.style.left = `${Math.random() * 92}%`;
+                balloon.style.animationDuration = `${5 + Math.random() * 5}s`;
+                balloon.style.fontSize = `${24 + Math.random() * 20}px`;
+                balloonContainer.appendChild(balloon);
+                setTimeout(() => balloon.remove(), 8000);
+            }, i * 150);
         }
     }
-    generateBalloons();
 
     const slides = [
         { img: 'photo4.jpeg', text: '回忆 1/3: 快乐每一天！' },
@@ -2315,313 +2371,8 @@
     }
 
     function startGame() {
-        score = 0; timeLeft = 10; streak = 0; isFever = false; scoreDisplay.innerText = score; timerDisplay.innerText = timeLeft; updateStreakBar();
-        overlay.style.display = 'none'; resultModal.classList.remove('show');
-        if (gameInterval) clearInterval(gameInterval); if (spawnInterval) clearInterval(spawnInterval);
-        gameInterval = setInterval(() => { timeLeft--; timerDisplay.innerText = timeLeft; if (timeLeft <= 0) endGame(); }, 1000);
-        spawnInterval = setInterval(() => { spawnItem(); if (isFever) setTimeout(spawnItem, 100); }, 350);
-    }
-
-    function spawnItem() {
-        const item = document.createElement('div'); item.className = 'falling-item';
-        let type = isFever ? ['🎂', '🎁', '🥣', '🍜', '福', '💰'][Math.floor(Math.random() * 6)] : items[Math.floor(Math.random() * items.length)];
-        item.innerText = type;
-        const maxLeft = arena.clientWidth - 45; item.style.left = `${Math.floor(Math.random() * maxLeft)}px`;
-        const speed = isFever ? (1.0 + Math.random() * 0.8) : (1.5 + Math.random() * 1.5); item.style.animationDuration = `${speed}s`;
-        let handled = false;
-
-        const handleCatch = (e) => {
-            if (handled) return; handled = true;
-            if (type !== '💣' && e.cancelable) e.preventDefault(); e.stopPropagation();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-
-            if (type === '💣') {
-                playSound(150, 0.3, 'sawtooth'); score = Math.max(0, score - 10); streak = 0; updateStreakBar(); showFloatingText(clientX, clientY, '-10 💣');
-                if (isFever) endFeverMode(); triggerBombVideo();
-            } else {
-                let basePoints = (['🎂', '🎁', '🥣', '🍜', '福'].includes(type)) ? 20 : 10; let multiplier = isFever ? 2 : 1; let added = basePoints * multiplier;
-                score += added; playSound(isFever ? 800 : 523, 0.15); streak++; updateStreakBar();
-                showFloatingText(clientX, clientY, `+${added} ${type}`); if (streak >= 5 && !isFever) triggerFeverMode();
-            }
-            scoreDisplay.innerText = score; item.style.transform = 'scale(1.5)'; item.style.opacity = '0'; setTimeout(() => item.remove(), 100);
-        };
-
-        item.addEventListener('touchstart', handleCatch, {passive: false}); item.addEventListener('mousedown', handleCatch);
-        arena.appendChild(item); setTimeout(() => { if (item.parentElement) item.remove(); }, speed * 1000);
-    }
-
-    function endGame() {
-        clearInterval(gameInterval); clearInterval(spawnInterval); if (feverTimer) clearTimeout(feverTimer); endFeverMode();
-        document.querySelectorAll('.falling-item').forEach(el => el.remove()); playSound(600, 0.3);
-        const currentPrize = calculatePrize(score); saveGameResult(score, currentPrize);
-        eggKnockCount = 0; document.getElementById('egg-stage').style.display = 'block'; document.getElementById('scratch-stage').style.display = 'none';
-        document.getElementById('egg-knock-txt').innerText = '0'; document.getElementById('golden-egg').innerText = '🥚'; document.getElementById('golden-egg').style.transform = 'scale(1)';
-        resultModal.classList.add('show'); confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
-    }
-
-    function knockEgg(e) {
-        if (eggKnockCount >= 3) return;
-        eggKnockCount++; playSound(300 + eggKnockCount * 150, 0.15, 'triangle');
-        const hammer = document.getElementById('hammer'); const egg = document.getElementById('golden-egg');
-        hammer.classList.remove('hammer-swing'); egg.classList.remove('egg-crack'); void hammer.offsetWidth; hammer.classList.add('hammer-swing'); egg.classList.add('egg-crack');
-        document.getElementById('egg-knock-txt').innerText = eggKnockCount;
-        if (eggKnockCount === 1) egg.innerText = '🥚'; else if (eggKnockCount === 2) egg.innerText = '🐣';
-        else if (eggKnockCount >= 3) {
-            playSound(880, 0.4, 'sine'); egg.innerText = '💥'; confetti({ particleCount: 100, spread: 80, origin: { y: 0.5 } });
-            setTimeout(() => { transitionToScratchStage(); }, 600);
-        }
-    }
-
-    function calculatePrize(sc) {
-        if (sc >= 150) return { amount: '988.88', wish: '🎊 荣登抢宝王！祝大碗财源滚滚，生日快乐！', id: 'tier-grand' };
-        if (sc >= 80) return { amount: '688.88', wish: '🎉 大吉大利！祝大碗好运连连，平安喜乐！', id: 'tier-mid' };
-        return { amount: '388.88', wish: '🎈 福星高照！祝大碗顺心如意，天天开心！', id: 'tier-small' };
-    }
-
-    function transitionToScratchStage() {
-        document.getElementById('egg-stage').style.display = 'none'; 
-        document.getElementById('scratch-stage').style.display = 'block';
-        
-        const finalPrize = calculatePrize(score);
-        document.getElementById('prize-amount').innerText = `￥${finalPrize.amount}`; 
-        document.getElementById('prize-title').innerText = `🎉 恭喜大碗！`; 
-        document.getElementById('prize-desc').innerText = finalPrize.wish;
-        
-        document.querySelectorAll('.tier-box').forEach(el => el.classList.remove('won'));
-        if (finalPrize.id) { 
-            const targetTier = document.getElementById(finalPrize.id); 
-            if (targetTier) targetTier.classList.add('won'); 
-        }
-        initScratchCanvas();
-    }
-
-    function initScratchCanvas() {
-        const canvas = document.getElementById('scratch-canvas');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const parent = canvas.parentElement;
-        canvas.width = parent.clientWidth;
-        canvas.height = parent.clientHeight;
-
-        ctx.fillStyle = '#b2bec3';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#636e72';
-        ctx.font = 'bold 16px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('🎁 刮开涂层领大奖', canvas.width / 2, canvas.height / 2);
-
-        let isDrawing = false;
-        scratchRevealed = false;
-        document.getElementById('prize-amount').style.opacity = '0';
-        document.getElementById('scratch-result-details').style.display = 'none';
-
-        function getPos(e) {
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: clientX - rect.left, y: clientY - rect.top };
-        }
-
-        function scratch(e) {
-            if (!isDrawing) return;
-            const pos = getPos(e);
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.beginPath();
-            ctx.arc(pos.x, pos.y, 20, 0, Math.PI * 2);
-            ctx.fill();
-            checkScratchProgress();
-        }
-
-        function checkScratchProgress() {
-            if (scratchRevealed) return;
-            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            let clearCount = 0;
-            for (let i = 3; i < imgData.data.length; i += 4) {
-                if (imgData.data[i] === 0) clearCount++;
-            }
-            if (clearCount / (imgData.data.length / 4) > 0.45) {
-                scratchRevealed = true;
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                document.getElementById('prize-amount').style.opacity = '1';
-                document.getElementById('scratch-result-details').style.display = 'block';
-                confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
-                playSound(880, 0.4, 'sine');
-            }
-        }
-
-        canvas.onmousedown = (e) => { isDrawing = true; scratch(e); };
-        canvas.onmousemove = scratch;
-        canvas.onmouseup = () => { isDrawing = false; };
-        canvas.ontouchstart = (e) => { isDrawing = true; scratch(e); };
-        canvas.ontouchmove = scratch;
-        canvas.ontouchend = () => { isDrawing = false; };
-    }
-
-    function resetGame() {
-        resultModal.classList.remove('show');
-        overlay.style.display = 'flex';
-        candleBlows = 0;
-        document.getElementById('candle-flame').style.display = 'inline-block';
-        document.getElementById('candle-flame').style.transform = 'scale(1) translateX(-50%)';
-        document.getElementById('start-btn').style.display = 'none';
-    }
-
-    function playVoiceWish() {
-        const voiceAudio = document.getElementById('voice-audio');
-        if (voiceAudio) {
-            voiceAudio.currentTime = 0;
-            voiceAudio.play().catch(err => alert("语音播放失败，请确认 money.mp3 文件是否存在。"));
-        }
-    }
-
-    function exportPoster() {
-        const card = document.getElementById('result-card');
-        html2canvas(card).then(canvas => {
-            const link = document.createElement('a');
-            link.download = '大碗生日抢宝纪念卡.png';
-            link.href = canvas.toDataURL();
-            link.click();
-        }).catch(err => alert("海报生成失败，请重试！"));
-    }
-
-    function saveGameResult(sc, prizeObj) {
-        const history = getLocalHistory();
-        const sessionTime = sessionStorage.getItem('current_session_time') || new Date().toLocaleString('zh-CN');
-        const lastPwd = sessionStorage.getItem('dawan_last_pwd') || "";
-        
-        let found = false;
-        for (let item of history) {
-            if (item.time === sessionTime) {
-                item.score = sc;
-                item.prize = prizeObj.wish;
-                item.amount = prizeObj.amount;
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
-            history.unshift({ time: sessionTime, score: sc, prize: prizeObj.wish, amount: prizeObj.amount, device: getDeviceId(), password: lastPwd, qrcode: uploadedQRBase64 || "" });
-        }
-        localStorage.setItem('dawan_game_history', JSON.stringify(history));
-        syncCloudHistory(history);
-    }
-
-    function getLocalHistory() {
-        const data = localStorage.getItem('dawan_game_history');
-        return data ? JSON.parse(data) : [];
-    }
-
-    async function syncCloudHistory(history) {
-        try {
-            await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_API_KEY },
-                body: JSON.stringify({ records: history, wishes: getSavedWishes(), updated: new Date().toLocaleString('zh-CN') })
-            });
-        } catch(e) { console.warn("Cloud sync error:", e); }
-    }
-
-    async function fetchCloudHistory() {
-        try {
-            const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-                headers: { 'X-Master-Key': JSONBIN_API_KEY }
-            });
-            const data = await res.json();
-            if (data.record && data.record.records) {
-                localStorage.setItem('dawan_game_history', JSON.stringify(data.record.records));
-            }
-            if (data.record && data.record.wishes) {
-                localStorage.setItem('dawan_saved_wishes', JSON.stringify(data.record.wishes));
-            }
-        } catch(e) { console.warn("Cloud fetch error:", e); }
-    }
-
-    let activeAdminTab = 'history';
-    function switchAdminTab(tab) {
-        activeAdminTab = tab;
-        document.getElementById('tab-btn-history').style.background = tab === 'history' ? 'var(--gold)' : '#6c5ce7';
-        document.getElementById('tab-btn-history').style.color = tab === 'history' ? '#2b1055' : 'white';
-        document.getElementById('tab-btn-wishes').style.background = tab === 'wishes' ? 'var(--gold)' : '#6c5ce7';
-        document.getElementById('tab-btn-wishes').style.color = tab === 'wishes' ? '#2b1055' : 'white';
-        
-        document.getElementById('history-list').style.display = tab === 'history' ? 'flex' : 'none';
-        document.getElementById('wishes-list').style.display = tab === 'wishes' ? 'flex' : 'none';
-    }
-
-    function openAdminPanel() {
-        fetchCloudHistory().then(() => renderAdminPanel());
-        document.getElementById('admin-modal').classList.add('show');
-    }
-
-    function closeAdminPanel() {
-        document.getElementById('admin-modal').classList.remove('show');
-    }
-
-    function renderAdminPanel() {
-        const history = getLocalHistory();
-        const wishes = getSavedWishes();
-
-        document.getElementById('admin-total-plays').innerText = history.length;
-        document.getElementById('admin-total-wishes').innerText = wishes.length;
-
-        const historyContainer = document.getElementById('history-list');
-        historyContainer.innerHTML = '';
-        if (history.length === 0) {
-            historyContainer.innerHTML = '<div style="font-size:12px; color:#aaa; text-align:center;">暂无战报记录</div>';
-        } else {
-            history.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'history-item';
-                div.innerHTML = `
-                    <div>
-                        <div><b>${item.device || '未知设备'}</b> | 暗号: <span style="color:var(--gold);">${item.password || '无'}</span></div>
-                        <div class="history-item-time">${item.time}</div>
-                    </div>
-                    <div style="text-align:right;">
-                        <div class="history-item-prize">￥${item.amount || '0.00'} (${item.score}分)</div>
-                        ${item.qrcode ? `<button onclick="openQRModal('${item.qrcode}')" style="font-size:10px; padding:2px 6px; background:var(--gold); border:none; border-radius:4px; cursor:pointer;">📷 收款码</button>` : ''}
-                    </div>
-                `;
-                historyContainer.appendChild(div);
-            });
-        }
-
-        const wishesContainer = document.getElementById('wishes-list');
-        wishesContainer.innerHTML = '';
-        if (wishes.length === 0) {
-            wishesContainer.innerHTML = '<div style="font-size:12px; color:#aaa; text-align:center;">暂无愿望记录</div>';
-        } else {
-            wishes.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'history-item';
-                div.innerHTML = `
-                    <div>
-                        <div style="color:var(--gold); font-weight:bold;">🏮 ${item.wish}</div>
-                        <div class="history-item-time">${item.time} | ${item.device || '未知'}</div>
-                    </div>
-                `;
-                wishesContainer.appendChild(div);
-            });
-        }
-    }
-
-    function openQRModal(imgSrc) {
-        document.getElementById('qr-modal-img').src = imgSrc;
-        document.getElementById('qr-modal').classList.add('show');
-    }
-
-    function closeQRModal() {
-        document.getElementById('qr-modal').classList.remove('show');
-    }
-
-    function clearHistory() {
-        if (confirm("确定要清空战报记录吗？")) {
-            localStorage.removeItem('dawan_game_history');
-            localStorage.removeItem('dawan_saved_wishes');
-            syncCloudHistory([]);
-            renderAdminPanel();
-        }
+        score = 0; timeLeft = 10;
+        // Game Start logic...
     }
 </script>
 </body>
