@@ -40,7 +40,6 @@
             overscroll-behavior-y: none;
         }
 
-        /* --- iOS SAFARI & WECHAT INPUT FIX --- */
         input, textarea {
             -webkit-user-select: auto !important;
             user-select: auto !important;
@@ -74,7 +73,6 @@
             100% { background-position: 0% 50%; }
         }
 
-        /* --- CARTOON FLOATING BALLOONS BG --- */
         .balloon-container {
             position: fixed;
             inset: 0;
@@ -98,7 +96,6 @@
             100% { transform: translateY(-110vh) rotate(-15deg); opacity: 0; }
         }
 
-        /* --- SKY LANTERN ANIMATION --- */
         .sky-lantern {
             position: fixed;
             bottom: -80px;
@@ -259,7 +256,6 @@
             margin-top: -4px;
         }
 
-        /* --- QR CODE UPLOAD STYLES --- */
         .qr-upload-box {
             border: 2px dashed var(--gold);
             border-radius: 16px;
@@ -325,7 +321,6 @@
             box-shadow: 2px 2px 0 var(--dark-border);
         }
 
-        /* --- POLAROID PHOTO SLIDESHOW & COVER --- */
         .polaroid-container {
             margin: 6px 0;
             background: #fff;
@@ -393,7 +388,6 @@
             font-weight: bold;
         }
 
-        /* --- AVATAR DRESS UP BAR --- */
         .avatar-bar {
             display: flex;
             justify-content: center;
@@ -957,7 +951,6 @@
             40%, 80% { transform: translateX(8px); }
         }
 
-        /* --- WECHAT COMPATIBLE VIDEO OVERLAY STYLES --- */
         .bomb-video-modal {
             position: fixed;
             inset: 0;
@@ -1009,7 +1002,6 @@
             width: 100%;
         }
 
-        /* --- TREE RAINING PICTURES STYLES --- */
         .picture-drop {
             position: fixed;
             top: -80px;
@@ -1028,7 +1020,6 @@
             100% { transform: translateY(108vh) rotate(360deg); opacity: 0; }
         }
 
-        /* --- FALLING PETALS STYLES --- */
         .petal-drop {
             position: fixed;
             top: -50px;
@@ -1066,7 +1057,6 @@
             border-radius: 10px;
             z-index: 5001;
             transform: scaleX(-1);
-            /* Adds an "Infrared/Thermal" sensor aesthetic to the camera */
             filter: sepia(1) hue-rotate(320deg) saturate(3) contrast(2) brightness(0.8) invert(1);
             box-shadow: 0 0 15px rgba(255, 118, 117, 0.8);
         }
@@ -1081,7 +1071,7 @@
         }
 
         .hand-status-badge {
-            background: rgba(255, 118, 117, 0.8);
+            background: rgba(255, 118, 117, 0.85);
             border: 2px solid #fff;
             padding: 8px 16px;
             border-radius: 20px;
@@ -1093,14 +1083,22 @@
             animation: pulse 1s infinite alternate;
         }
 
+        /* 新增：321手势倒计时 UI 样式 */
+        .gesture-num-display {
+            font-size: 56px;
+            font-weight: bold;
+            color: var(--gold);
+            text-shadow: 0 0 25px rgba(255, 215, 0, 0.9), 0 0 10px #ff7675;
+            margin-bottom: 4px;
+            animation: pulse 0.8s infinite alternate;
+        }
     </style>
 </head>
 <body id="body-root">
 
-<!-- BACKGROUND FLOATING CARTOON BALLOONS -->
 <div class="balloon-container" id="balloon-container"></div>
 
-<!-- LANDING SCREEN (PASSWORD CHECK) -->
+<!-- LANDING SCREEN -->
 <div class="landing-screen" id="landing-screen">
     <div class="envelope-card" id="envelope-card">
         <div class="party-sticker">🎂 HAPPY BIRTHDAY!</div>
@@ -1111,7 +1109,6 @@
             这是一份只属于 <b>【大碗 🥣】</b> 的生日绝密礼包<br>输入<b>恰好 4 个</b>词语、字母或汉字即可拆封！
         </p>
 
-        <!-- POLAROID PHOTO CAROUSEL WITH COVER OVERLAY -->
         <div class="polaroid-container" onclick="nextSlide()">
             <div class="polaroid-frame">
                 <img id="polaroid-img" src="photo4.jpeg" alt="电子蛋糕🎂" />
@@ -1137,7 +1134,7 @@
     </div>
 </div>
 
-<!-- STEP 2: WECHAT QR CODE UPLOAD SCREEN -->
+<!-- UPLOAD SCREEN -->
 <div class="landing-screen hidden" id="upload-screen" style="z-index: 998;">
     <div class="envelope-card" style="max-width: 400px;">
         <div class="party-sticker">📱 领取奖金必备</div>
@@ -1159,7 +1156,7 @@
     </div>
 </div>
 
-<!-- STEP 3: COUNTDOWN & DAILY TREE WATERING SCREEN -->
+<!-- COUNTDOWN & TREE SCREEN -->
 <div class="landing-screen hidden" id="countdown-screen" style="z-index: 999;">
     <div class="envelope-card" style="max-width: 400px;">
         <div class="party-sticker">🌱 浇水加速解密</div>
@@ -1187,7 +1184,6 @@
 </div>
 
 <div class="container">
-
     <div class="cartoon-card header-card">
         <div class="header-sticker-left">🎈 Party Time!</div>
         <div class="caishen-avatar" id="caishen-face" onclick="handleAvatarClick()">🧙‍♂️</div>
@@ -1221,7 +1217,6 @@
         <div class="audio-status-msg" id="audio-status"></div>
         <audio id="bgm-audio" loop playsinline webkit-playsinline></audio>
         <audio id="voice-audio" src="money.mp3" playsinline webkit-playsinline></audio>
-        
         <audio id="petal-audio-1" src="petal.mp3" playsinline webkit-playsinline></audio>
         <audio id="petal-audio-2" src="petal2.mp3" playsinline webkit-playsinline></audio>
     </div>
@@ -1256,14 +1251,12 @@
             <button class="btn-action" id="start-btn" onclick="startGame()" style="display:none; margin-top: 6px;">开始抢大奖 🚀</button>
         </div>
     </div>
-
 </div>
 
 <!-- RESULT POP-UP MODAL -->
 <div class="result-modal" id="result-modal">
     <div class="result-card" id="result-card">
         
-        <!-- PHASE 1: GOLDEN EGG -->
         <div id="egg-stage" style="text-align: center;">
             <div class="party-sticker">🔨 砸金蛋环节</div>
             <h3 style="margin: 8px 0 4px; font-size: 20px; color: var(--gold);">🔨 幸运大碗金蛋</h3>
@@ -1279,7 +1272,6 @@
             </div>
         </div>
 
-        <!-- PHASE 2: SCRATCH CARD STAGE -->
         <div id="scratch-stage" style="display: none; text-align: center;">
             <div class="party-sticker" style="top: -12px; right: 10px;">🎉 生日大喜！</div>
             <h3 style="margin: 0; font-size: 18px; color: var(--gold);">✨ 幸运刮刮乐</h3>
@@ -1307,8 +1299,7 @@
                     <button class="bgm-btn" onclick="exportPoster()" style="background: #0984e3; flex:1; padding: 8px; font-size:11px;">📸 保存生日纪念卡</button>
                 </div>
                 
-                <!-- NEW BUTTON: TRIGGER 3D HOLOGRAPHIC CAKE -->
-                <button class="btn-action" onclick="init3DHologramCake()" style="width: 100%; margin-bottom: 8px; background: linear-gradient(180deg, #ff7675 0%, #e84393 100%); color: white; box-shadow: 0 4px 0 #b71540;">✨ 召唤红外触控 3D 全息蛋糕 ✨</button>
+                <button class="btn-action" onclick="init3DHologramCake()" style="width: 100%; margin-bottom: 8px; background: linear-gradient(180deg, #ff7675 0%, #e84393 100%); color: white; box-shadow: 0 4px 0 #b71540;">✨ 召唤手势解锁 3D 全息蛋糕 ✨</button>
 
                 <button class="btn-action" onclick="resetGame()" style="width: 100%;">再吹一次蜡烛 🔄</button>
             </div>
@@ -1322,16 +1313,24 @@
     <video id="webcam-video" autoplay playsinline class="webcam-preview"></video>
     <div id="three-canvas-container" style="position: absolute; inset: 0; z-index: 5000;"></div>
     
-<div class="hologram-ui">
-    <h2 style="color: var(--gold); text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 6px;">🎂 HAPPY BIRTHDAY </h2>
-    <div class="hand-status-badge" id="hand-status">📷 正在启动红外传感器... 请允许摄像头权限</div>
-    <!-- UPDATE THIS LINE: -->
-    <p style="font-size: 12px; color: #ffeaa7; text-shadow: 0 1px 2px #000; margin-bottom: 12px;">
-    ✋ 玩法升级：单手【大拇指与食指】捏合抓取右侧的蜡烛，拖动放置到蛋糕上！完成后捏合可控制蛋糕爆炸！
-</p>
+    <div class="hologram-ui">
+        <h2 style="color: var(--gold); text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 6px;">🎂 HAPPY BIRTHDAY 🎂</h2>
+        
+        <!-- 手势 3-2-1 倒计时显示容器 -->
+        <div id="countdown-gesture-box" style="margin-bottom: 6px;">
+            <div class="gesture-num-display" id="gesture-num-display">3</div>
+        </div>
+
+        <div class="hand-status-badge" id="hand-status">📷 正在启动红外传感器... 请允许摄像头权限</div>
+        
+        <p id="hologram-instruction" style="font-size: 12px; color: #ffeaa7; text-shadow: 0 1px 2px #000; margin-bottom: 12px; display: none;">
+            ✋ 玩法升级：单手【大拇指与食指】捏合抓取右侧的蜡烛，拖动放置到蛋糕上！完成后捏合可控制蛋糕大小！
+        </p>
+        <button class="btn-action" onclick="close3DHologramCake()" style="padding: 4px 16px; font-size: 12px; margin-top: 4px;">退出全息模式 ✕</button>
+    </div>
 </div>
 
-<!-- ADMIN MODALS AND VIDEO OVERLAYS REMAIN THE SAME... -->
+<!-- ADMIN MODAL -->
 <div class="admin-modal" id="admin-modal">
     <div class="admin-card">
         <div class="admin-header">
@@ -1394,11 +1393,11 @@
 </div>
 
 <script>
-   // -----------------------------------------------------------
+    // -----------------------------------------------------------
     // 🌟 3D PARTICLE CAKE & TOUCHLESS HAND TRACKING LOGIC 🌟
     // -----------------------------------------------------------
     let threeScene, threeCamera, threeRenderer;
-    let cakeSystem, candleSystem; // 拆分为蛋糕和蜡烛两个独立系统
+    let cakeSystem, candleSystem; 
     let targetScale = 1.0;
     let currentScale = 1.0;
     let animationId;
@@ -1408,12 +1407,35 @@
     let isHoldingCandle = false;
     let candlePlaced = false;
 
+    // 手势 3-2-1 倒计时控制变量
+    let countdownStep = 3; 
+    let countdownFinished = false;
+    let lastStepTime = 0;
+
     function init3DHologramCake() {
         const container = document.getElementById('hologram-container');
         const canvasWrapper = document.getElementById('three-canvas-container');
         container.style.display = 'flex';
         
         pauseBGM();
+
+        // 重置倒计时状态
+        countdownStep = 3;
+        countdownFinished = false;
+        lastStepTime = Date.now();
+
+        const gestureBox = document.getElementById('countdown-gesture-box');
+        const numDisplay = document.getElementById('gesture-num-display');
+        const handStatus = document.getElementById('hand-status');
+        const hologramInstr = document.getElementById('hologram-instruction');
+
+        if (gestureBox) gestureBox.style.display = 'block';
+        if (numDisplay) { numDisplay.innerText = '3'; numDisplay.style.color = '#ffd700'; }
+        if (handStatus) {
+            handStatus.innerText = '📷 请比出 3 根手指 🖐️ (依次比出 3->2->1 解锁蛋糕)';
+            handStatus.style.background = 'rgba(255, 118, 117, 0.85)';
+        }
+        if (hologramInstr) hologramInstr.style.display = 'none';
 
         if (!threeRenderer) {
             threeScene = new THREE.Scene();
@@ -1428,10 +1450,9 @@
 
             createParticleCake();
         } else {
-            // 重置动画与互动状态
-            if(cakeSystem) cakeSystem.userData.formationProgress = 0;
-            if(candleSystem) {
-                candleSystem.position.set(4, 2, 0); // 重新把蜡烛放在右侧半空中
+            if (cakeSystem) cakeSystem.userData.formationProgress = 0;
+            if (candleSystem) {
+                candleSystem.position.set(4, 2, 0); 
                 candlePlaced = false;
                 isHoldingCandle = false;
             }
@@ -1445,7 +1466,6 @@
         const cakeCount = 3400;
         const candleCount = 600;
 
-        // 统一的材质
         const material = new THREE.PointsMaterial({
             size: 0.12,
             vertexColors: true,
@@ -1463,13 +1483,13 @@
 
         for (let i = 0; i < cakeCount; i++) {
             let r, theta, y, color;
-            if (i < 2000) { // 底座
+            if (i < 2000) { 
                 r = Math.sqrt(Math.random()) * 3.5; theta = Math.random() * Math.PI * 2; y = Math.random() * 1.5; color = new THREE.Color(0xffd700);
-            } else { // 顶层奶油
+            } else { 
                 r = Math.sqrt(Math.random()) * 3.3; theta = Math.random() * Math.PI * 2; y = 1.5 + Math.random() * 1.0; color = new THREE.Color(0xff7675);
             }
             cBasePos[i*3] = r * Math.cos(theta); cBasePos[i*3+1] = y; cBasePos[i*3+2] = r * Math.sin(theta);
-            // 初始散落位置
+            
             cInitPos[i*3] = (Math.random() - 0.5) * 25; cInitPos[i*3+1] = -10 + Math.random() * 5; cInitPos[i*3+2] = (Math.random() - 0.5) * 25;
             
             cCurrPos[i*3] = cInitPos[i*3]; cCurrPos[i*3+1] = cInitPos[i*3+1]; cCurrPos[i*3+2] = cInitPos[i*3+2];
@@ -1490,9 +1510,9 @@
 
         for (let i = 0; i < candleCount; i++) {
             let r, theta, y, color;
-            if (i < 400) { // 蜡烛柱体
+            if (i < 400) { 
                 r = Math.random() * 0.25; theta = Math.random() * Math.PI * 2; y = 2.5 + Math.random() * 1.5; color = new THREE.Color(0xffffff);
-            } else { // 火焰锥体
+            } else { 
                 let yOffset = Math.random() * 0.6; y = 4.0 + yOffset; let maxR = 0.15 * (1 - yOffset / 0.6); r = Math.random() * maxR; theta = Math.random() * Math.PI * 2;
                 color = new THREE.Color().lerpColors(new THREE.Color(0xffd700), new THREE.Color(0xff3300), yOffset / 0.6);
             }
@@ -1504,7 +1524,6 @@
         candleGeo.setAttribute('color', new THREE.BufferAttribute(lColors, 3));
         candleSystem = new THREE.Points(candleGeo, material);
         
-        // 蜡烛初始生成在屏幕右侧等待抓取
         candleSystem.position.set(4, 2, 0); 
         candleSystem.userData = { basePositions: lBasePos };
         threeScene.add(candleSystem);
@@ -1515,20 +1534,22 @@
         animationId = requestAnimationFrame(animate3DCake);
         const time = Date.now() * 0.005;
 
-        // 全局缩放缓动
         currentScale += (targetScale - currentScale) * 0.15;
         
-        // 蛋糕自转
         cakeSystem.rotation.y += 0.005;
         if (candlePlaced) {
-            candleSystem.rotation.y = cakeSystem.rotation.y; // 放置后随蛋糕一起旋转
+            candleSystem.rotation.y = cakeSystem.rotation.y;
         } else {
-            candleSystem.rotation.y += 0.01; // 未放置时自己慢慢旋转
+            candleSystem.rotation.y += 0.01;
         }
 
-        // ================= 更新主体蛋糕（聚合动画与缩放） =================
+        // 仅在手势 3-2-1 倒计时完成后，蛋糕粒子才开始渐显凝聚
         let p = cakeSystem.userData.formationProgress;
-        if (p < 1.0) { p += 0.012; if (p > 1.0) p = 1.0; cakeSystem.userData.formationProgress = p; }
+        if (countdownFinished && p < 1.0) { 
+            p += 0.015; 
+            if (p > 1.0) p = 1.0; 
+            cakeSystem.userData.formationProgress = p; 
+        }
         let easeP = 1 - Math.pow(1 - p, 4); 
 
         const cInit = cakeSystem.userData.initialPositions;
@@ -1545,18 +1566,17 @@
         }
         cakeSystem.geometry.attributes.position.needsUpdate = true;
 
-        // ================= 更新蜡烛（火焰抖动与缩放） =================
+        // 更新蜡烛
         const lBase = candleSystem.userData.basePositions;
         const lPos = candleSystem.geometry.attributes.position.array;
         
         for (let i = 0; i < lPos.length / 3; i++) {
             let bx = lBase[i*3]; let by = lBase[i*3+1]; let bz = lBase[i*3+2];
             
-            if (i >= 400) { // 给火焰粒子添加随机风吹抖动效果
+            if (i >= 400) { 
                 bx += Math.sin(time + by * 10) * 0.03;
                 bz += Math.cos(time + by * 10) * 0.03;
             }
-            // 只有成功放置后，才应用蛋糕的整体缩放系数
             let scaleVal = candlePlaced ? currentScale : 1.0;
             lPos[i*3] = bx * scaleVal;
             lPos[i*3+1] = by * scaleVal;
@@ -1567,9 +1587,32 @@
         threeRenderer.render(threeScene, threeCamera);
     }
 
+    // 手指伸展数量计算函数
+    function countExtendedFingers(handLandmarks) {
+        let count = 0;
+        // 食指: 指尖(8) 高于 中节关节(6)
+        if (handLandmarks[8].y < handLandmarks[6].y) count++;
+        // 中指: 指尖(12) 高于 中节关节(10)
+        if (handLandmarks[12].y < handLandmarks[10].y) count++;
+        // 无名指: 指尖(16) 高于 中节关节(14)
+        if (handLandmarks[16].y < handLandmarks[14].y) count++;
+        // 小指: 指尖(20) 高于 中节关节(18)
+        if (handLandmarks[20].y < handLandmarks[18].y) count++;
+        
+        // 大拇指: 检查指尖(4)与小指根部(17)的距离
+        const thumbDist = Math.hypot(handLandmarks[4].x - handLandmarks[17].x, handLandmarks[4].y - handLandmarks[17].y);
+        const mcpDist = Math.hypot(handLandmarks[2].x - handLandmarks[17].x, handLandmarks[2].y - handLandmarks[17].y);
+        if (thumbDist > mcpDist + 0.04) count++;
+
+        return count;
+    }
+
     function initHandTracking() {
         const videoElement = document.getElementById('webcam-video');
         const statusBadge = document.getElementById('hand-status');
+        const numDisplay = document.getElementById('gesture-num-display');
+        const gestureBox = document.getElementById('countdown-gesture-box');
+        const hologramInstr = document.getElementById('hologram-instruction');
         
         const hands = new Hands({locateFile: (file) => {
             return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
@@ -1580,56 +1623,85 @@
         hands.onResults((results) => {
             if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
                 const handLandmarks = results.multiHandLandmarks[0];
+                const now = Date.now();
+
+                // ================= 阶段 1：3-2-1 手势倒计时解锁 =================
+                if (!countdownFinished) {
+                    const fingerCount = countExtendedFingers(handLandmarks);
+
+                    if (countdownStep === 3) {
+                        if (fingerCount === 3 && (now - lastStepTime > 500)) {
+                            countdownStep = 2;
+                            lastStepTime = now;
+                            playSound(600, 0.2, 'sine');
+                            if (numDisplay) numDisplay.innerText = '2';
+                            if (statusBadge) statusBadge.innerText = '✨ 成功识别 3！现在请比出 2 根手指 ✌️ (2)';
+                        } else {
+                            if (statusBadge) statusBadge.innerText = `📷 请比出 3 根手指 🖐️ (检测到: ${fingerCount} 根)`;
+                        }
+                    } else if (countdownStep === 2) {
+                        if (fingerCount === 2 && (now - lastStepTime > 500)) {
+                            countdownStep = 1;
+                            lastStepTime = now;
+                            playSound(800, 0.2, 'sine');
+                            if (numDisplay) numDisplay.innerText = '1';
+                            if (statusBadge) statusBadge.innerText = '✨ 成功识别 2！最后比出 1 根手指 ☝️ (1)';
+                        } else {
+                            if (statusBadge) statusBadge.innerText = `📷 请比出 2 根手指 ✌️ (检测到: ${fingerCount} 根)`;
+                        }
+                    } else if (countdownStep === 1) {
+                        if (fingerCount === 1 && (now - lastStepTime > 500)) {
+                            countdownStep = 0;
+                            countdownFinished = true;
+                            triggerSnapEffect();
+                            
+                            if (gestureBox) gestureBox.style.display = 'none';
+                            if (hologramInstr) hologramInstr.style.display = 'block';
+                            if (statusBadge) {
+                                statusBadge.innerText = '🎉 倒计时完成！3D蛋糕逐渐显现中...';
+                                statusBadge.style.background = 'rgba(0, 184, 148, 0.9)';
+                            }
+                        } else {
+                            if (statusBadge) statusBadge.innerText = `📷 请比出 1 根手指 ☝️ (检测到: ${fingerCount} 根)`;
+                        }
+                    }
+                    return; // 倒计时未完成前，暂不进行蜡烛拖拽
+                }
+
+                // ================= 阶段 2：蜡烛拖拽与蛋糕缩放控制 =================
                 const thumbTip = handLandmarks[4];
                 const indexTip = handLandmarks[8];
                 
-                // 计算指尖距离判断是否捏合
                 const dx = thumbTip.x - indexTip.x;
                 const dy = thumbTip.y - indexTip.y;
                 const dz = thumbTip.z - indexTip.z;
                 const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
                 const isPinching = dist < 0.06;
 
-                // 计算双指中心点并映射到 3D 世界坐标 (由于摄像头翻转，X轴需倒置)
                 const midX = (thumbTip.x + indexTip.x) / 2;
                 const midY = (thumbTip.y + indexTip.y) / 2;
                 const worldX = (0.5 - midX) * 16;  
                 const worldY = (0.5 - midY) * 12 + 1; 
 
-                // 阶段 1：拖拽放置蜡烛
                 if (!candlePlaced) {
-                  if (Math.abs(candleSystem.position.x) < 2.5 && candleSystem.position.y > -1.0 && candleSystem.position.y < 4.0) {
-    candlePlaced = true;
-    candleSystem.position.set(0, -2, 0); // Snap candle to cake center
-    candleSystem.rotation.y = cakeSystem.rotation.y; // Sync rotation
-    
-    statusBadge.innerText = "🎂 蜡烛点燃！现在捏合可控制蛋糕大小！";
-    statusBadge.style.background = "rgba(0, 184, 148, 0.9)";
-    
-    // Execute ignition flash flare & confetti cannon
-    triggerSnapEffect();
-}
                     if (isPinching) {
                         isHoldingCandle = true;
                         statusBadge.innerText = "🤏 拖动蜡烛放到正中蛋糕顶部！";
                         statusBadge.style.background = "rgba(0, 184, 148, 0.8)";
                         
-                        // 带有缓动的随动效果
                         candleSystem.position.x += (worldX - candleSystem.position.x) * 0.15;
                         candleSystem.position.y += (worldY - candleSystem.position.y) * 0.15;
                     } else {
                         if (isHoldingCandle) {
                             isHoldingCandle = false;
-                            // 检测是否松手在蛋糕中央区域 (X附近为0，Y处于顶部)
                             if (Math.abs(candleSystem.position.x) < 2.5 && candleSystem.position.y > -1.0 && candleSystem.position.y < 4.0) {
                                 candlePlaced = true;
-                                candleSystem.position.set(0, -2, 0); // 吸附到蛋糕绝对中心位置
-                                candleSystem.rotation.y = cakeSystem.rotation.y; // 同步自转
+                                candleSystem.position.set(0, -2, 0); 
+                                candleSystem.rotation.y = cakeSystem.rotation.y; 
                                 
                                 statusBadge.innerText = "🎂 放置成功！现在捏合可控制蛋糕大小！";
                                 statusBadge.style.background = "rgba(0, 184, 148, 0.9)";
-                                confetti({ particleCount: 80, spread: 80, origin: { y: 0.5 } });
-                                playSound(880, 0.5, 'sine');
+                                triggerSnapEffect();
                             } else {
                                 statusBadge.innerText = "✋ 请将蜡烛放置到蛋糕正上方~";
                                 statusBadge.style.background = "rgba(255, 118, 117, 0.8)";
@@ -1639,9 +1711,7 @@
                             statusBadge.style.background = "rgba(255, 118, 117, 0.8)";
                         }
                     }
-                } 
-                // 阶段 2：恢复原本的全局大小缩放控制
-                else {
+                } else {
                     let mappedScale = 1.0 + (dist - 0.04) * 15.0; 
                     mappedScale = Math.max(0.5, Math.min(mappedScale, 3.5)); 
                     targetScale = mappedScale;
@@ -1656,7 +1726,11 @@
                 }
             } else {
                 targetScale = 1.0;
-                statusBadge.innerText = "📷 请将手放在镜头前控制";
+                if (!countdownFinished) {
+                    statusBadge.innerText = `📷 请将手放在镜头前比出 ${countdownStep} 根手指`;
+                } else {
+                    statusBadge.innerText = "📷 请将手放在镜头前控制";
+                }
                 statusBadge.style.background = "rgba(255, 118, 117, 0.8)";
                 isHoldingCandle = false;
             }
@@ -1670,31 +1744,28 @@
     }
 
     function triggerSnapEffect() {
-    // 1. Multi-Angle Confetti Blast
-    confetti({ particleCount: 100, spread: 100, origin: { y: 0.55 }, colors: ['#ffd700', '#ff7675', '#ffffff', '#6c5ce7'] });
-    setTimeout(() => confetti({ particleCount: 50, angle: 60, spread: 55, origin: { x: 0, y: 0.6 } }), 120);
-    setTimeout(() => confetti({ particleCount: 50, angle: 120, spread: 55, origin: { x: 1, y: 0.6 } }), 240);
+        confetti({ particleCount: 100, spread: 100, origin: { y: 0.55 }, colors: ['#ffd700', '#ff7675', '#ffffff', '#6c5ce7'] });
+        setTimeout(() => confetti({ particleCount: 50, angle: 60, spread: 55, origin: { x: 0, y: 0.6 } }), 120);
+        setTimeout(() => confetti({ particleCount: 50, angle: 120, spread: 55, origin: { x: 1, y: 0.6 } }), 240);
 
-    // 2. Ascending Audio Chime Sweep
-    playSound(784, 0.2, 'sine'); // G5
-    setTimeout(() => playSound(987.77, 0.25, 'sine'), 80); // B5
-    setTimeout(() => playSound(1318.51, 0.4, 'sine'), 160); // E6
+        playSound(784, 0.2, 'sine');
+        setTimeout(() => playSound(987.77, 0.25, 'sine'), 80);
+        setTimeout(() => playSound(1318.51, 0.4, 'sine'), 160);
 
-    // 3. 3D Flame Ignition Flash
-    let flashTicks = 0;
-    const baseParticleSize = candleSystem.material.size;
-    
-    const flashInterval = setInterval(() => {
-        flashTicks++;
-        // Pulse the particle size outward to mimic a bright glow flash
-        candleSystem.material.size = baseParticleSize * (1 + Math.sin((flashTicks / 10) * Math.PI) * 2.2);
+        let flashTicks = 0;
+        const baseParticleSize = candleSystem ? candleSystem.material.size : 0.12;
         
-        if (flashTicks >= 10) {
-            clearInterval(flashInterval);
-            candleSystem.material.size = baseParticleSize; // Smoothly restore standard particle size
-        }
-    }, 25);
-}
+        const flashInterval = setInterval(() => {
+            flashTicks++;
+            if (candleSystem) {
+                candleSystem.material.size = baseParticleSize * (1 + Math.sin((flashTicks / 10) * Math.PI) * 2.2);
+            }
+            if (flashTicks >= 10) {
+                clearInterval(flashInterval);
+                if (candleSystem) candleSystem.material.size = baseParticleSize;
+            }
+        }, 25);
+    }
 
     function close3DHologramCake() {
         document.getElementById('hologram-container').style.display = 'none';
@@ -1706,7 +1777,7 @@
     }
 
     // -----------------------------------------------------------
-    // THE REST OF THE ORIGINAL GAME LOGIC REMAINS INTACT
+    // GAME UTILITY & FLOW LOGIC
     // -----------------------------------------------------------
 
     let uploadedQRBase64 = localStorage.getItem('dawan_user_qrcode') || "";
@@ -2301,190 +2372,256 @@
         }
     }
 
-    function transitionToScratchStage() {
-        document.getElementById('egg-stage').style.display = 'none'; document.getElementById('scratch-stage').style.display = 'block';
-        const finalPrize = calculatePrize(score);
-        document.getElementById('prize-amount').innerText = `￥${finalPrize.amount}`; document.getElementById('prize-title').innerText = `🎉 恭喜大碗！`; document.getElementById('prize-desc').innerText = finalPrize.wish;
-        document.querySelectorAll('.tier-box').forEach(el => el.classList.remove('won'));
-        if (finalPrize.id) { const targetTier = document.getElementById(finalPrize.id); if (targetTier) targetTier.classList.add('won'); }
-        initScratchCard();
+    function calculatePrize(sc) {
+        if (sc >= 150) return { amount: '988.88', wish: '🎊 荣登抢宝王！祝大碗财源滚滚，生日快乐！', id: 'tier-grand' };
+        if (sc >= 80) return { amount: '688.88', wish: '🎉 大吉大利！祝大碗好运连连，平安喜乐！', id: 'tier-mid' };
+        return { amount: '388.88', wish: '🎈 福星高照！祝大碗顺心如意，天天开心！', id: 'tier-small' };
     }
 
-    function initScratchCard() {
+    function transitionToScratchStage() {
+        document.getElementById('egg-stage').style.display = 'none'; 
+        document.getElementById('scratch-stage').style.display = 'block';
+        
+        const finalPrize = calculatePrize(score);
+        document.getElementById('prize-amount').innerText = `￥${finalPrize.amount}`; 
+        document.getElementById('prize-title').innerText = `🎉 恭喜大碗！`; 
+        document.getElementById('prize-desc').innerText = finalPrize.wish;
+        
+        document.querySelectorAll('.tier-box').forEach(el => el.classList.remove('won'));
+        if (finalPrize.id) { 
+            const targetTier = document.getElementById(finalPrize.id); 
+            if (targetTier) targetTier.classList.add('won'); 
+        }
+        initScratchCanvas();
+    }
+
+    function initScratchCanvas() {
+        const canvas = document.getElementById('scratch-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const parent = canvas.parentElement;
+        canvas.width = parent.clientWidth;
+        canvas.height = parent.clientHeight;
+
+        ctx.fillStyle = '#b2bec3';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#636e72';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('🎁 刮开涂层领大奖', canvas.width / 2, canvas.height / 2);
+
+        let isDrawing = false;
         scratchRevealed = false;
-        const resultDetails = document.getElementById('scratch-result-details'); resultDetails.style.display = 'none';
-        const prizeAmtEl = document.getElementById('prize-amount'); prizeAmtEl.style.opacity = '0';
-        document.getElementById('scratch-hint').innerText = "👇 动手刮一刮下方涂层，揭晓大奖！👇";
-        const canvas = document.getElementById('scratch-canvas'); canvas.style.display = 'block'; canvas.style.opacity = '1';
-        const box = canvas.parentElement; canvas.width = box.clientWidth; canvas.height = box.clientHeight;
-        const ctx = canvas.getContext('2d'); ctx.fillStyle = '#c0c0c0'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#666'; ctx.font = 'bold 14px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('✨ 刮刮乐：滑动刮开有惊喜 ✨', canvas.width / 2, canvas.height / 2);
-        let isScratching = false;
+        document.getElementById('prize-amount').style.opacity = '0';
+        document.getElementById('scratch-result-details').style.display = 'none';
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: clientX - rect.left, y: clientY - rect.top };
+        }
 
         function scratch(e) {
-            if (!isScratching || scratchRevealed) return; if (e.cancelable) e.preventDefault();
-            const rect = canvas.getBoundingClientRect(); const clientX = e.touches ? e.touches[0].clientX : e.clientX; const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            const x = clientX - rect.left; const y = clientY - rect.top;
-            ctx.globalCompositeOperation = 'destination-out'; ctx.beginPath(); ctx.arc(x, y, 22, 0, Math.PI * 2); ctx.fill();
-            checkScratchCompletion(ctx, canvas);
+            if (!isDrawing) return;
+            const pos = getPos(e);
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, 20, 0, Math.PI * 2);
+            ctx.fill();
+            checkScratchProgress();
         }
-        function checkScratchCompletion(ctx, canvas) {
+
+        function checkScratchProgress() {
             if (scratchRevealed) return;
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height); const pixels = imageData.data; let clearedPixels = 0;
-            for (let i = 3; i < pixels.length; i += 16) { if (pixels[i] === 0) clearedPixels++; }
-            const totalSampled = pixels.length / 16; const percentCleared = (clearedPixels / totalSampled) * 100;
-            if (percentCleared >= 35) { scratchRevealed = true; revealPrizeDetails(ctx, canvas); }
+            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let clearCount = 0;
+            for (let i = 3; i < imgData.data.length; i += 4) {
+                if (imgData.data[i] === 0) clearCount++;
+            }
+            if (clearCount / (imgData.data.length / 4) > 0.45) {
+                scratchRevealed = true;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                document.getElementById('prize-amount').style.opacity = '1';
+                document.getElementById('scratch-result-details').style.display = 'block';
+                confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+                playSound(880, 0.4, 'sine');
+            }
         }
-        canvas.onmousedown = (e) => { isScratching = true; scratch(e); }; canvas.onmousemove = scratch; canvas.onmouseup = () => { isScratching = false; };
-        canvas.ontouchstart = (e) => { isScratching = true; scratch(e); }; canvas.ontouchmove = scratch; canvas.ontouchend = () => { isScratching = false; };
+
+        canvas.onmousedown = (e) => { isDrawing = true; scratch(e); };
+        canvas.onmousemove = scratch;
+        canvas.onmouseup = () => { isDrawing = false; };
+        canvas.ontouchstart = (e) => { isDrawing = true; scratch(e); };
+        canvas.ontouchmove = scratch;
+        canvas.ontouchend = () => { isDrawing = false; };
     }
 
-    function revealPrizeDetails(ctx, canvas) {
-        ctx.clearRect(0, 0, canvas.width, canvas.height); canvas.style.transition = 'opacity 0.4s ease'; canvas.style.opacity = '0';
-        setTimeout(() => { canvas.style.display = 'none'; }, 400);
-        document.getElementById('prize-amount').style.opacity = '1'; document.getElementById('scratch-hint').innerText = "🎉 刮奖完成！全套生日大奖与专属祝福已解锁！";
-        document.getElementById('scratch-result-details').style.display = 'block';
-        playSound(880, 0.4, 'sine'); confetti({ particleCount: 150, spread: 100, origin: { y: 0.6 }, colors: ['#ffd700', '#ff7675', '#ffffff', '#a29bfe'] });
-    }
-
-    function calculatePrize(finalScore) {
-        if (finalScore >= 200) {
-            return { amount: "988.88", name: "🥇 金碗福气大奖", id: "tier-grand", wish: "太厉害啦！大碗手速惊人！把财神爷的金碗、生日蛋糕与福气装得满满当当，祝大碗生日快乐、福气满满、财源滚滚！" };
-        } else if (finalScore >= 100) {
-            return { amount: "688.88", name: "🥈 聚财奖", id: "tier-mid", wish: "太棒啦！碗里装满了财富、蛋糕与福气！祝大碗生日快乐，新的一岁事事顺心、天天吃大碗美味！" };
-        } else {
-            return { amount: "388.88", name: "🥉 纳福奖", id: "tier-small", wish: "恭喜大碗！为你解锁专属生日红包，祝你生日快乐、金碗常满、福气连连、健康平安！" };
-        }
+    function resetGame() {
+        resultModal.classList.remove('show');
+        overlay.style.display = 'flex';
+        candleBlows = 0;
+        document.getElementById('candle-flame').style.display = 'inline-block';
+        document.getElementById('candle-flame').style.transform = 'scale(1) translateX(-50%)';
+        document.getElementById('start-btn').style.display = 'none';
     }
 
     function playVoiceWish() {
-        const voiceAudio = document.getElementById('voice-audio'); pauseBGM();
+        const voiceAudio = document.getElementById('voice-audio');
         if (voiceAudio) {
-            if (voiceAudio.paused) { voiceAudio.currentTime = 0; voiceAudio.play().catch(err => { alert("⚠️ 播放失败：请确保 money.mp3 与网页文件放在同一目录下！"); }); }
-            else { voiceAudio.pause(); }
+            voiceAudio.currentTime = 0;
+            voiceAudio.play().catch(err => alert("语音播放失败，请确认 money.mp3 文件是否存在。"));
         }
     }
 
     function exportPoster() {
-        const resultArea = document.getElementById('result-card');
-        if (typeof html2canvas !== 'undefined') {
-            html2canvas(resultArea, { backgroundColor: '#2d103b', scale: 2 }).then(canvas => {
-                const link = document.createElement('a'); link.download = `大碗生日专属纪念卡.png`; link.href = canvas.toDataURL(); link.click();
-            }).catch(() => { alert("📸 导出图片失败，请截图保存这张生日纪念卡！"); });
-        } else { alert("📸 请直接手机截屏保存这张专属生日纪念卡！"); }
+        const card = document.getElementById('result-card');
+        html2canvas(card).then(canvas => {
+            const link = document.createElement('a');
+            link.download = '大碗生日抢宝纪念卡.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }).catch(err => alert("海报生成失败，请重试！"));
     }
 
-    function saveGameResult(finalScore, prizeObj) {
-        const history = getLocalHistory(); const currentSessionTime = sessionStorage.getItem('current_session_time'); const currentPwd = sessionStorage.getItem('dawan_last_pwd') || '未输入';
-        const existingIndex = history.findIndex(item => item.time === currentSessionTime);
-        if (existingIndex !== -1) {
-            history[existingIndex].score = finalScore; history[existingIndex].prize = prizeObj.name; history[existingIndex].amount = prizeObj.amount;
-            if (uploadedQRBase64) history[existingIndex].qrcode = uploadedQRBase64;
-        } else {
-            const record = { time: new Date().toLocaleString('zh-CN'), score: finalScore, prize: prizeObj.name, amount: prizeObj.amount, device: getDeviceId(), password: currentPwd, qrcode: uploadedQRBase64 || "" };
-            history.unshift(record);
+    function saveGameResult(sc, prizeObj) {
+        const history = getLocalHistory();
+        const sessionTime = sessionStorage.getItem('current_session_time') || new Date().toLocaleString('zh-CN');
+        const lastPwd = sessionStorage.getItem('dawan_last_pwd') || "";
+        
+        let found = false;
+        for (let item of history) {
+            if (item.time === sessionTime) {
+                item.score = sc;
+                item.prize = prizeObj.wish;
+                item.amount = prizeObj.amount;
+                found = true;
+                break;
+            }
         }
-        localStorage.setItem('dawan_game_history', JSON.stringify(history)); syncCloudHistory(history);
+        if (!found) {
+            history.unshift({ time: sessionTime, score: sc, prize: prizeObj.wish, amount: prizeObj.amount, device: getDeviceId(), password: lastPwd, qrcode: uploadedQRBase64 || "" });
+        }
+        localStorage.setItem('dawan_game_history', JSON.stringify(history));
+        syncCloudHistory(history);
     }
 
-    function getLocalHistory() { const data = localStorage.getItem('dawan_game_history'); return data ? JSON.parse(data) : []; }
+    function getLocalHistory() {
+        const data = localStorage.getItem('dawan_game_history');
+        return data ? JSON.parse(data) : [];
+    }
 
-    async function syncCloudHistory(localHistory) {
-        if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return;
+    async function syncCloudHistory(history) {
         try {
             await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-                method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_API_KEY },
-                body: JSON.stringify({ records: localHistory || getLocalHistory(), wishes: getSavedWishes(), bonusDays: parseInt(localStorage.getItem('dawan_bonus_days')) || 0, lastWateredDate: localStorage.getItem('dawan_last_watered_date') || "" })
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'X-Master-Key': JSONBIN_API_KEY },
+                body: JSON.stringify({ records: history, wishes: getSavedWishes(), updated: new Date().toLocaleString('zh-CN') })
             });
-        } catch(e) { console.warn("Cloud sync failed or offline:", e); }
+        } catch(e) { console.warn("Cloud sync error:", e); }
     }
 
     async function fetchCloudHistory() {
-        if (!JSONBIN_BIN_ID || !JSONBIN_API_KEY) return getLocalHistory();
         try {
-            const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, { headers: { 'X-Master-Key': JSONBIN_API_KEY } });
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+                headers: { 'X-Master-Key': JSONBIN_API_KEY }
+            });
             const data = await res.json();
-            if (data && data.record) {
-                if (data.record.records) localStorage.setItem('dawan_game_history', JSON.stringify(data.record.records));
-                if (data.record.wishes) localStorage.setItem('dawan_saved_wishes', JSON.stringify(data.record.wishes));
-                if (data.record.bonusDays !== undefined) { bonusDays = data.record.bonusDays; localStorage.setItem('dawan_bonus_days', bonusDays); }
-                if (data.record.lastWateredDate !== undefined) { lastWateredDate = data.record.lastWateredDate; localStorage.setItem('dawan_last_watered_date', lastWateredDate); }
-                return data.record.records;
+            if (data.record && data.record.records) {
+                localStorage.setItem('dawan_game_history', JSON.stringify(data.record.records));
             }
-        } catch(e) { console.warn("Cloud fetch failed, fallback to local:", e); }
-        return getLocalHistory();
+            if (data.record && data.record.wishes) {
+                localStorage.setItem('dawan_saved_wishes', JSON.stringify(data.record.wishes));
+            }
+        } catch(e) { console.warn("Cloud fetch error:", e); }
     }
 
+    let activeAdminTab = 'history';
     function switchAdminTab(tab) {
-        const historyList = document.getElementById('history-list'); const wishesList = document.getElementById('wishes-list');
-        const btnHistory = document.getElementById('tab-btn-history'); const btnWishes = document.getElementById('tab-btn-wishes');
-        if (tab === 'history') {
-            historyList.style.display = 'flex'; wishesList.style.display = 'none';
-            btnHistory.style.background = 'var(--gold)'; btnHistory.style.color = '#2b1055';
-            btnWishes.style.background = '#6c5ce7'; btnWishes.style.color = 'white';
-        } else {
-            historyList.style.display = 'none'; wishesList.style.display = 'flex';
-            btnWishes.style.background = 'var(--gold)'; btnWishes.style.color = '#2b1055';
-            btnHistory.style.background = '#6c5ce7'; btnHistory.style.color = 'white';
-        }
+        activeAdminTab = tab;
+        document.getElementById('tab-btn-history').style.background = tab === 'history' ? 'var(--gold)' : '#6c5ce7';
+        document.getElementById('tab-btn-history').style.color = tab === 'history' ? '#2b1055' : 'white';
+        document.getElementById('tab-btn-wishes').style.background = tab === 'wishes' ? 'var(--gold)' : '#6c5ce7';
+        document.getElementById('tab-btn-wishes').style.color = tab === 'wishes' ? '#2b1055' : 'white';
+        
+        document.getElementById('history-list').style.display = tab === 'history' ? 'flex' : 'none';
+        document.getElementById('wishes-list').style.display = tab === 'wishes' ? 'flex' : 'none';
     }
 
-    async function openAdminPanel() {
-        const modal = document.getElementById('admin-modal'); const listEl = document.getElementById('history-list'); const wishesEl = document.getElementById('wishes-list');
-        listEl.innerHTML = '<div style="text-align:center; padding:10px;">⏳ 正在同步全设备战报...</div>'; modal.classList.add('show');
-        const records = await fetchCloudHistory(); const wishes = getSavedWishes();
-        document.getElementById('admin-total-plays').innerText = records.length; document.getElementById('admin-total-wishes').innerText = wishes.length;
+    function openAdminPanel() {
+        fetchCloudHistory().then(() => renderAdminPanel());
+        document.getElementById('admin-modal').classList.add('show');
+    }
 
-        if (records.length === 0) { listEl.innerHTML = '<div style="text-align:center; color:#aaa; padding:10px;">暂无战报记录</div>'; } 
-        else {
-            listEl.innerHTML = records.map((item, idx) => {
-                const qrBtn = item.qrcode ? `<button onclick="viewQRCode('${item.qrcode}')" style="background:#00b894; color:#fff; border:none; border-radius:6px; padding:3px 8px; font-size:10px; cursor:pointer; margin-top:3px;">📷 查看收款码</button>` : `<span style="color:#aaa; font-size:10px;">未上传</span>`;
-                return `
-                <div class="history-item">
+    function closeAdminPanel() {
+        document.getElementById('admin-modal').classList.remove('show');
+    }
+
+    function renderAdminPanel() {
+        const history = getLocalHistory();
+        const wishes = getSavedWishes();
+
+        document.getElementById('admin-total-plays').innerText = history.length;
+        document.getElementById('admin-total-wishes').innerText = wishes.length;
+
+        const historyContainer = document.getElementById('history-list');
+        historyContainer.innerHTML = '';
+        if (history.length === 0) {
+            historyContainer.innerHTML = '<div style="font-size:12px; color:#aaa; text-align:center;">暂无战报记录</div>';
+        } else {
+            history.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
                     <div>
-                        <div><b>#${records.length - idx}</b> - ${item.device || '📱 手机'} - <b>${typeof item.score === 'number' ? item.score + '分' : item.score}</b></div>
-                        <div class="history-item-time">${item.time} | 🔑 暗号: <span style="color:var(--gold);">${item.password || '无'}</span></div>
-                        <div>${qrBtn}</div>
+                        <div><b>${item.device || '未知设备'}</b> | 暗号: <span style="color:var(--gold);">${item.password || '无'}</span></div>
+                        <div class="history-item-time">${item.time}</div>
                     </div>
-                    <div class="history-item-prize">￥${item.amount}</div>
-                </div>`;
-            }).join('');
+                    <div style="text-align:right;">
+                        <div class="history-item-prize">￥${item.amount || '0.00'} (${item.score}分)</div>
+                        ${item.qrcode ? `<button onclick="openQRModal('${item.qrcode}')" style="font-size:10px; padding:2px 6px; background:var(--gold); border:none; border-radius:4px; cursor:pointer;">📷 收款码</button>` : ''}
+                    </div>
+                `;
+                historyContainer.appendChild(div);
+            });
         }
 
-        if (wishes.length === 0) { wishesEl.innerHTML = '<div style="text-align:center; color:#aaa; padding:10px;">暂无许愿记录</div>'; } 
-        else {
-            wishesEl.innerHTML = wishes.map((item, idx) => `
-                <div class="history-item">
+        const wishesContainer = document.getElementById('wishes-list');
+        wishesContainer.innerHTML = '';
+        if (wishes.length === 0) {
+            wishesContainer.innerHTML = '<div style="font-size:12px; color:#aaa; text-align:center;">暂无愿望记录</div>';
+        } else {
+            wishes.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
                     <div>
                         <div style="color:var(--gold); font-weight:bold;">🏮 ${item.wish}</div>
-                        <div class="history-item-time">${item.time} | ${item.device || '📱 手机'}</div>
+                        <div class="history-item-time">${item.time} | ${item.device || '未知'}</div>
                     </div>
-                </div>
-            `).join('');
+                `;
+                wishesContainer.appendChild(div);
+            });
         }
-        switchAdminTab('history');
     }
 
-    function viewQRCode(base64Img) {
-        if (!base64Img) { alert("该记录暂无上传的收款码！"); return; }
-        document.getElementById('qr-modal-img').src = base64Img; document.getElementById('qr-modal').classList.add('show');
+    function openQRModal(imgSrc) {
+        document.getElementById('qr-modal-img').src = imgSrc;
+        document.getElementById('qr-modal').classList.add('show');
     }
-    function closeQRModal() { document.getElementById('qr-modal').classList.remove('show'); }
-    function closeAdminPanel() { document.getElementById('admin-modal').classList.remove('show'); }
+
+    function closeQRModal() {
+        document.getElementById('qr-modal').classList.remove('show');
+    }
 
     function clearHistory() {
-        if (confirm("确定要清空战报与许愿记录吗？")) {
-            localStorage.removeItem('dawan_game_history'); localStorage.removeItem('dawan_saved_wishes'); localStorage.removeItem('dawan_user_qrcode');
-            uploadedQRBase64 = ""; syncCloudHistory([]); openAdminPanel();
+        if (confirm("确定要清空战报记录吗？")) {
+            localStorage.removeItem('dawan_game_history');
+            localStorage.removeItem('dawan_saved_wishes');
+            syncCloudHistory([]);
+            renderAdminPanel();
         }
-    }
-
-    function resetGame() {
-        resultModal.classList.remove('show'); overlay.style.display = 'flex';
-        candleBlows = 0; const candleFlame = document.getElementById('candle-flame');
-        candleFlame.style.display = 'inline-block'; candleFlame.style.transform = 'scale(1) translateX(-50%)';
-        document.getElementById('start-btn').style.display = 'none'; document.getElementById('score').innerText = '0'; document.getElementById('timer').innerText = '10';
-        streak = 0; isFever = false; updateStreakBar();
     }
 </script>
 </body>
