@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -1117,6 +1118,26 @@
             margin-bottom: 4px;
             animation: pulse 0.8s infinite alternate;
         }
+
+        /* --- TOUCHLESS VIDEO / MUSIC GALLERY --- */
+        #cake-media-gallery {
+            position:absolute; left:50%; top:46%; transform:translate(-50%,-50%) scale(0.85);
+            width:min(92vw,760px); height:250px; z-index:5004; pointer-events:none;
+            display:none; perspective:1200px; transition:transform .12s ease-out, opacity .25s ease;
+            opacity:0;
+        }
+        #cake-media-gallery.active { display:block; opacity:1; }
+        .gallery-hud { position:absolute; left:50%; top:-42px; transform:translateX(-50%); color:#fff; background:rgba(20,10,35,.78); border:2px solid var(--gold); border-radius:18px; padding:5px 12px; font-size:12px; white-space:nowrap; box-shadow:0 0 14px rgba(255,215,0,.35); }
+        .gallery-track { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; transform-style:preserve-3d; transition:transform .42s cubic-bezier(.2,.8,.2,1); }
+        .gallery-card { position:absolute; width:210px; height:170px; border:3px solid var(--gold); border-radius:18px; overflow:hidden; background:rgba(15,7,30,.94); box-shadow:0 0 25px rgba(255,215,0,.28); transform-style:preserve-3d; transition:transform .42s, opacity .3s, filter .3s; }
+        .gallery-card.active { box-shadow:0 0 35px rgba(255,215,0,.75); }
+        .gallery-card video, .gallery-card .gallery-art { width:100%; height:122px; object-fit:cover; display:block; background:linear-gradient(135deg,#2b1055,#6c5ce7); }
+        .gallery-art { display:flex !important; align-items:center; justify-content:center; font-size:48px; }
+        .gallery-card .gallery-label { height:44px; display:flex; align-items:center; justify-content:center; gap:6px; color:#fff; font-size:13px; font-weight:bold; background:rgba(0,0,0,.38); }
+        .gallery-card .gallery-type { color:var(--gold); font-size:11px; }
+        .gallery-help { position:absolute; bottom:-42px; left:50%; transform:translateX(-50%); color:#ffeaa7; font-size:11px; white-space:nowrap; text-shadow:0 1px 3px #000; }
+        .gallery-now-playing { position:absolute; right:8px; top:8px; background:#00b894; color:#fff; padding:3px 7px; border-radius:10px; font-size:10px; display:none; }
+        .gallery-card.playing .gallery-now-playing { display:block; }
     </style>
 </head>
 <body id="body-root">
@@ -1345,6 +1366,14 @@
         <div style="font-size:26px;">🎂✨🥳🎈</div>
     </div>
 
+
+    <!-- TOUCHLESS VIDEO / MUSIC GALLERY -->
+    <div id="cake-media-gallery">
+        <div class="gallery-hud" id="gallery-hud">👉 右手左右挥动：旋转选择　🤏 右手捏合：播放　🖐️ 张开/握拳：放大/缩小</div>
+        <div class="gallery-track" id="gallery-track"></div>
+        <div class="gallery-help" id="gallery-help">等待右手手势…</div>
+    </div>
+
     <div class="hologram-ui">
         <h2 style="color: var(--gold); text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 6px;">🎂 HAPPY BIRTHDAY 🎂</h2>
         
@@ -1355,7 +1384,7 @@
         <div class="hand-status-badge" id="hand-status">📷 正在启动红外传感器... 请允许摄像头权限</div>
         
         <p id="hologram-instruction" style="font-size: 12px; color: #ffeaa7; text-shadow: 0 1px 2px #000; margin-bottom: 12px; display: none;">
-            ✋ 玩法升级：单手【大拇指与食指】捏合抓取右侧的蜡烛，拖动放置到蛋糕上！完成后捏合可控制蛋糕大小！
+            ✋ 完成蜡烛后：右手左右挥动旋转媒体库；🤏 捏合播放当前媒体；🖐️ 张开/握拳实时控制蛋糕粒子与媒体库大小。
         </p>
         <button class="btn-action" onclick="close3DHologramCake()" style="padding: 4px 16px; font-size: 12px; margin-top: 4px;">退出全息模式 ✕</button>
     </div>
@@ -1433,6 +1462,27 @@
     let currentScale = 1.0;
     let animationId;
     let mediapipeCamera;
+    let cakeCompletionToastTimer = null;
+
+    // Touchless video/music gallery state
+    let galleryIndex = 0;
+    let galleryItems = [];
+    let galleryInitialized = false;
+    let gallerySwipeStartX = null;
+    let gallerySwipeLastX = null;
+    let gallerySwipeCooldown = 0;
+    let galleryPinchWasActive = false;
+    let galleryCurrentScale = 0.85;
+    let galleryTargetScale = 0.85;
+    let galleryMediaElement = null;
+
+    // Change these filenames to your own media files. Keep them in the same folder as this HTML file.
+    const CAKE_GALLERY_ITEMS = [
+        { type:'video', title:'专属视频 1', icon:'🎬', src:'cake-video-1.mp4' },
+        { type:'video', title:'专属视频 2', icon:'🎥', src:'cake-video-2.mp4' },
+        { type:'audio', title:'生日音乐 1', icon:'🎵', src:'cake-music-1.mp3' },
+        { type:'audio', title:'生日音乐 2', icon:'🎶', src:'cake-music-2.mp3' }
+    ];
 
     // 蜡烛互动状态
     let isHoldingCandle = false;
@@ -1456,7 +1506,9 @@
         lastStepTime = Date.now();
 
         const toast = document.getElementById('cake-completion-toast');
+        if (cakeCompletionToastTimer) { clearTimeout(cakeCompletionToastTimer); cakeCompletionToastTimer = null; }
         if (toast) toast.style.display = 'none';
+        resetCakeMediaGallery();
 
         const gestureBox = document.getElementById('countdown-gesture-box');
         const numDisplay = document.getElementById('gesture-num-display');
@@ -1569,6 +1621,7 @@
         const time = Date.now() * 0.005;
 
         currentScale += (targetScale - currentScale) * 0.15;
+        updateCakeGestureVisuals();
         
         cakeSystem.rotation.y += 0.005;
         if (candlePlaced) {
@@ -1657,140 +1710,278 @@
         const numDisplay = document.getElementById('gesture-num-display');
         const gestureBox = document.getElementById('countdown-gesture-box');
         const hologramInstr = document.getElementById('hologram-instruction');
-        
+
         const hands = new Hands({locateFile: (file) => {
             return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
         }});
-        
-        hands.setOptions({ maxNumHands: 1, modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
-        
+
+        // Need handedness so the gallery is controlled specifically by the RIGHT hand.
+        hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
+
         hands.onResults((results) => {
-            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                const handLandmarks = results.multiHandLandmarks[0];
-                const now = Date.now();
+            const now = Date.now();
+            const landmarksList = results.multiHandLandmarks || [];
+            const handednessList = results.multiHandedness || [];
 
-                if (!countdownFinished) {
+            // During the 3-2-1 unlock, preserve the original behaviour and use the first detected hand.
+            if (!countdownFinished) {
+                if (landmarksList.length > 0) {
+                    const handLandmarks = landmarksList[0];
                     const fingerCount = countExtendedFingers(handLandmarks);
-
                     if (countdownStep === 3) {
                         if (fingerCount === 3 && (now - lastStepTime > 500)) {
-                            countdownStep = 2;
-                            lastStepTime = now;
-                            playSound(600, 0.2, 'sine');
-                            if (numDisplay) numDisplay.innerText = '2';
-                            if (statusBadge) statusBadge.innerText = '✨ 成功识别 3！现在请比出 2 根手指 ✌️ (2)';
-                        } else {
-                            if (statusBadge) statusBadge.innerText = `📷 请比出 3 根手指 🖐️ (检测到: ${fingerCount} 根)`;
-                        }
+                            countdownStep = 2; lastStepTime = now; playSound(600,0.2,'sine');
+                            if (numDisplay) numDisplay.innerText='2';
+                            if (statusBadge) statusBadge.innerText='✨ 成功识别 3！现在请比出 2 根手指 ✌️ (2)';
+                        } else if (statusBadge) statusBadge.innerText=`📷 请比出 3 根手指 🖐️ (检测到: ${fingerCount} 根)`;
                     } else if (countdownStep === 2) {
                         if (fingerCount === 2 && (now - lastStepTime > 500)) {
-                            countdownStep = 1;
-                            lastStepTime = now;
-                            playSound(800, 0.2, 'sine');
-                            if (numDisplay) numDisplay.innerText = '1';
-                            if (statusBadge) statusBadge.innerText = '✨ 成功识别 2！最后比出 1 根手指 ☝️ (1)';
-                        } else {
-                            if (statusBadge) statusBadge.innerText = `📷 请比出 2 根手指 ✌️ (检测到: ${fingerCount} 根)`;
-                        }
+                            countdownStep=1; lastStepTime=now; playSound(800,0.2,'sine');
+                            if (numDisplay) numDisplay.innerText='1';
+                            if (statusBadge) statusBadge.innerText='✨ 成功识别 2！最后比出 1 根手指 ☝️ (1)';
+                        } else if (statusBadge) statusBadge.innerText=`📷 请比出 2 根手指 ✌️ (检测到: ${fingerCount} 根)`;
                     } else if (countdownStep === 1) {
                         if (fingerCount === 1 && (now - lastStepTime > 500)) {
-                            countdownStep = 0;
-                            countdownFinished = true;
-                            triggerSnapEffect();
-                            
-                            if (gestureBox) gestureBox.style.display = 'none';
-                            if (hologramInstr) hologramInstr.style.display = 'block';
-                            if (statusBadge) {
-                                statusBadge.innerText = '🎉 倒计时完成！3D蛋糕逐渐显现中...';
-                                statusBadge.style.background = 'rgba(0, 184, 148, 0.9)';
-                            }
-                        } else {
-                            if (statusBadge) statusBadge.innerText = `📷 请比出 1 根手指 ☝️ (检测到: ${fingerCount} 根)`;
-                        }
+                            countdownStep=0; countdownFinished=true; triggerSnapEffect();
+                            if (gestureBox) gestureBox.style.display='none';
+                            if (hologramInstr) hologramInstr.style.display='block';
+                            if (statusBadge) { statusBadge.innerText='🎉 倒计时完成！3D蛋糕逐渐显现中...'; statusBadge.style.background='rgba(0,184,148,.9)'; }
+                        } else if (statusBadge) statusBadge.innerText=`📷 请比出 1 根手指 ☝️ (检测到: ${fingerCount} 根)`;
                     }
-                    return; 
                 }
+                return;
+            }
 
-                const thumbTip = handLandmarks[4];
-                const indexTip = handLandmarks[8];
-                
-                const dx = thumbTip.x - indexTip.x;
-                const dy = thumbTip.y - indexTip.y;
-                const dz = thumbTip.z - indexTip.z;
-                const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
-                const isPinching = dist < 0.06;
+            // Prefer the RIGHT hand. MediaPipe's handedness is from the user's mirrored camera view,
+            // but the label itself is already normalized by MediaPipe.
+            let rightLandmarks = null;
+            let rightIndex = -1;
+            for (let i=0; i<landmarksList.length; i++) {
+                const label = handednessList[i] && handednessList[i].label;
+                if (label === 'Right') { rightLandmarks = landmarksList[i]; rightIndex=i; break; }
+            }
 
-                const midX = (thumbTip.x + indexTip.x) / 2;
-                const midY = (thumbTip.y + indexTip.y) / 2;
-                const worldX = (0.5 - midX) * 16;  
-                const worldY = (0.5 - midY) * 12 + 1; 
+            // If only one hand is visible, MediaPipe can occasionally miss handedness for a frame.
+            // Use the single hand as a temporary fallback so the interaction does not freeze.
+            if (!rightLandmarks && landmarksList.length === 1) {
+                rightLandmarks = landmarksList[0];
+                rightIndex = 0;
+            }
 
-                if (!candlePlaced) {
-                    if (isPinching) {
-                        isHoldingCandle = true;
-                        statusBadge.innerText = "🤏 拖动蜡烛放到正中蛋糕顶部！";
-                        statusBadge.style.background = "rgba(0, 184, 148, 0.8)";
-                        
-                        candleSystem.position.x += (worldX - candleSystem.position.x) * 0.15;
-                        candleSystem.position.y += (worldY - candleSystem.position.y) * 0.15;
-                    } else {
-                        if (isHoldingCandle) {
-                            isHoldingCandle = false;
-                            if (Math.abs(candleSystem.position.x) < 2.5 && candleSystem.position.y > -1.0 && candleSystem.position.y < 4.0) {
-                                candlePlaced = true;
-                                candleSystem.position.set(0, -2, 0); 
-                                candleSystem.rotation.y = cakeSystem.rotation.y; 
-                                
-                                statusBadge.innerText = "🎂 放置成功！蛋糕仪式完成，漫天气球升起！";
-                                statusBadge.style.background = "rgba(0, 184, 148, 0.95)";
-                                
-                                // 1. 弹出完成信号提示 Toast
-                                const toast = document.getElementById('cake-completion-toast');
-                                if (toast) toast.style.display = 'block';
+            if (!rightLandmarks) {
+                if (statusBadge) {
+                    statusBadge.innerText = candlePlaced ? '🖐️ 请伸出右手控制媒体库' : '🤏 请用手捏住蜡烛拖到蛋糕中央';
+                    statusBadge.style.background='rgba(255,118,117,.8)';
+                }
+                isHoldingCandle=false;
+                if (candlePlaced) {
+                    galleryTargetScale += (0.85-galleryTargetScale)*0.08;
+                    targetScale += (1.0-targetScale)*0.05;
+                }
+                return;
+            }
 
-                                // 2. 触发放飞气球特效
-                                generateBalloons();
-                                triggerSnapEffect();
-                                triggerCandlePlacedBalloons();
-                            } else {
-                                statusBadge.innerText = "✋ 请将蜡烛放置到蛋糕正上方~";
-                                statusBadge.style.background = "rgba(255, 118, 117, 0.8)";
-                            }
-                        } else {
-                            statusBadge.innerText = "✋ 捏住右侧的蜡烛，把它拖拽到蛋糕上！";
-                            statusBadge.style.background = "rgba(255, 118, 117, 0.8)";
+            const thumbTip=rightLandmarks[4], indexTip=rightLandmarks[8], wrist=rightLandmarks[0];
+            const dx=thumbTip.x-indexTip.x, dy=thumbTip.y-indexTip.y, dz=thumbTip.z-indexTip.z;
+            const dist=Math.sqrt(dx*dx+dy*dy+dz*dz);
+            const isPinching=dist<0.065;
+            const fingerCount=countExtendedFingers(rightLandmarks);
+
+            const midX=(thumbTip.x+indexTip.x)/2, midY=(thumbTip.y+indexTip.y)/2;
+            const worldX=(0.5-midX)*16, worldY=(0.5-midY)*12+1;
+
+            if (!candlePlaced) {
+                // Original candle-placement interaction remains unchanged, using the right hand when available.
+                if (isPinching) {
+                    isHoldingCandle=true;
+                    if (statusBadge) { statusBadge.innerText='🤏 拖动蜡烛放到正中蛋糕顶部！'; statusBadge.style.background='rgba(0,184,148,.8)'; }
+                    candleSystem.position.x += (worldX-candleSystem.position.x)*0.15;
+                    candleSystem.position.y += (worldY-candleSystem.position.y)*0.15;
+                } else if (isHoldingCandle) {
+                    isHoldingCandle=false;
+                    if (Math.abs(candleSystem.position.x)<2.5 && candleSystem.position.y>-1.0 && candleSystem.position.y<4.0) {
+                        candlePlaced=true;
+                        candleSystem.position.set(0,-2,0);
+                        candleSystem.rotation.y=cakeSystem.rotation.y;
+                        if (statusBadge) { statusBadge.innerText='🎂 放置成功！蛋糕仪式完成，漫天气球升起！'; statusBadge.style.background='rgba(0,184,148,.95)'; }
+                        const toast=document.getElementById('cake-completion-toast');
+                        if (toast) {
+                            toast.style.display='block';
+                            if (cakeCompletionToastTimer) clearTimeout(cakeCompletionToastTimer);
+                            cakeCompletionToastTimer=setTimeout(()=>{ toast.style.display='none'; },5000);
                         }
+                        showCakeMediaGallery();
+                        generateBalloons(); triggerSnapEffect(); triggerCandlePlacedBalloons();
+                    } else if (statusBadge) {
+                        statusBadge.innerText='✋ 请将蜡烛放置到蛋糕正上方~'; statusBadge.style.background='rgba(255,118,117,.8)';
                     }
-                } else {
-                    let mappedScale = 1.0 + (dist - 0.04) * 15.0; 
-                    mappedScale = Math.max(0.5, Math.min(mappedScale, 3.5)); 
-                    targetScale = mappedScale;
-                    
-                    if (isPinching || dist < 0.1) {
-                        statusBadge.innerText = `🤏 粒子爆炸系数: ${mappedScale.toFixed(1)}x`;
-                        statusBadge.style.background = "rgba(0, 184, 148, 0.8)";
-                    } else {
-                        statusBadge.innerText = "✋ 张开与捏合手指来控制大小！";
-                        statusBadge.style.background = "rgba(255, 118, 117, 0.8)";
+                } else if (statusBadge) {
+                    statusBadge.innerText='✋ 请用右手捏住右侧蜡烛并拖到蛋糕上'; statusBadge.style.background='rgba(255,118,117,.8)';
+                }
+                return;
+            }
+
+            // ----- AFTER CANDLE: real-time particle scaling + media gallery -----
+            // Open hand = larger, closed hand = smaller. This continuously drives both systems.
+            const openness=fingerCount/5;
+            const liveScale=0.65 + openness*0.95;
+            targetScale=Math.max(0.55,Math.min(liveScale,1.65));
+            galleryTargetScale=0.62 + openness*0.78;
+
+            // Swipe detection from right-hand wrist movement.
+            if (gallerySwipeLastX !== null) {
+                const deltaX=wrist.x-gallerySwipeLastX;
+                if (Math.abs(deltaX)>0.018 && now-gallerySwipeCooldown>250) {
+                    gallerySwipeStartX = gallerySwipeStartX===null ? gallerySwipeLastX : gallerySwipeStartX;
+                    const accumulated=wrist.x-gallerySwipeStartX;
+                    if (Math.abs(accumulated)>0.075) {
+                        if (accumulated<0) spinCakeGallery(1); else spinCakeGallery(-1);
+                        gallerySwipeCooldown=now;
+                        gallerySwipeStartX=wrist.x;
                     }
                 }
             } else {
-                targetScale = 1.0;
-                if (!countdownFinished) {
-                    statusBadge.innerText = `📷 请将手放在镜头前比出 ${countdownStep} 根手指`;
+                gallerySwipeStartX=wrist.x;
+            }
+            gallerySwipeLastX=wrist.x;
+
+            // Pinch has edge-trigger semantics: one pinch = one play. Holding the pinch won't restart it.
+            if (isPinching && !galleryPinchWasActive) {
+                playSelectedCakeGalleryItem();
+            }
+            galleryPinchWasActive=isPinching;
+
+            if (statusBadge) {
+                if (isPinching) {
+                    statusBadge.innerText=`🤏 已选择：${galleryItems[galleryIndex]?.title || '媒体'}｜松开后再次捏合可重新播放`;
+                    statusBadge.style.background='rgba(0,184,148,.9)';
                 } else {
-                    statusBadge.innerText = "📷 请将手放在镜头前控制";
+                    statusBadge.innerText=`👉 右手挥动旋转｜🖐️ 手指 ${fingerCount} 根：媒体库 ${(galleryTargetScale).toFixed(1)}x｜粒子 ${(targetScale).toFixed(1)}x`;
+                    statusBadge.style.background='rgba(108,92,231,.9)';
                 }
-                statusBadge.style.background = "rgba(255, 118, 117, 0.8)";
-                isHoldingCandle = false;
             }
         });
-        
+
+        if (mediapipeCamera) { try { mediapipeCamera.stop(); } catch(e){} }
         mediapipeCamera = new Camera(videoElement, {
             onFrame: async () => { await hands.send({image: videoElement}); },
-            width: 320, height: 240
+            width:320, height:240
         });
         mediapipeCamera.start();
+    }
+
+    function showCakeMediaGallery() {
+        const gallery=document.getElementById('cake-media-gallery');
+        if (!gallery) return;
+        gallery.classList.add('active');
+        if (!galleryInitialized) buildCakeMediaGallery();
+        updateCakeGalleryVisuals(true);
+    }
+
+    function resetCakeMediaGallery() {
+        stopCakeGalleryMedia();
+        galleryIndex=0; gallerySwipeStartX=null; gallerySwipeLastX=null;
+        gallerySwipeCooldown=0; galleryPinchWasActive=false;
+        galleryCurrentScale=0.85; galleryTargetScale=0.85;
+        const gallery=document.getElementById('cake-media-gallery');
+        if (gallery) gallery.classList.remove('active');
+        if (galleryInitialized) updateCakeGalleryVisuals(true);
+    }
+
+    function buildCakeMediaGallery() {
+        const track=document.getElementById('gallery-track');
+        if (!track) return;
+        galleryItems=CAKE_GALLERY_ITEMS.slice();
+        track.innerHTML='';
+        galleryItems.forEach((item,i)=>{
+            const card=document.createElement('div');
+            card.className='gallery-card';
+            card.dataset.index=i;
+            let media='';
+            if (item.type==='video') {
+                media=`<video muted playsinline preload="metadata" src="${item.src}"></video>`;
+            } else {
+                media=`<div class="gallery-art">${item.icon}</div>`;
+            }
+            card.innerHTML=`${media}<div class="gallery-label"><span>${item.icon}</span>${item.title}<span class="gallery-type">${item.type==='video'?'VIDEO':'MUSIC'}</span></div><div class="gallery-now-playing">▶ 播放中</div>`;
+            track.appendChild(card);
+        });
+        galleryInitialized=true;
+        updateCakeGalleryVisuals(true);
+    }
+
+    function spinCakeGallery(direction) {
+        if (!galleryItems.length) return;
+        galleryIndex=(galleryIndex+direction+galleryItems.length)%galleryItems.length;
+        const track=document.getElementById('gallery-track');
+        if (track) {
+            track.style.transform=`translateX(${direction*18}px) rotateY(${direction*12}deg)`;
+            setTimeout(()=>{ track.style.transform='translateX(0) rotateY(0deg)'; },80);
+        }
+        updateCakeGalleryVisuals(false);
+        playSound(direction>0?880:660,0.08,'sine');
+    }
+
+    function updateCakeGalleryVisuals(immediate=false) {
+        const gallery=document.getElementById('cake-media-gallery');
+        const cards=document.querySelectorAll('#gallery-track .gallery-card');
+        if (!gallery || !cards.length) return;
+        galleryCurrentScale += (galleryTargetScale-galleryCurrentScale)*(immediate?1:0.25);
+        gallery.style.transform=`translate(-50%,-50%) scale(${galleryCurrentScale})`;
+        cards.forEach((card,i)=>{
+            let offset=i-galleryIndex;
+            const n=galleryItems.length;
+            if (offset>n/2) offset-=n;
+            if (offset<-n/2) offset+=n;
+            const abs=Math.abs(offset);
+            const x=offset*190;
+            const z=-abs*90;
+            const ry=offset*-28;
+            card.style.transform=`translateX(${x}px) translateZ(${z}px) rotateY(${ry}deg) scale(${i===galleryIndex?1:0.78})`;
+            card.style.opacity=abs>2?0:1;
+            card.style.filter=i===galleryIndex?'brightness(1.15)':'brightness(.7)';
+            card.classList.toggle('active',i===galleryIndex);
+            card.classList.toggle('playing', galleryMediaElement && galleryMediaElement.dataset && Number(galleryMediaElement.dataset.galleryIndex)===i && !galleryMediaElement.paused);
+        });
+        const help=document.getElementById('gallery-help');
+        if (help && galleryItems[galleryIndex]) help.innerText=`当前：${galleryItems[galleryIndex].icon} ${galleryItems[galleryIndex].title}｜左右挥动旋转｜捏合播放`;
+    }
+
+    function playSelectedCakeGalleryItem() {
+        if (!galleryItems.length) return;
+        const item=galleryItems[galleryIndex];
+        stopCakeGalleryMedia();
+        let media;
+        if (item.type==='video') {
+            media=document.createElement('video');
+            media.src=item.src; media.autoplay=true; media.controls=true; media.playsInline=true;
+            media.style.position='fixed'; media.style.left='50%'; media.style.top='50%'; media.style.transform='translate(-50%,-50%)';
+            media.style.width='min(78vw,720px)'; media.style.maxHeight='68vh'; media.style.zIndex='5010'; media.style.border='3px solid #ffd700'; media.style.borderRadius='18px'; media.style.boxShadow='0 0 40px rgba(255,215,0,.65)';
+            media.dataset.galleryIndex=galleryIndex;
+            document.getElementById('hologram-container').appendChild(media);
+        } else {
+            media=new Audio(item.src); media.loop=true; media.autoplay=true; media.dataset.galleryIndex=galleryIndex;
+        }
+        galleryMediaElement=media;
+        const playPromise=media.play();
+        if (playPromise && playPromise.catch) playPromise.catch(()=>{});
+        updateCakeGalleryVisuals(false);
+        playSound(1046.5,0.12,'sine');
+    }
+
+    function stopCakeGalleryMedia() {
+        if (!galleryMediaElement) return;
+        try { galleryMediaElement.pause(); galleryMediaElement.currentTime=0; } catch(e){}
+        if (galleryMediaElement.tagName==='VIDEO' && galleryMediaElement.parentNode) galleryMediaElement.remove();
+        galleryMediaElement=null;
+        updateCakeGalleryVisuals(false);
+    }
+
+    // Keep gallery scale/particle response smooth every animation frame.
+    function updateCakeGestureVisuals() {
+        galleryCurrentScale += (galleryTargetScale-galleryCurrentScale)*0.18;
+        const gallery=document.getElementById('cake-media-gallery');
+        if (gallery && gallery.classList.contains('active')) gallery.style.transform=`translate(-50%,-50%) scale(${galleryCurrentScale})`;
     }
 
     function triggerSnapEffect() {
@@ -1822,7 +2013,12 @@
         cancelAnimationFrame(animationId);
         if (mediapipeCamera) {
             mediapipeCamera.stop();
+            mediapipeCamera = null;
         }
+        if (cakeCompletionToastTimer) { clearTimeout(cakeCompletionToastTimer); cakeCompletionToastTimer=null; }
+        const toast=document.getElementById('cake-completion-toast');
+        if (toast) toast.style.display='none';
+        resetCakeMediaGallery();
         playBGM('song3'); 
     }
 
@@ -2863,3 +3059,5 @@ async function fetchCloudHistory() {
 </script>
 </body>
 </html>
+now3.txt
+Displaying now3.txt.
