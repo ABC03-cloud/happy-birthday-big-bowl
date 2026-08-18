@@ -1502,21 +1502,24 @@
     let countdownFinished = false;
     let lastStepTime = 0;
 
-    function init3DHologramCake() {
+   function init3DHologramCake() {
         const container = document.getElementById('hologram-container');
         const canvasWrapper = container.style.display = 'flex';
         
         pauseBGM();
 
-        // 重置提示及倒计时状态
+        // Reset gestures and state
         countdownStep = 3;
         countdownFinished = false;
         lastStepTime = Date.now();
 
+        // Auto-complete candle state to prevent getting stuck
+        candlePlaced = true; 
+        isHoldingCandle = false;
+
         const toast = document.getElementById('cake-completion-toast');
         if (cakeCompletionToastTimer) { clearTimeout(cakeCompletionToastTimer); cakeCompletionToastTimer = null; }
         if (toast) toast.style.display = 'none';
-        resetCakeMediaGallery();
 
         const gestureBox = document.getElementById('countdown-gesture-box');
         const numDisplay = document.getElementById('gesture-num-display');
@@ -1526,7 +1529,7 @@
         if (gestureBox) gestureBox.style.display = 'block';
         if (numDisplay) { numDisplay.innerText = '3'; numDisplay.style.color = '#ffd700'; }
         if (handStatus) {
-            handStatus.innerText = '📷 请比出 3 根手指 🖐️ (依次比出 3->2->1 解锁蛋糕)';
+            handStatus.innerText = '📷 请比出 3 根手指 🖐️ (依次比出 3->2->1 开启媒体库)';
             handStatus.style.background = 'rgba(255, 118, 117, 0.85)';
         }
         if (hologramInstr) hologramInstr.style.display = 'none';
@@ -1546,16 +1549,14 @@
         } else {
             if (cakeSystem) cakeSystem.userData.formationProgress = 0;
             if (candleSystem) {
-                candleSystem.position.set(4, 2, 0); 
-                candlePlaced = false;
-                isHoldingCandle = false;
+                candleSystem.position.set(0, 2, 0); // Directly position candle onto cake
             }
         }
 
         animate3DCake();
         initHandTracking();
     }
-
+    
     function createParticleCake() {
         const cakeCount = 3400;
         const candleCount = 600;
@@ -1712,7 +1713,7 @@
         }
     }
 
-    function initHandTracking() {
+function initHandTracking() {
         const videoElement = document.getElementById('webcam-video');
         const statusBadge = document.getElementById('hand-status');
         const numDisplay = document.getElementById('gesture-num-display');
@@ -1723,7 +1724,6 @@
             return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
         }});
 
-        // Need handedness so the gallery is controlled specifically by the RIGHT hand.
         hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
 
         hands.onResults((results) => {
@@ -1731,174 +1731,106 @@
             const landmarksList = results.multiHandLandmarks || [];
             const handednessList = results.multiHandedness || [];
 
-            // During the 3-2-1 unlock, preserve the original behaviour and use the first detected hand.
+            // 1. Gesture 3-2-1 Countdown
             if (!countdownFinished) {
                 if (landmarksList.length > 0) {
                     const handLandmarks = landmarksList[0];
                     const fingerCount = countExtendedFingers(handLandmarks);
                     if (countdownStep === 3) {
                         if (fingerCount === 3 && (now - lastStepTime > 500)) {
-                            countdownStep = 2; lastStepTime = now; playSound(600,0.2,'sine');
-                            if (numDisplay) numDisplay.innerText='2';
-                            if (statusBadge) statusBadge.innerText='✨ 成功识别 3！现在请比出 2 根手指 ✌️ (2)';
-                        } else if (statusBadge) statusBadge.innerText=`📷 请比出 3 根手指 🖐️ (检测到: ${fingerCount} 根)`;
+                            countdownStep = 2; lastStepTime = now; playSound(600, 0.2, 'sine');
+                            if (numDisplay) numDisplay.innerText = '2';
+                            if (statusBadge) statusBadge.innerText = '✨ 成功识别 3！现在请比出 2 根手指 ✌️ (2)';
+                        } else if (statusBadge) statusBadge.innerText = `📷 请比出 3 根手指 🖐️ (检测到: ${fingerCount} 根)`;
                     } else if (countdownStep === 2) {
                         if (fingerCount === 2 && (now - lastStepTime > 500)) {
-                            countdownStep=1; lastStepTime=now; playSound(800,0.2,'sine');
-                            if (numDisplay) numDisplay.innerText='1';
-                            if (statusBadge) statusBadge.innerText='✨ 成功识别 2！最后比出 1 根手指 ☝️ (1)';
-                        } else if (statusBadge) statusBadge.innerText=`📷 请比出 2 根手指 ✌️ (检测到: ${fingerCount} 根)`;
+                            countdownStep = 1; lastStepTime = now; playSound(800, 0.2, 'sine');
+                            if (numDisplay) numDisplay.innerText = '1';
+                            if (statusBadge) statusBadge.innerText = '✨ 成功识别 2！最后比出 1 根手指 ☝️ (1)';
+                        } else if (statusBadge) statusBadge.innerText = `📷 请比出 2 根手指 ✌️ (检测到: ${fingerCount} 根)`;
                     } else if (countdownStep === 1) {
                         if (fingerCount === 1 && (now - lastStepTime > 500)) {
-                            countdownStep=0; countdownFinished=true; triggerSnapEffect();
-                            if (gestureBox) gestureBox.style.display='none';
-                            if (hologramInstr) hologramInstr.style.display='block';
-                            if (statusBadge) { statusBadge.innerText='🎉 倒计时完成！3D蛋糕逐渐显现中...'; statusBadge.style.background='rgba(0,184,148,.9)'; }
-                        } else if (statusBadge) statusBadge.innerText=`📷 请比出 1 根手指 ☝️ (检测到: ${fingerCount} 根)`;
+                            countdownStep = 0; 
+                            countdownFinished = true; 
+                            candlePlaced = true; // Auto-pass candle placement
+
+                            triggerSnapEffect();
+                            generateBalloons();
+                            triggerCandlePlacedBalloons();
+                            showCakeMediaGallery(); // Direct entry into song/media gallery
+
+                            if (gestureBox) gestureBox.style.display = 'none';
+                            if (hologramInstr) hologramInstr.style.display = 'block';
+                            if (statusBadge) { 
+                                statusBadge.innerText = '🎉 解锁成功！已直接进入生日歌单与媒体点播'; 
+                                statusBadge.style.background = 'rgba(0,184,148,.9)'; 
+                            }
+                        } else if (statusBadge) statusBadge.innerText = `📷 请比出 1 根手指 ☝️ (检测到: ${fingerCount} 根)`;
                     }
                 }
                 return;
             }
 
-            // Prefer the RIGHT hand. MediaPipe's handedness is from the user's mirrored camera view,
-            // but the label itself is already normalized by MediaPipe.
+            // 2. Direct Song Session / Media Gallery Hand Tracking
             let rightLandmarks = null;
-            let rightIndex = -1;
-            for (let i=0; i<landmarksList.length; i++) {
+            for (let i = 0; i < landmarksList.length; i++) {
                 const label = handednessList[i] && handednessList[i].label;
-                if (label === 'Right') { rightLandmarks = landmarksList[i]; rightIndex=i; break; }
+                if (label === 'Right') { rightLandmarks = landmarksList[i]; break; }
             }
-
-            // If only one hand is visible, MediaPipe can occasionally miss handedness for a frame.
-            // Use the single hand as a temporary fallback so the interaction does not freeze.
             if (!rightLandmarks && landmarksList.length === 1) {
                 rightLandmarks = landmarksList[0];
-                rightIndex = 0;
             }
 
             if (!rightLandmarks) {
                 if (statusBadge) {
-                    statusBadge.innerText = candlePlaced ? '🖐️ 请伸出右手控制媒体库' : '🤏 请用手捏住蜡烛拖到蛋糕中央';
-                    statusBadge.style.background='rgba(255,118,117,.8)';
+                    statusBadge.innerText = '🖐️ 请伸出右手控制音乐/视频媒体库';
+                    statusBadge.style.background = 'rgba(108,92,231,.8)';
                 }
-                isHoldingCandle=false;
-                if (candlePlaced) {
-                    galleryTargetScale += (0.85-galleryTargetScale)*0.08;
-                    targetScale += (1.0-targetScale)*0.05;
-                }
+                galleryTargetScale += (0.85 - galleryTargetScale) * 0.08;
+                targetScale += (1.0 - targetScale) * 0.05;
                 return;
             }
 
-            const thumbTip=rightLandmarks[4], indexTip=rightLandmarks[8], wrist=rightLandmarks[0];
-            const dx=thumbTip.x-indexTip.x, dy=thumbTip.y-indexTip.y, dz=thumbTip.z-indexTip.z;
-            const dist=Math.sqrt(dx*dx+dy*dy+dz*dz);
-            const isPinching=dist<0.065;
-            const fingerCount=countExtendedFingers(rightLandmarks);
+            const thumbTip = rightLandmarks[4], indexTip = rightLandmarks[8], wrist = rightLandmarks[0];
+            const dist = Math.hypot(thumbTip.x - indexTip.x, thumbTip.y - indexTip.y, thumbTip.z - indexTip.z);
+            const isPinching = dist < 0.065;
+            const fingerCount = countExtendedFingers(rightLandmarks);
 
-            const midX=(thumbTip.x+indexTip.x)/2, midY=(thumbTip.y+indexTip.y)/2;
-            const worldX=(0.5-midX)*16, worldY=(0.5-midY)*12+1;
+            // Scale particle cake & gallery with hand openness
+            const openness = fingerCount / 5;
+            targetScale = Math.max(0.55, Math.min(0.65 + openness * 0.95, 1.65));
+            galleryTargetScale = 0.62 + openness * 0.78;
 
-            if (!candlePlaced) {
-                // 🕯️ NEW CANDLE RULE:
-                // The candle does NOT need to reach the cake center.
-                // As soon as the candle is moved by the right-hand gesture,
-                // the candle-placement session is considered finished.
-                if (isPinching) {
-                    const oldX = candleSystem.position.x;
-                    const oldY = candleSystem.position.y;
-
-                    isHoldingCandle = true;
-
-                    // Move candle normally while the user pinches.
-                    candleSystem.position.x += (worldX - candleSystem.position.x) * 0.15;
-                    candleSystem.position.y += (worldY - candleSystem.position.y) * 0.15;
-
-                    const movement = Math.hypot(
-                        candleSystem.position.x - oldX,
-                        candleSystem.position.y - oldY
-                    );
-
-                    if (movement > 0.008) {
-                        candleGestureStarted = true;
-
-                        // Immediately finish candle placement.
-                        candlePlaced = true;
-
-                        if (statusBadge) {
-                            statusBadge.innerText = '🎂 蜡烛摆放完成！现在可以控制媒体库';
-                            statusBadge.style.background = 'rgba(0,184,148,.95)';
-                        }
-
-                        const toast = document.getElementById('cake-completion-toast');
-                        if (toast) {
-                            toast.style.display = 'block';
-                            if (cakeCompletionToastTimer) clearTimeout(cakeCompletionToastTimer);
-                            cakeCompletionToastTimer = setTimeout(() => {
-                                toast.style.display = 'none';
-                            }, 5000);
-                        }
-
-                        showCakeMediaGallery();
-                        generateBalloons();
-                        triggerSnapEffect();
-                        triggerCandlePlacedBalloons();
-
-                        // Keep the candle exactly where the gesture left it.
-                        // No center snapping and no double-click required.
-                    } else if (statusBadge) {
-                        statusBadge.innerText = '🤏 正在移动蜡烛…';
-                        statusBadge.style.background = 'rgba(0,184,148,.8)';
-                    }
-                } else if (isHoldingCandle) {
-                    isHoldingCandle = false;
-                    if (statusBadge) {
-                        statusBadge.innerText = '🤏 请移动蜡烛以完成摆放';
-                        statusBadge.style.background = 'rgba(255,118,117,.8)';
-                    }
-                } else if (statusBadge) {
-                    statusBadge.innerText = '🤏 请用右手捏住并移动蜡烛';
-                    statusBadge.style.background = 'rgba(255,118,117,.8)';
-                }
-                return;
-            }
-
-            // ----- AFTER CANDLE: real-time particle scaling + media gallery -----
-            // Open hand = larger, closed hand = smaller. This continuously drives both systems.
-            const openness=fingerCount/5;
-            const liveScale=0.65 + openness*0.95;
-            targetScale=Math.max(0.55,Math.min(liveScale,1.65));
-            galleryTargetScale=0.62 + openness*0.78;
-
-            // Swipe detection from right-hand wrist movement.
+            // Swipe to rotate gallery songs
             if (gallerySwipeLastX !== null) {
-                const deltaX=wrist.x-gallerySwipeLastX;
-                if (Math.abs(deltaX)>0.018 && now-gallerySwipeCooldown>250) {
-                    gallerySwipeStartX = gallerySwipeStartX===null ? gallerySwipeLastX : gallerySwipeStartX;
-                    const accumulated=wrist.x-gallerySwipeStartX;
-                    if (Math.abs(accumulated)>0.075) {
-                        if (accumulated<0) spinCakeGallery(1); else spinCakeGallery(-1);
-                        gallerySwipeCooldown=now;
-                        gallerySwipeStartX=wrist.x;
+                const deltaX = wrist.x - gallerySwipeLastX;
+                if (Math.abs(deltaX) > 0.018 && now - gallerySwipeCooldown > 250) {
+                    gallerySwipeStartX = gallerySwipeStartX === null ? gallerySwipeLastX : gallerySwipeStartX;
+                    const accumulated = wrist.x - gallerySwipeStartX;
+                    if (Math.abs(accumulated) > 0.075) {
+                        if (accumulated < 0) spinCakeGallery(1); else spinCakeGallery(-1);
+                        gallerySwipeCooldown = now;
+                        gallerySwipeStartX = wrist.x;
                     }
                 }
             } else {
-                gallerySwipeStartX=wrist.x;
+                gallerySwipeStartX = wrist.x;
             }
-            gallerySwipeLastX=wrist.x;
+            gallerySwipeLastX = wrist.x;
 
-            // Pinch has edge-trigger semantics: one pinch = one play. Holding the pinch won't restart it.
+            // Pinch gesture to play current song/video
             if (isPinching && !galleryPinchWasActive) {
                 playSelectedCakeGalleryItem();
             }
-            galleryPinchWasActive=isPinching;
+            galleryPinchWasActive = isPinching;
 
             if (statusBadge) {
                 if (isPinching) {
-                    statusBadge.innerText=`🤏 已选择：${galleryItems[galleryIndex]?.title || '媒体'}｜松开后再次捏合可重新播放`;
-                    statusBadge.style.background='rgba(0,184,148,.9)';
+                    statusBadge.innerText = `🤏 正在播放：${galleryItems[galleryIndex]?.title || '媒体'}`;
+                    statusBadge.style.background = 'rgba(0,184,148,.9)';
                 } else {
-                    statusBadge.innerText=`👉 右手挥动旋转｜🖐️ 手指 ${fingerCount} 根：媒体库 ${(galleryTargetScale).toFixed(1)}x｜粒子 ${(targetScale).toFixed(1)}x`;
-                    statusBadge.style.background='rgba(108,92,231,.9)';
+                    statusBadge.innerText = `👉 右手左右挥动切歌｜🤏 捏合播放｜🖐️ 张开/握拳调节画面`;
+                    statusBadge.style.background = 'rgba(108,92,231,.9)';
                 }
             }
         });
@@ -1906,7 +1838,7 @@
         if (mediapipeCamera) { try { mediapipeCamera.stop(); } catch(e){} }
         mediapipeCamera = new Camera(videoElement, {
             onFrame: async () => { await hands.send({image: videoElement}); },
-            width:320, height:240
+            width: 320, height: 240
         });
         mediapipeCamera.start();
     }
