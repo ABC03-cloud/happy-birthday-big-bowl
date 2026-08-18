@@ -1122,7 +1122,7 @@
         /* --- TOUCHLESS VIDEO / MUSIC GALLERY --- */
         #cake-media-gallery {
             position:absolute; left:50%; top:46%; transform:translate(-50%,-50%) scale(0.85);
-            width:min(92vw,760px); height:250px; z-index:5004; pointer-events:auto;
+            width:min(92vw,760px); height:250px; z-index:5004; pointer-events:none;
             display:none; perspective:1200px; transition:transform .12s ease-out, opacity .25s ease;
             opacity:0;
         }
@@ -1372,7 +1372,6 @@
         <div class="gallery-hud" id="gallery-hud">👉 右手左右挥动：旋转选择　🤏 右手捏合：播放　🖐️ 张开/握拳：放大/缩小</div>
         <div class="gallery-track" id="gallery-track"></div>
         <div class="gallery-help" id="gallery-help">等待右手手势…</div>
-        <button id="gallery-touch-playpause" type="button" style="position:absolute;left:50%;bottom:-58px;transform:translateX(-50%);z-index:20;border:2px solid var(--gold);border-radius:16px;background:rgba(20,10,35,.9);color:#fff;padding:9px 18px;font-weight:800;cursor:pointer;touch-action:manipulation;box-shadow:0 0 18px rgba(255,215,0,.35);">▶️ 播放</button>
     </div>
 
     <div class="hologram-ui">
@@ -1482,15 +1481,20 @@
         { type:'video', title:'搞怪爆笑视频 1', icon:'🎬', src:'cake-video-1.mp4' },
         { type:'video', title:'搞怪爆笑视频 2', icon:'🎥', src:'cake-video-2.mp4' },
         { type:'audio', title:'左肩', icon:'🎵', src:'cake-video-3.mp4' },
-        { type:'audio', title:'但愿人长久 2', icon:'🎶', src:'cake-video-4.mp4' }
+        { type:'audio', title:'但愿人长久 2', icon:'🎶', src:'cake-video-4.mp4' },
+        { type:'video', title:'视频 5', icon:'🎬', src:'cake-video-5.mp4' },
+        { type:'video', title:'视频 6', icon:'🎥', src:'cake-video-6.mp4' },
+        { type:'video', title:'视频 7', icon:'🎞️', src:'cake-video-7.mp4' },
+        { type:'video', title:'视频 8', icon:'🎬', src:'cake-video-8.mp4' },
+        { type:'video', title:'视频 9', icon:'🎥', src:'cake-video-9.mp4' },
+        { type:'video', title:'视频 10', icon:'🎞️', src:'cake-video-10.mp4' }
     ];
 
     // 蜡烛互动状态
     let isHoldingCandle = false;
     let candlePlaced = false;
-    let candleReleasedOnCake = false;
-    let candleDoubleClickArmed = false;
-    let galleryTouchPauseButton = null;
+    let candleMovedByGesture = false;
+    let candleAwaitingDoubleClick = false;
 
     // 手势 3-2-1 倒计时控制变量
     let countdownStep = 3; 
@@ -1498,10 +1502,10 @@
     let lastStepTime = 0;
 
     function init3DHologramCake() {
+        setupCandleDoubleClick();
         const container = document.getElementById('hologram-container');
         const canvasWrapper = document.getElementById('three-canvas-container');
         container.style.display = 'flex';
-        attachCakeTouchControls();
         
         pauseBGM();
 
@@ -1514,10 +1518,6 @@
         if (cakeCompletionToastTimer) { clearTimeout(cakeCompletionToastTimer); cakeCompletionToastTimer = null; }
         if (toast) toast.style.display = 'none';
         resetCakeMediaGallery();
-        candlePlaced = false;
-        isHoldingCandle = false;
-        candleReleasedOnCake = false;
-        candleDoubleClickArmed = false;
 
         const gestureBox = document.getElementById('countdown-gesture-box');
         const numDisplay = document.getElementById('gesture-num-display');
@@ -1549,6 +1549,8 @@
             if (candleSystem) {
                 candleSystem.position.set(4, 2, 0); 
                 candlePlaced = false;
+                candleMovedByGesture = false;
+                candleAwaitingDoubleClick = false;
                 isHoldingCandle = false;
             }
         }
@@ -1713,6 +1715,41 @@
         }
     }
 
+
+    // Double-click anywhere on the 3D canvas after the candle has been moved by gesture
+    // to explicitly finish the candle-placement session. No pixel-perfect candle targeting.
+    function setupCandleDoubleClick() {
+        const canvas = document.getElementById('three-canvas');
+        if (!canvas || canvas.dataset.candleDblClickReady === '1') return;
+        canvas.dataset.candleDblClickReady = '1';
+        canvas.addEventListener('dblclick', () => {
+            if (candlePlaced || !candleAwaitingDoubleClick || !candleMovedByGesture) return;
+
+            candlePlaced = true;
+            candleAwaitingDoubleClick = false;
+            candleMovedByGesture = false;
+            if (candleSystem && cakeSystem) candleSystem.rotation.y = cakeSystem.rotation.y;
+
+            const statusBadge = document.getElementById('hand-status');
+            if (statusBadge) {
+                statusBadge.innerText='🎂 放置完成！蛋糕仪式完成，漫天气球升起！';
+                statusBadge.style.background='rgba(0,184,148,.95)';
+            }
+
+            const toast = document.getElementById('cake-completion-toast');
+            if (toast) {
+                toast.style.display='block';
+                if (cakeCompletionToastTimer) clearTimeout(cakeCompletionToastTimer);
+                cakeCompletionToastTimer=setTimeout(()=>{ toast.style.display='none'; },5000);
+            }
+
+            showCakeMediaGallery();
+            generateBalloons();
+            triggerSnapEffect();
+            triggerCandlePlacedBalloons();
+        });
+    }
+
     function initHandTracking() {
         const videoElement = document.getElementById('webcam-video');
         const statusBadge = document.getElementById('hand-status');
@@ -1800,29 +1837,27 @@
             const worldX=(0.5-midX)*16, worldY=(0.5-midY)*12+1;
 
             if (!candlePlaced) {
-                // Original candle-placement interaction remains unchanged, using the right hand when available.
+                // Easier candle interaction: gesture-move the candle, release anywhere after
+                // it has been moved, then DOUBLE-CLICK the candle on screen to finish.
                 if (isPinching) {
                     isHoldingCandle=true;
-                    if (statusBadge) { statusBadge.innerText='🤏 拖动蜡烛放到正中蛋糕顶部！'; statusBadge.style.background='rgba(0,184,148,.8)'; }
-                    candleSystem.position.x += (worldX-candleSystem.position.x)*0.15;
-                    candleSystem.position.y += (worldY-candleSystem.position.y)*0.15;
+                    candleMovedByGesture=true;
+                    candleAwaitingDoubleClick=false;
+                    if (statusBadge) { statusBadge.innerText='🤏 正在移动蜡烛……松开后双击蜡烛即可完成'; statusBadge.style.background='rgba(0,184,148,.8)'; }
+                    candleSystem.position.x += (worldX-candleSystem.position.x)*0.22;
+                    candleSystem.position.y += (worldY-candleSystem.position.y)*0.22;
                 } else if (isHoldingCandle) {
                     isHoldingCandle=false;
-                    // Much more forgiving placement zone: the candle only needs to be over the cake.
-                    // Releasing the pinch NEVER ends the session; the user must double-click the candle.
-                    if (Math.abs(candleSystem.position.x)<4.2 && candleSystem.position.y>-2.0 && candleSystem.position.y<4.8) {
-                        candleReleasedOnCake=true;
-                        candleDoubleClickArmed=true;
-                        if (statusBadge) {
-                            statusBadge.innerText='🕯️ 蜡烛已放到蛋糕上！请双击屏幕上的蜡烛结束摆放';
-                            statusBadge.style.background='rgba(0,184,148,.95)';
-                        }
-                    } else if (statusBadge) {
-                        statusBadge.innerText='✋ 请把蜡烛放到蛋糕上，再松开手';
-                        statusBadge.style.background='rgba(255,118,117,.8)';
+                    candleAwaitingDoubleClick = candleMovedByGesture;
+                    // Do NOT require precise centering. Any released position is accepted as
+                    // the candidate candle position; double-click is the explicit completion action.
+                    if (statusBadge) {
+                        statusBadge.innerText='🕯️ 蜡烛已放置！请双击屏幕上的蜡烛，结束摆放';
+                        statusBadge.style.background='rgba(0,184,148,.95)';
                     }
                 } else if (statusBadge) {
-                    statusBadge.innerText='✋ 请用右手捏住右侧蜡烛并拖到蛋糕上'; statusBadge.style.background='rgba(255,118,117,.8)';
+                    statusBadge.innerText='🤏 请用右手捏住并移动蜡烛；放开后双击蜡烛结束';
+                    statusBadge.style.background='rgba(255,118,117,.8)';
                 }
                 return;
             }
@@ -1969,16 +2004,10 @@
             media=new Audio(item.src); media.loop=true; media.autoplay=true; media.dataset.galleryIndex=galleryIndex;
         }
         galleryMediaElement=media;
-        if (item.type==='video') {
-            media.addEventListener('click', (e)=>{ e.preventDefault(); toggleCakeGalleryMedia(); });
-        }
-        media.addEventListener('play', updateGalleryTouchButton);
-        media.addEventListener('pause', updateGalleryTouchButton);
         const playPromise=media.play();
         if (playPromise && playPromise.catch) playPromise.catch(()=>{});
         updateCakeGalleryVisuals(false);
         playSound(1046.5,0.12,'sine');
-        updateGalleryTouchButton();
     }
 
     function stopCakeGalleryMedia() {
@@ -1987,7 +2016,6 @@
         if (galleryMediaElement.tagName==='VIDEO' && galleryMediaElement.parentNode) galleryMediaElement.remove();
         galleryMediaElement=null;
         updateCakeGalleryVisuals(false);
-        updateGalleryTouchButton();
     }
 
     // Keep gallery scale/particle response smooth every animation frame.
@@ -2021,82 +2049,6 @@
         }, 25);
     }
 
-    function completeCandlePlacementByDoubleClick(clientX, clientY) {
-        if (candlePlaced || !candleReleasedOnCake || !candleDoubleClickArmed || !candleSystem || !threeCamera || !threeRenderer) return false;
-        const rect = threeRenderer.domElement.getBoundingClientRect();
-        const x = ((clientX - rect.left) / rect.width) * 2 - 1;
-        const y = -(((clientY - rect.top) / rect.height) * 2 - 1);
-        const projected = candleSystem.position.clone().project(threeCamera);
-        const px = (projected.x + 1) * 0.5 * rect.width;
-        const py = (1 - projected.y) * 0.5 * rect.height;
-        const distance = Math.hypot((clientX - rect.left) - px, (clientY - rect.top) - py);
-        // Generous hit radius makes the required double-click easy, while still requiring the candle itself.
-        const hitRadius = Math.max(70, Math.min(rect.width, rect.height) * 0.12);
-        if (distance > hitRadius) {
-            if (statusBadge) {
-                statusBadge.innerText='🕯️ 请双击屏幕上蜡烛的位置';
-                statusBadge.style.background='rgba(255,118,117,.9)';
-            }
-            return false;
-        }
-        candlePlaced = true;
-        candleReleasedOnCake = false;
-        candleDoubleClickArmed = false;
-        candleSystem.position.set(0,-2,0);
-        candleSystem.rotation.y = cakeSystem.rotation.y;
-        if (statusBadge) {
-            statusBadge.innerText='🎂 插蜡烛完成！5秒提示后进入媒体库';
-            statusBadge.style.background='rgba(0,184,148,.95)';
-        }
-        const toast=document.getElementById('cake-completion-toast');
-        if (toast) {
-            toast.style.display='block';
-            if (cakeCompletionToastTimer) clearTimeout(cakeCompletionToastTimer);
-            cakeCompletionToastTimer=setTimeout(()=>{ toast.style.display='none'; },5000);
-        }
-        showCakeMediaGallery();
-        generateBalloons(); triggerSnapEffect(); triggerCandlePlacedBalloons();
-        return true;
-    }
-
-    function toggleCakeGalleryMedia() {
-        if (!galleryMediaElement) {
-            playSelectedCakeGalleryItem();
-            return;
-        }
-        try {
-            if (galleryMediaElement.paused) {
-                const promise = galleryMediaElement.play();
-                if (promise && promise.catch) promise.catch(()=>{});
-            } else {
-                galleryMediaElement.pause();
-            }
-        } catch(e) {}
-        updateCakeGalleryVisuals(false);
-        updateGalleryTouchButton();
-    }
-
-    function updateGalleryTouchButton() {
-        const btn=document.getElementById('gallery-touch-playpause');
-        if (!btn) return;
-        if (!galleryMediaElement) { btn.innerText='▶️ 播放'; return; }
-        btn.innerText=galleryMediaElement.paused ? '▶️ 播放' : '⏸️ 暂停';
-    }
-
-    function attachCakeTouchControls() {
-        const wrapper=document.getElementById('three-canvas-container');
-        if (!wrapper || wrapper.dataset.touchControlsAttached==='1') return;
-        wrapper.dataset.touchControlsAttached='1';
-        wrapper.addEventListener('dblclick', (e)=>{
-            if (completeCandlePlacementByDoubleClick(e.clientX,e.clientY)) e.preventDefault();
-        });
-        const btn=document.getElementById('gallery-touch-playpause');
-        if (btn) {
-            btn.addEventListener('click', (e)=>{ e.stopPropagation(); toggleCakeGalleryMedia(); });
-            btn.addEventListener('touchend', (e)=>{ e.preventDefault(); e.stopPropagation(); toggleCakeGalleryMedia(); }, {passive:false});
-        }
-    }
-
     function close3DHologramCake() {
         document.getElementById('hologram-container').style.display = 'none';
         cancelAnimationFrame(animationId);
@@ -2108,7 +2060,6 @@
         const toast=document.getElementById('cake-completion-toast');
         if (toast) toast.style.display='none';
         resetCakeMediaGallery();
-        candlePlaced=false; isHoldingCandle=false; candleReleasedOnCake=false; candleDoubleClickArmed=false;
         playBGM('song3'); 
     }
 
