@@ -1481,20 +1481,21 @@
         { type:'video', title:'搞怪爆笑视频 1', icon:'🎬', src:'cake-video-1.mp4' },
         { type:'video', title:'搞怪爆笑视频 2', icon:'🎥', src:'cake-video-2.mp4' },
         { type:'audio', title:'左肩', icon:'🎵', src:'cake-video-3.mp4' },
-        { type:'audio', title:'但愿人长久 2', icon:'🎶', src:'cake-video-4.mp4' },
-        { type:'video', title:'视频 5', icon:'🎬', src:'cake-video-5.mp4' },
-        { type:'video', title:'视频 6', icon:'🎥', src:'cake-video-6.mp4' },
-        { type:'video', title:'视频 7', icon:'🎞️', src:'cake-video-7.mp4' },
-        { type:'video', title:'视频 8', icon:'🎬', src:'cake-video-8.mp4' },
-        { type:'video', title:'视频 9', icon:'🎥', src:'cake-video-9.mp4' },
-        { type:'video', title:'视频 10', icon:'🎞️', src:'cake-video-10.mp4' }
+        { type:'audio', title:'但愿人长久', icon:'🎶', src:'cake-video-4.mp4' },
+        { type:'video', title:'盛夏的果实 ', icon:'🎵', src:'cake-video-5.mp4' },
+        { type:'video', title:'平凡之路', icon:'🎶', src:'cake-video-6.mp4' },
+        { type:'video', title:'遇见最好的你', icon:'🎵', src:'cake-video-7.mp4' },
+        { type:'video', title:'过火', icon:'🎶', src:'cake-video-8.mp4' },
+        { type:'video', title:'big big world', icon:'🎵', src:'cake-video-9.mp4' },
+        { type:'video', title:'甜甜的', icon:'🎶', src:'cake-video-10.mp4' }
     ];
 
     // 蜡烛互动状态
     let isHoldingCandle = false;
     let candlePlaced = false;
-    let candleMovedByGesture = false;
-    let candleAwaitingDoubleClick = false;
+    // Once the candle has been moved by gesture, the candle-placement
+    // session ends on the first valid movement/release cycle.
+    let candleGestureStarted = false;
 
     // 手势 3-2-1 倒计时控制变量
     let countdownStep = 3; 
@@ -1502,10 +1503,8 @@
     let lastStepTime = 0;
 
     function init3DHologramCake() {
-        setupCandleDoubleClick();
         const container = document.getElementById('hologram-container');
-        const canvasWrapper = document.getElementById('three-canvas-container');
-        container.style.display = 'flex';
+        const canvasWrapper = container.style.display = 'flex';
         
         pauseBGM();
 
@@ -1549,8 +1548,6 @@
             if (candleSystem) {
                 candleSystem.position.set(4, 2, 0); 
                 candlePlaced = false;
-                candleMovedByGesture = false;
-                candleAwaitingDoubleClick = false;
                 isHoldingCandle = false;
             }
         }
@@ -1715,41 +1712,6 @@
         }
     }
 
-
-    // Double-click anywhere on the 3D canvas after the candle has been moved by gesture
-    // to explicitly finish the candle-placement session. No pixel-perfect candle targeting.
-    function setupCandleDoubleClick() {
-        const canvas = document.getElementById('three-canvas');
-        if (!canvas || canvas.dataset.candleDblClickReady === '1') return;
-        canvas.dataset.candleDblClickReady = '1';
-        canvas.addEventListener('dblclick', () => {
-            if (candlePlaced || !candleAwaitingDoubleClick || !candleMovedByGesture) return;
-
-            candlePlaced = true;
-            candleAwaitingDoubleClick = false;
-            candleMovedByGesture = false;
-            if (candleSystem && cakeSystem) candleSystem.rotation.y = cakeSystem.rotation.y;
-
-            const statusBadge = document.getElementById('hand-status');
-            if (statusBadge) {
-                statusBadge.innerText='🎂 放置完成！蛋糕仪式完成，漫天气球升起！';
-                statusBadge.style.background='rgba(0,184,148,.95)';
-            }
-
-            const toast = document.getElementById('cake-completion-toast');
-            if (toast) {
-                toast.style.display='block';
-                if (cakeCompletionToastTimer) clearTimeout(cakeCompletionToastTimer);
-                cakeCompletionToastTimer=setTimeout(()=>{ toast.style.display='none'; },5000);
-            }
-
-            showCakeMediaGallery();
-            generateBalloons();
-            triggerSnapEffect();
-            triggerCandlePlacedBalloons();
-        });
-    }
-
     function initHandTracking() {
         const videoElement = document.getElementById('webcam-video');
         const statusBadge = document.getElementById('hand-status');
@@ -1837,27 +1799,65 @@
             const worldX=(0.5-midX)*16, worldY=(0.5-midY)*12+1;
 
             if (!candlePlaced) {
-                // Easier candle interaction: gesture-move the candle, release anywhere after
-                // it has been moved, then DOUBLE-CLICK the candle on screen to finish.
+                // 🕯️ NEW CANDLE RULE:
+                // The candle does NOT need to reach the cake center.
+                // As soon as the candle is moved by the right-hand gesture,
+                // the candle-placement session is considered finished.
                 if (isPinching) {
-                    isHoldingCandle=true;
-                    candleMovedByGesture=true;
-                    candleAwaitingDoubleClick=false;
-                    if (statusBadge) { statusBadge.innerText='🤏 正在移动蜡烛……松开后双击蜡烛即可完成'; statusBadge.style.background='rgba(0,184,148,.8)'; }
-                    candleSystem.position.x += (worldX-candleSystem.position.x)*0.22;
-                    candleSystem.position.y += (worldY-candleSystem.position.y)*0.22;
+                    const oldX = candleSystem.position.x;
+                    const oldY = candleSystem.position.y;
+
+                    isHoldingCandle = true;
+
+                    // Move candle normally while the user pinches.
+                    candleSystem.position.x += (worldX - candleSystem.position.x) * 0.15;
+                    candleSystem.position.y += (worldY - candleSystem.position.y) * 0.15;
+
+                    const movement = Math.hypot(
+                        candleSystem.position.x - oldX,
+                        candleSystem.position.y - oldY
+                    );
+
+                    if (movement > 0.008) {
+                        candleGestureStarted = true;
+
+                        // Immediately finish candle placement.
+                        candlePlaced = true;
+
+                        if (statusBadge) {
+                            statusBadge.innerText = '🎂 蜡烛摆放完成！现在可以控制媒体库';
+                            statusBadge.style.background = 'rgba(0,184,148,.95)';
+                        }
+
+                        const toast = document.getElementById('cake-completion-toast');
+                        if (toast) {
+                            toast.style.display = 'block';
+                            if (cakeCompletionToastTimer) clearTimeout(cakeCompletionToastTimer);
+                            cakeCompletionToastTimer = setTimeout(() => {
+                                toast.style.display = 'none';
+                            }, 5000);
+                        }
+
+                        showCakeMediaGallery();
+                        generateBalloons();
+                        triggerSnapEffect();
+                        triggerCandlePlacedBalloons();
+
+                        // Keep the candle exactly where the gesture left it.
+                        // No center snapping and no double-click required.
+                    } else if (statusBadge) {
+                        statusBadge.innerText = '🤏 正在移动蜡烛…';
+                        statusBadge.style.background = 'rgba(0,184,148,.8)';
+                    }
                 } else if (isHoldingCandle) {
-                    isHoldingCandle=false;
-                    candleAwaitingDoubleClick = candleMovedByGesture;
-                    // Do NOT require precise centering. Any released position is accepted as
-                    // the candidate candle position; double-click is the explicit completion action.
+                    isHoldingCandle = false;
                     if (statusBadge) {
-                        statusBadge.innerText='🕯️ 蜡烛已放置！请双击屏幕上的蜡烛，结束摆放';
-                        statusBadge.style.background='rgba(0,184,148,.95)';
+                        statusBadge.innerText = '🤏 请移动蜡烛以完成摆放';
+                        statusBadge.style.background = 'rgba(255,118,117,.8)';
                     }
                 } else if (statusBadge) {
-                    statusBadge.innerText='🤏 请用右手捏住并移动蜡烛；放开后双击蜡烛结束';
-                    statusBadge.style.background='rgba(255,118,117,.8)';
+                    statusBadge.innerText = '🤏 请用右手捏住并移动蜡烛';
+                    statusBadge.style.background = 'rgba(255,118,117,.8)';
                 }
                 return;
             }
