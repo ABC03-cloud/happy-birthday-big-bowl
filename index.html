@@ -1122,7 +1122,7 @@
         /* --- TOUCHLESS VIDEO / MUSIC GALLERY --- */
         #cake-media-gallery {
             position:absolute; left:50%; top:46%; transform:translate(-50%,-50%) scale(0.85);
-            width:min(92vw,760px); height:250px; z-index:5004; pointer-events:none;
+            width:min(92vw,760px); height:250px; z-index:5004; pointer-events:auto;
             display:none; perspective:1200px; transition:transform .12s ease-out, opacity .25s ease;
             opacity:0;
         }
@@ -1369,9 +1369,10 @@
 
     <!-- TOUCHLESS VIDEO / MUSIC GALLERY -->
     <div id="cake-media-gallery">
-        <div class="gallery-hud" id="gallery-hud">👉 右手左右挥动：旋转选择　🤏 捏合：播放　🤏×3 三次捏合：关闭媒体　🖐️ 张开/握拳：实时缩放</div>
+        <div class="gallery-hud" id="gallery-hud">👉 右手左右挥动：旋转选择　🤏 右手捏合：播放　🖐️ 张开/握拳：放大/缩小</div>
         <div class="gallery-track" id="gallery-track"></div>
         <div class="gallery-help" id="gallery-help">等待右手手势…</div>
+        <button id="gallery-touch-playpause" type="button" style="position:absolute;left:50%;bottom:-58px;transform:translateX(-50%);z-index:20;border:2px solid var(--gold);border-radius:16px;background:rgba(20,10,35,.9);color:#fff;padding:9px 18px;font-weight:800;cursor:pointer;touch-action:manipulation;box-shadow:0 0 18px rgba(255,215,0,.35);">▶️ 播放</button>
     </div>
 
     <div class="hologram-ui">
@@ -1384,7 +1385,7 @@
         <div class="hand-status-badge" id="hand-status">📷 正在启动红外传感器... 请允许摄像头权限</div>
         
         <p id="hologram-instruction" style="font-size: 12px; color: #ffeaa7; text-shadow: 0 1px 2px #000; margin-bottom: 12px; display: none;">
-            ✋ 蜡烛需先用右手捏合拖到蛋糕上，再在屏幕蜡烛上双击确认。完成后：右手左右挥动旋转媒体库；🤏 捏合播放；🤏×3 三次捏合关闭正在播放的媒体；🖐️ 张开/握拳实时控制蛋糕粒子与媒体库大小。
+            ✋ 完成蜡烛后：右手左右挥动旋转媒体库；🤏 捏合播放当前媒体；🖐️ 张开/握拳实时控制蛋糕粒子与媒体库大小。
         </p>
         <button class="btn-action" onclick="close3DHologramCake()" style="padding: 4px 16px; font-size: 12px; margin-top: 4px;">退出全息模式 ✕</button>
     </div>
@@ -1475,14 +1476,6 @@
     let galleryCurrentScale = 0.85;
     let galleryTargetScale = 0.85;
     let galleryMediaElement = null;
-    let galleryPinchCount = 0;
-    let galleryLastPinchAt = 0;
-    const GALLERY_TRIPLE_PINCH_WINDOW = 1800;
-
-    // Candle placement now has a confirmation stage: the candle must be touchlessly
-    // placed over the cake first, then the user must double-click the candle on screen.
-    let candleReadyForConfirmation = false;
-    let candleDoubleClickHandlerAttached = false;
 
     // Change these filenames to your own media files. Keep them in the same folder as this HTML file.
     const CAKE_GALLERY_ITEMS = [
@@ -1495,6 +1488,9 @@
     // 蜡烛互动状态
     let isHoldingCandle = false;
     let candlePlaced = false;
+    let candleReleasedOnCake = false;
+    let candleDoubleClickArmed = false;
+    let galleryTouchPauseButton = null;
 
     // 手势 3-2-1 倒计时控制变量
     let countdownStep = 3; 
@@ -1505,6 +1501,7 @@
         const container = document.getElementById('hologram-container');
         const canvasWrapper = document.getElementById('three-canvas-container');
         container.style.display = 'flex';
+        attachCakeTouchControls();
         
         pauseBGM();
 
@@ -1517,7 +1514,10 @@
         if (cakeCompletionToastTimer) { clearTimeout(cakeCompletionToastTimer); cakeCompletionToastTimer = null; }
         if (toast) toast.style.display = 'none';
         resetCakeMediaGallery();
-        candleReadyForConfirmation = false;
+        candlePlaced = false;
+        isHoldingCandle = false;
+        candleReleasedOnCake = false;
+        candleDoubleClickArmed = false;
 
         const gestureBox = document.getElementById('countdown-gesture-box');
         const numDisplay = document.getElementById('gesture-num-display');
@@ -1542,7 +1542,6 @@
             threeRenderer.setSize(window.innerWidth, window.innerHeight);
             threeRenderer.setPixelRatio(window.devicePixelRatio);
             canvasWrapper.appendChild(threeRenderer.domElement);
-            attachCandleDoubleClickHandler();
 
             createParticleCake();
         } else {
@@ -1550,12 +1549,10 @@
             if (candleSystem) {
                 candleSystem.position.set(4, 2, 0); 
                 candlePlaced = false;
-                candleReadyForConfirmation = false;
                 isHoldingCandle = false;
             }
         }
 
-        attachCandleDoubleClickHandler();
         animate3DCake();
         initHandTracking();
     }
@@ -1786,7 +1783,6 @@
                     statusBadge.style.background='rgba(255,118,117,.8)';
                 }
                 isHoldingCandle=false;
-                galleryPinchWasActive=false;
                 if (candlePlaced) {
                     galleryTargetScale += (0.85-galleryTargetScale)*0.08;
                     targetScale += (1.0-targetScale)*0.05;
@@ -1804,37 +1800,29 @@
             const worldX=(0.5-midX)*16, worldY=(0.5-midY)*12+1;
 
             if (!candlePlaced) {
-                // Stage 1: touchless hold + drag the candle onto the cake.
-                // Stage 2: release over the cake, but DO NOT finish yet.
-                // Stage 3: double-click the on-screen candle to end the candle session.
-                if (candleReadyForConfirmation) {
-                    if (statusBadge) {
-                        statusBadge.innerText='🕯️ 蜡烛已放到蛋糕上｜请在屏幕上的蜡烛上双击完成';
-                        statusBadge.style.background='rgba(0,184,148,.95)';
-                    }
-                    return;
-                }
-
+                // Original candle-placement interaction remains unchanged, using the right hand when available.
                 if (isPinching) {
                     isHoldingCandle=true;
-                    if (statusBadge) { statusBadge.innerText='🤏 保持捏合，拖动蜡烛放到正中蛋糕顶部！'; statusBadge.style.background='rgba(0,184,148,.8)'; }
+                    if (statusBadge) { statusBadge.innerText='🤏 拖动蜡烛放到正中蛋糕顶部！'; statusBadge.style.background='rgba(0,184,148,.8)'; }
                     candleSystem.position.x += (worldX-candleSystem.position.x)*0.15;
                     candleSystem.position.y += (worldY-candleSystem.position.y)*0.15;
                 } else if (isHoldingCandle) {
                     isHoldingCandle=false;
-                    if (Math.abs(candleSystem.position.x)<2.5 && candleSystem.position.y>-1.0 && candleSystem.position.y<4.0) {
-                        candleReadyForConfirmation=true;
-                        candleSystem.position.set(0,-2,0);
-                        candleSystem.rotation.y=cakeSystem.rotation.y;
+                    // Much more forgiving placement zone: the candle only needs to be over the cake.
+                    // Releasing the pinch NEVER ends the session; the user must double-click the candle.
+                    if (Math.abs(candleSystem.position.x)<4.2 && candleSystem.position.y>-2.0 && candleSystem.position.y<4.8) {
+                        candleReleasedOnCake=true;
+                        candleDoubleClickArmed=true;
                         if (statusBadge) {
-                            statusBadge.innerText='🕯️ 蜡烛已放到蛋糕上！请在屏幕上的蜡烛上双击，结束摆放';
+                            statusBadge.innerText='🕯️ 蜡烛已放到蛋糕上！请双击屏幕上的蜡烛结束摆放';
                             statusBadge.style.background='rgba(0,184,148,.95)';
                         }
                     } else if (statusBadge) {
-                        statusBadge.innerText='✋ 请将蜡烛放置到蛋糕正上方~'; statusBadge.style.background='rgba(255,118,117,.8)';
+                        statusBadge.innerText='✋ 请把蜡烛放到蛋糕上，再松开手';
+                        statusBadge.style.background='rgba(255,118,117,.8)';
                     }
                 } else if (statusBadge) {
-                    statusBadge.innerText='✋ 请用右手捏住蜡烛并拖到蛋糕上，然后松开'; statusBadge.style.background='rgba(255,118,117,.8)';
+                    statusBadge.innerText='✋ 请用右手捏住右侧蜡烛并拖到蛋糕上'; statusBadge.style.background='rgba(255,118,117,.8)';
                 }
                 return;
             }
@@ -1863,27 +1851,9 @@
             }
             gallerySwipeLastX=wrist.x;
 
-            // Pinch has edge-trigger semantics. Three distinct pinches within the
-            // configured window close the currently playing video/song.
+            // Pinch has edge-trigger semantics: one pinch = one play. Holding the pinch won't restart it.
             if (isPinching && !galleryPinchWasActive) {
-                if (now - galleryLastPinchAt > GALLERY_TRIPLE_PINCH_WINDOW) galleryPinchCount = 0;
-                galleryPinchCount++;
-                galleryLastPinchAt = now;
-
-                const mediaIsPlaying = !!(galleryMediaElement && galleryMediaElement.paused === false);
-                if (galleryPinchCount >= 3 && mediaIsPlaying) {
-                    stopCakeGalleryMedia();
-                    galleryPinchCount = 0;
-                    galleryLastPinchAt = 0;
-                    if (statusBadge) {
-                        statusBadge.innerText='🤏×3 三次捏合：已关闭正在播放的视频/音乐';
-                        statusBadge.style.background='rgba(108,92,231,.95)';
-                    }
-                    playSound(523.25,0.12,'sine');
-                } else if (!mediaIsPlaying) {
-                    // If nothing is currently playing, a pinch plays the selected item.
-                    playSelectedCakeGalleryItem();
-                }
+                playSelectedCakeGalleryItem();
             }
             galleryPinchWasActive=isPinching;
 
@@ -1906,58 +1876,6 @@
         mediapipeCamera.start();
     }
 
-    function attachCandleDoubleClickHandler() {
-        if (candleDoubleClickHandlerAttached || !threeRenderer || !threeRenderer.domElement) return;
-        candleDoubleClickHandlerAttached = true;
-        threeRenderer.domElement.addEventListener('dblclick', (event) => {
-            if (candlePlaced || !candleReadyForConfirmation || !candleSystem || !threeCamera) return;
-
-            // Project the candle's current 3D position into screen coordinates so the
-            // double-click must actually land on/near the visible candle.
-            const rect = threeRenderer.domElement.getBoundingClientRect();
-            const projected = candleSystem.position.clone().project(threeCamera);
-            const candleX = rect.left + (projected.x + 1) * 0.5 * rect.width;
-            const candleY = rect.top + (1 - projected.y) * 0.5 * rect.height;
-            const dx = event.clientX - candleX;
-            const dy = event.clientY - candleY;
-            const hitRadius = Math.max(70, Math.min(130, Math.min(rect.width, rect.height) * 0.10));
-
-            if ((dx * dx + dy * dy) > hitRadius * hitRadius) {
-                const statusBadge=document.getElementById('hand-status');
-                if (statusBadge) {
-                    statusBadge.innerText='🕯️ 请双击屏幕上蛋糕顶部的蜡烛';
-                    statusBadge.style.background='rgba(255,118,117,.9)';
-                }
-                return;
-            }
-
-            // Final confirmation: only NOW does the candle session end.
-            candlePlaced = true;
-            candleReadyForConfirmation = false;
-            isHoldingCandle = false;
-            candleSystem.position.set(0,-2,0);
-            candleSystem.rotation.y = cakeSystem ? cakeSystem.rotation.y : candleSystem.rotation.y;
-
-            const statusBadge=document.getElementById('hand-status');
-            if (statusBadge) {
-                statusBadge.innerText='🎂 双击确认成功！蛋糕仪式完成，漫天气球升起！';
-                statusBadge.style.background='rgba(0,184,148,.95)';
-            }
-
-            const toast=document.getElementById('cake-completion-toast');
-            if (toast) {
-                toast.style.display='block';
-                if (cakeCompletionToastTimer) clearTimeout(cakeCompletionToastTimer);
-                cakeCompletionToastTimer=setTimeout(()=>{ toast.style.display='none'; },5000);
-            }
-
-            showCakeMediaGallery();
-            generateBalloons();
-            triggerSnapEffect();
-            triggerCandlePlacedBalloons();
-        });
-    }
-
     function showCakeMediaGallery() {
         const gallery=document.getElementById('cake-media-gallery');
         if (!gallery) return;
@@ -1970,7 +1888,6 @@
         stopCakeGalleryMedia();
         galleryIndex=0; gallerySwipeStartX=null; gallerySwipeLastX=null;
         gallerySwipeCooldown=0; galleryPinchWasActive=false;
-        galleryPinchCount=0; galleryLastPinchAt=0;
         galleryCurrentScale=0.85; galleryTargetScale=0.85;
         const gallery=document.getElementById('cake-media-gallery');
         if (gallery) gallery.classList.remove('active');
@@ -2033,7 +1950,7 @@
             card.classList.toggle('playing', galleryMediaElement && galleryMediaElement.dataset && Number(galleryMediaElement.dataset.galleryIndex)===i && !galleryMediaElement.paused);
         });
         const help=document.getElementById('gallery-help');
-        if (help && galleryItems[galleryIndex]) help.innerText=`当前：${galleryItems[galleryIndex].icon} ${galleryItems[galleryIndex].title}｜左右挥动旋转｜捏合播放｜三次捏合关闭`;
+        if (help && galleryItems[galleryIndex]) help.innerText=`当前：${galleryItems[galleryIndex].icon} ${galleryItems[galleryIndex].title}｜左右挥动旋转｜捏合播放`;
     }
 
     function playSelectedCakeGalleryItem() {
@@ -2052,10 +1969,16 @@
             media=new Audio(item.src); media.loop=true; media.autoplay=true; media.dataset.galleryIndex=galleryIndex;
         }
         galleryMediaElement=media;
+        if (item.type==='video') {
+            media.addEventListener('click', (e)=>{ e.preventDefault(); toggleCakeGalleryMedia(); });
+        }
+        media.addEventListener('play', updateGalleryTouchButton);
+        media.addEventListener('pause', updateGalleryTouchButton);
         const playPromise=media.play();
         if (playPromise && playPromise.catch) playPromise.catch(()=>{});
         updateCakeGalleryVisuals(false);
         playSound(1046.5,0.12,'sine');
+        updateGalleryTouchButton();
     }
 
     function stopCakeGalleryMedia() {
@@ -2064,6 +1987,7 @@
         if (galleryMediaElement.tagName==='VIDEO' && galleryMediaElement.parentNode) galleryMediaElement.remove();
         galleryMediaElement=null;
         updateCakeGalleryVisuals(false);
+        updateGalleryTouchButton();
     }
 
     // Keep gallery scale/particle response smooth every animation frame.
@@ -2071,13 +1995,6 @@
         galleryCurrentScale += (galleryTargetScale-galleryCurrentScale)*0.18;
         const gallery=document.getElementById('cake-media-gallery');
         if (gallery && gallery.classList.contains('active')) gallery.style.transform=`translate(-50%,-50%) scale(${galleryCurrentScale})`;
-
-        // The currently playing video follows the same live gesture scale.
-        // Audio has no visual surface, but its gallery card remains live-scaled.
-        if (galleryMediaElement && galleryMediaElement.tagName === 'VIDEO') {
-            const mediaScale = Math.max(0.72, Math.min(galleryCurrentScale, 1.45));
-            galleryMediaElement.style.transform = `translate(-50%,-50%) scale(${mediaScale})`;
-        }
     }
 
     function triggerSnapEffect() {
@@ -2104,6 +2021,82 @@
         }, 25);
     }
 
+    function completeCandlePlacementByDoubleClick(clientX, clientY) {
+        if (candlePlaced || !candleReleasedOnCake || !candleDoubleClickArmed || !candleSystem || !threeCamera || !threeRenderer) return false;
+        const rect = threeRenderer.domElement.getBoundingClientRect();
+        const x = ((clientX - rect.left) / rect.width) * 2 - 1;
+        const y = -(((clientY - rect.top) / rect.height) * 2 - 1);
+        const projected = candleSystem.position.clone().project(threeCamera);
+        const px = (projected.x + 1) * 0.5 * rect.width;
+        const py = (1 - projected.y) * 0.5 * rect.height;
+        const distance = Math.hypot((clientX - rect.left) - px, (clientY - rect.top) - py);
+        // Generous hit radius makes the required double-click easy, while still requiring the candle itself.
+        const hitRadius = Math.max(70, Math.min(rect.width, rect.height) * 0.12);
+        if (distance > hitRadius) {
+            if (statusBadge) {
+                statusBadge.innerText='🕯️ 请双击屏幕上蜡烛的位置';
+                statusBadge.style.background='rgba(255,118,117,.9)';
+            }
+            return false;
+        }
+        candlePlaced = true;
+        candleReleasedOnCake = false;
+        candleDoubleClickArmed = false;
+        candleSystem.position.set(0,-2,0);
+        candleSystem.rotation.y = cakeSystem.rotation.y;
+        if (statusBadge) {
+            statusBadge.innerText='🎂 插蜡烛完成！5秒提示后进入媒体库';
+            statusBadge.style.background='rgba(0,184,148,.95)';
+        }
+        const toast=document.getElementById('cake-completion-toast');
+        if (toast) {
+            toast.style.display='block';
+            if (cakeCompletionToastTimer) clearTimeout(cakeCompletionToastTimer);
+            cakeCompletionToastTimer=setTimeout(()=>{ toast.style.display='none'; },5000);
+        }
+        showCakeMediaGallery();
+        generateBalloons(); triggerSnapEffect(); triggerCandlePlacedBalloons();
+        return true;
+    }
+
+    function toggleCakeGalleryMedia() {
+        if (!galleryMediaElement) {
+            playSelectedCakeGalleryItem();
+            return;
+        }
+        try {
+            if (galleryMediaElement.paused) {
+                const promise = galleryMediaElement.play();
+                if (promise && promise.catch) promise.catch(()=>{});
+            } else {
+                galleryMediaElement.pause();
+            }
+        } catch(e) {}
+        updateCakeGalleryVisuals(false);
+        updateGalleryTouchButton();
+    }
+
+    function updateGalleryTouchButton() {
+        const btn=document.getElementById('gallery-touch-playpause');
+        if (!btn) return;
+        if (!galleryMediaElement) { btn.innerText='▶️ 播放'; return; }
+        btn.innerText=galleryMediaElement.paused ? '▶️ 播放' : '⏸️ 暂停';
+    }
+
+    function attachCakeTouchControls() {
+        const wrapper=document.getElementById('three-canvas-container');
+        if (!wrapper || wrapper.dataset.touchControlsAttached==='1') return;
+        wrapper.dataset.touchControlsAttached='1';
+        wrapper.addEventListener('dblclick', (e)=>{
+            if (completeCandlePlacementByDoubleClick(e.clientX,e.clientY)) e.preventDefault();
+        });
+        const btn=document.getElementById('gallery-touch-playpause');
+        if (btn) {
+            btn.addEventListener('click', (e)=>{ e.stopPropagation(); toggleCakeGalleryMedia(); });
+            btn.addEventListener('touchend', (e)=>{ e.preventDefault(); e.stopPropagation(); toggleCakeGalleryMedia(); }, {passive:false});
+        }
+    }
+
     function close3DHologramCake() {
         document.getElementById('hologram-container').style.display = 'none';
         cancelAnimationFrame(animationId);
@@ -2114,8 +2107,8 @@
         if (cakeCompletionToastTimer) { clearTimeout(cakeCompletionToastTimer); cakeCompletionToastTimer=null; }
         const toast=document.getElementById('cake-completion-toast');
         if (toast) toast.style.display='none';
-        candleReadyForConfirmation = false;
         resetCakeMediaGallery();
+        candlePlaced=false; isHoldingCandle=false; candleReleasedOnCake=false; candleDoubleClickArmed=false;
         playBGM('song3'); 
     }
 
