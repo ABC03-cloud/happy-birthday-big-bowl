@@ -1118,87 +1118,6 @@
             margin-bottom: 4px;
             animation: pulse 0.8s infinite alternate;
         }
-
-        /* --- 3D CAKE PINCH VIDEO PLAYER --- */
-        .cake-video-panel {
-            position: absolute;
-            left: 50%;
-            top: 12%;
-            transform: translateX(-50%);
-            width: min(82vw, 420px);
-            z-index: 5010;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-            pointer-events: none;
-        }
-
-        .cake-video-panel.show {
-            display: flex;
-        }
-
-        .cake-video-title {
-            color: var(--gold);
-            font-size: 14px;
-            font-weight: bold;
-            text-shadow: 0 2px 5px #000;
-            background: rgba(10, 5, 25, 0.75);
-            border: 2px solid var(--gold);
-            border-radius: 18px;
-            padding: 5px 14px;
-        }
-
-        .cake-video-stage {
-            width: 100%;
-            aspect-ratio: 16 / 9;
-            perspective: 1000px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        #cake-gesture-video {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-            border: 3px solid var(--gold);
-            border-radius: 16px;
-            background: #000;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.45);
-            transform: rotateY(0deg) scale(1);
-            transition: transform 0.35s ease, opacity 0.2s ease;
-            pointer-events: none;
-        }
-
-        #cake-gesture-video.video-rotate {
-            animation: cakeVideoRotate 0.65s ease;
-        }
-
-        @keyframes cakeVideoRotate {
-            0%   { transform: rotateY(0deg) scale(1); opacity: 1; }
-            45%  { transform: rotateY(90deg) scale(0.92); opacity: 0.35; }
-            100% { transform: rotateY(0deg) scale(1); opacity: 1; }
-        }
-
-        .cake-video-hint {
-            color: #ffeaa7;
-            font-size: 11px;
-            background: rgba(10, 5, 25, 0.72);
-            border-radius: 12px;
-            padding: 4px 10px;
-            text-align: center;
-        }
-
-        .cake-video-index {
-            color: #fff;
-            font-size: 11px;
-            background: rgba(255, 118, 117, 0.8);
-            border: 1px solid #fff;
-            border-radius: 12px;
-            padding: 3px 9px;
-        }
-
     </style>
 </head>
 <body id="body-root">
@@ -1427,28 +1346,6 @@
         <div style="font-size:26px;">🎂✨🥳🎈</div>
     </div>
 
-
-    <!-- 3D CAKE PINCH VIDEO PLAYER
-         Put these two files in the same folder as this HTML:
-         cake-video-1.mp4
-         cake-video-2.mp4
-    -->
-    <div class="cake-video-panel" id="cake-video-panel">
-        <div class="cake-video-title">🎬 左手捏合 · 生日专属回忆</div>
-        <div class="cake-video-stage">
-            <video
-                id="cake-gesture-video"
-                playsinline
-                webkit-playsinline
-                x5-playsinline="true"
-                preload="auto"
-                controls>
-            </video>
-        </div>
-        <div class="cake-video-index" id="cake-video-index">视频 1 / 2</div>
-        <div class="cake-video-hint">🤏 每次“捏合 → 松开”都会切换到下一段视频</div>
-    </div>
-
     <div class="hologram-ui">
         <h2 style="color: var(--gold); text-shadow: 0 2px 4px rgba(0,0,0,0.8); margin-bottom: 6px;">🎂 HAPPY BIRTHDAY 🎂</h2>
         
@@ -1547,131 +1444,12 @@
     let countdownFinished = false;
     let lastStepTime = 0;
 
-    // -----------------------------------------------------------
-    // 🎬 LEFT-HAND PINCH VIDEO LOGIC
-    // -----------------------------------------------------------
-    // Change these filenames to your own two customized videos.
-    const CAKE_PINCH_VIDEOS = [
-        'cake-video-1.mp4',
-        'cake-video-2.mp4'
-    ];
-
-    let cakePinchVideoIndex = -1;
-    let cakePinchWasActive = false;
-    let lastCakePinchVideoTime = 0;
-    const CAKE_PINCH_COOLDOWN = 650;
-
-    function isUserLeftHand(results, handIndex = 0) {
-        if (!results || !results.multiHandedness || !results.multiHandedness[handIndex]) {
-            return false;
-        }
-
-        // MediaPipe's handedness label is "Left"/"Right".
-        // The camera image itself may be mirrored by the CSS preview,
-        // but the MediaPipe result is what we use for hand identity.
-        return results.multiHandedness[handIndex].label === 'Left';
-    }
-
-    function resetCakePinchVideo() {
-        cakePinchVideoIndex = -1;
-        cakePinchWasActive = false;
-        lastCakePinchVideoTime = 0;
-
-        const panel = document.getElementById('cake-video-panel');
-        const video = document.getElementById('cake-gesture-video');
-
-        if (video) {
-            video.pause();
-            video.removeAttribute('src');
-            video.load();
-            video.classList.remove('video-rotate');
-        }
-        if (panel) panel.classList.remove('show');
-
-        const indexEl = document.getElementById('cake-video-index');
-        if (indexEl) indexEl.innerText = '视频 1 / 2';
-    }
-
-    function playNextCakePinchVideo() {
-        const panel = document.getElementById('cake-video-panel');
-        const video = document.getElementById('cake-gesture-video');
-        const indexEl = document.getElementById('cake-video-index');
-
-        if (!panel || !video || !CAKE_PINCH_VIDEOS.length) return;
-
-        const now = Date.now();
-        if (now - lastCakePinchVideoTime < CAKE_PINCH_COOLDOWN) return;
-        lastCakePinchVideoTime = now;
-
-        cakePinchVideoIndex = (cakePinchVideoIndex + 1) % CAKE_PINCH_VIDEOS.length;
-
-        // Alternate: pinch #1 -> video 1, pinch #2 -> video 2,
-        // pinch #3 -> video 1, etc.
-        video.pause();
-        video.currentTime = 0;
-        video.src = CAKE_PINCH_VIDEOS[cakePinchVideoIndex];
-        video.load();
-
-        panel.classList.add('show');
-
-        if (indexEl) {
-            indexEl.innerText = `视频 ${cakePinchVideoIndex + 1} / ${CAKE_PINCH_VIDEOS.length}`;
-        }
-
-        // Re-trigger the 3D rotation animation every pinch.
-        video.classList.remove('video-rotate');
-        void video.offsetWidth;
-        video.classList.add('video-rotate');
-
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(() => {
-                // Browser autoplay restrictions can block playback.
-                // The video remains loaded and the user can tap its controls.
-                const statusBadge = document.getElementById('hand-status');
-                if (statusBadge) {
-                    statusBadge.innerText = '🎬 视频已切换，请点击视频播放按钮开始播放';
-                }
-            });
-        }
-
-        video.onended = () => {
-            // Keep the panel visible after playback so the user knows
-            // which video was triggered. The next pinch switches it.
-            video.currentTime = 0;
-        };
-    }
-
-    function detectLeftHandPinchForVideo(results, isPinching) {
-        if (!isUserLeftHand(results, 0)) {
-            cakePinchWasActive = false;
-            return;
-        }
-
-        // Only activate this feature after the candle has been placed,
-        // i.e. at the final/interactive part of the 3D cake session.
-        if (!candlePlaced || !countdownFinished) {
-            cakePinchWasActive = false;
-            return;
-        }
-
-        // Rising-edge detection:
-        // open -> pinch = ONE trigger.
-        // Holding the pinch does NOT repeatedly restart the video.
-        if (isPinching && !cakePinchWasActive) {
-            playNextCakePinchVideo();
-        }
-
-        cakePinchWasActive = isPinching;
-    }
-
     function init3DHologramCake() {
         const container = document.getElementById('hologram-container');
         const canvasWrapper = document.getElementById('three-canvas-container');
         container.style.display = 'flex';
         
         pauseBGM();
-        resetCakePinchVideo();
 
         // 重置提示及倒计时状态
         countdownStep = 3;
@@ -1943,9 +1721,6 @@
                 const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
                 const isPinching = dist < 0.06;
 
-                // 左手捏合：每次新的 pinch 只触发一次视频切换。
-                detectLeftHandPinchForVideo(results, isPinching);
-
                 const midX = (thumbTip.x + indexTip.x) / 2;
                 const midY = (thumbTip.y + indexTip.y) / 2;
                 const worldX = (0.5 - midX) * 16;  
@@ -2009,7 +1784,6 @@
                 }
                 statusBadge.style.background = "rgba(255, 118, 117, 0.8)";
                 isHoldingCandle = false;
-                cakePinchWasActive = false;
             }
         });
         
@@ -2050,7 +1824,6 @@
         if (mediapipeCamera) {
             mediapipeCamera.stop();
         }
-        resetCakePinchVideo();
         playBGM('song3'); 
     }
 
