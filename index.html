@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -1072,6 +1071,23 @@
             flex-direction: column;
             justify-content: center;
             align-items: center;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        /* 缩小淡出退出动画 CSS */
+        .zoom-out-exit {
+            animation: zoomOutExitAnim 0.48s cubic-bezier(0.55, 0.085, 0.68, 0.53) forwards !important;
+        }
+
+        @keyframes zoomOutExitAnim {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(0.02);
+                opacity: 0;
+            }
         }
         
         .webcam-preview {
@@ -1122,14 +1138,20 @@
         /* --- TOUCHLESS VIDEO / MUSIC GALLERY --- */
         #cake-media-gallery {
             position:absolute; left:50%; top:46%; transform:translate(-50%,-50%) scale(0.85);
-            width:min(92vw,760px); height:250px; z-index:5004; pointer-events:none;
+            width:min(92vw,760px); height:250px; z-index:5004; pointer-events:auto !important;
             display:none; perspective:1200px; transition:transform .12s ease-out, opacity .25s ease;
             opacity:0;
+            touch-action: pan-y;
         }
         #cake-media-gallery.active { display:block; opacity:1; }
         .gallery-hud { position:absolute; left:50%; top:-42px; transform:translateX(-50%); color:#fff; background:rgba(20,10,35,.78); border:2px solid var(--gold); border-radius:18px; padding:5px 12px; font-size:12px; white-space:nowrap; box-shadow:0 0 14px rgba(255,215,0,.35); }
         .gallery-track { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; transform-style:preserve-3d; transition:transform .42s cubic-bezier(.2,.8,.2,1); }
-        .gallery-card { position:absolute; width:210px; height:170px; border:3px solid var(--gold); border-radius:18px; overflow:hidden; background:rgba(15,7,30,.94); box-shadow:0 0 25px rgba(255,215,0,.28); transform-style:preserve-3d; transition:transform .42s, opacity .3s, filter .3s; }
+        .gallery-card { 
+            position:absolute; width:210px; height:170px; border:3px solid var(--gold); border-radius:18px; 
+            overflow:hidden; background:rgba(15,7,30,.94); box-shadow:0 0 25px rgba(255,215,0,.28); 
+            transform-style:preserve-3d; transition:transform .42s, opacity .3s, filter .3s; 
+            pointer-events: auto; cursor: pointer;
+        }
         .gallery-card.active { box-shadow:0 0 35px rgba(255,215,0,.75); }
         .gallery-card video, .gallery-card .gallery-art { width:100%; height:122px; object-fit:cover; display:block; background:linear-gradient(135deg,#2b1055,#6c5ce7); }
         .gallery-art { display:flex !important; align-items:center; justify-content:center; font-size:48px; }
@@ -1138,6 +1160,32 @@
         .gallery-help { position:absolute; bottom:-42px; left:50%; transform:translateX(-50%); color:#ffeaa7; font-size:11px; white-space:nowrap; text-shadow:0 1px 3px #000; }
         .gallery-now-playing { position:absolute; right:8px; top:8px; background:#00b894; color:#fff; padding:3px 7px; border-radius:10px; font-size:10px; display:none; }
         .gallery-card.playing .gallery-now-playing { display:block; }
+        
+        /* 独立高亮【播放】按钮样式 */
+        .gallery-play-btn {
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #ffd700, #ff9f1a);
+            color: #2b1055;
+            border: 2px solid #ffffff;
+            border-radius: 20px;
+            padding: 5px 14px;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            transition: transform 0.15s ease, background 0.15s ease;
+            cursor: pointer;
+        }
+        .gallery-play-btn:active {
+            transform: translate(-50%, -50%) scale(0.9);
+            background: #ffffff;
+        }
     </style>
 </head>
 <body id="body-root">
@@ -1272,7 +1320,7 @@
             <div>⏳ 倒计时: <span id="timer" style="color: #6c5ce7;">10</span>秒</div>
             <div>🥣 碗里财富: <span id="score" style="color: #059669;">0</span></div>
         </div>
-        <div style="font-size: 11px; display: flex; justify-content: space-between; align-items: center; color: #666;">
+        <div style="font-size: 11px; display: flex; justify-content: space-between; align- items: center; color: #666;">
             <span>🔥 连击狂暴 (Combo x<span id="combo-count">0</span>):</span>
             <span id="fever-txt" style="color: #ff7675; font-weight: bold;">普通模式</span>
         </div>
@@ -1362,16 +1410,15 @@
     <!-- 蛋糕插蜡烛完成提示信号 -->
     <div id="cake-completion-toast" style="display:none; position:absolute; top:18%; left:50%; transform:translateX(-50%); background:rgba(20, 10, 35, 0.92); border:3px solid var(--gold); border-radius:20px; padding:16px 24px; text-align:center; z-index:5005; box-shadow:0 0 35px var(--gold); animation: popIn 0.5s ease;">
         <h2 style="color:var(--gold); margin:0 0 6px; font-size:22px; text-shadow:0 0 10px rgba(255,215,0,0.8);">🎉 蜡烛摆放成功！</h2>
-        <p style="color:#ffffff; margin:0 0 8px; font-size:13px; line-height:1.4;">生日蛋糕仪式圆满完成！漫天飞舞的气球已为你升起 🎈<br>你可以继续用捏合手势缩放蛋糕，或点击下方按钮退出。</p>
+        <p style="color:#ffffff; margin:0 0 8px; font-size:13px; line-height:1.4;">生日蛋糕仪式圆满完成！漫天飞舞的气球已为你升起 🎈<br>你可以划动屏幕选择媒体，或用捏合手势缩放蛋糕。</p>
         <div style="font-size:26px;">🎂✨🥳🎈</div>
     </div>
 
-
     <!-- TOUCHLESS VIDEO / MUSIC GALLERY -->
     <div id="cake-media-gallery">
-        <div class="gallery-hud" id="gallery-hud">👉 右手左右挥动：旋转选择　🤏 右手捏合：播放　🖐️ 张开/握拳：放大/缩小</div>
+        <div class="gallery-hud" id="gallery-hud">👉 右手左右挥动/触屏划动：选择 🤏 捏合/点击：播放 🖐️ 张开/握拳：缩放</div>
         <div class="gallery-track" id="gallery-track"></div>
-        <div class="gallery-help" id="gallery-help">等待右手手势…</div>
+        <div class="gallery-help" id="gallery-help">等待手势或滑动屏幕…</div>
     </div>
 
     <div class="hologram-ui">
@@ -1384,9 +1431,11 @@
         <div class="hand-status-badge" id="hand-status">📷 正在启动红外传感器... 请允许摄像头权限</div>
         
         <p id="hologram-instruction" style="font-size: 12px; color: #ffeaa7; text-shadow: 0 1px 2px #000; margin-bottom: 12px; display: none;">
-            ✋ 完成蜡烛后：右手左右挥动旋转媒体库；🤏 捏合播放当前媒体；🖐️ 张开/握拳实时控制蛋糕粒子与媒体库大小。
+            ✋ 完成蜡烛后：右手左右挥动/触屏左右滑动选择媒体库；🤏 捏合或点击播放当前媒体。
         </p>
-        <button class="btn-action" onclick="close3DHologramCake()" style="padding: 4px 16px; font-size: 12px; margin-top: 4px;">退出全息模式 ✕</button>
+        
+        <!-- 带有缩小淡出 Exit 动画的退出按钮 -->
+        <button class="btn-action" onclick="close3DHologramCake()" style="padding: 6px 20px; font-size: 13px; margin-top: 4px; background: linear-gradient(180deg, #ff7675 0%, #d63031 100%); color: white; border-color: #2b1055; box-shadow: 0 4px 0 #810000;">✕ 退出全息模式 (Zoom Out)</button>
     </div>
 </div>
 
@@ -1476,7 +1525,6 @@
     let galleryTargetScale = 0.85;
     let galleryMediaElement = null;
 
-  // Change these filenames to your own media files. Keep them in the same folder as this HTML file.
     const CAKE_GALLERY_ITEMS = [
         { type:'video', title:'搞怪爆笑视频 1', icon:'🎬', src:'cake-video-1.mp4' },
         { type:'video', title:'搞怪爆笑视频 2', icon:'🎥', src:'cake-video-2.mp4' },
@@ -1490,8 +1538,6 @@
         { type:'video', title:'甜甜的', icon:'🎶', src:'cake-video-10.mp4' }
     ];
 
-
-
     // 蜡烛互动状态
     let isHoldingCandle = false;
     let candlePlaced = false;
@@ -1504,11 +1550,11 @@
     function init3DHologramCake() {
         const container = document.getElementById('hologram-container');
         const canvasWrapper = document.getElementById('three-canvas-container');
+        container.classList.remove('zoom-out-exit');
         container.style.display = 'flex';
         
         pauseBGM();
 
-        // 重置提示及倒计时状态
         countdownStep = 3;
         countdownFinished = false;
         lastStepTime = Date.now();
@@ -1694,7 +1740,6 @@
         return count;
     }
 
-    // 蜡烛归位后爆发升起海量彩色气球特效 🎈
     function triggerCandlePlacedBalloons() {
         const balloonContainer = document.getElementById('balloon-container');
         const balloonEmojis = ['🎈', '🎈', '🎉', '✨', '🎂', '🥳', '🧁', '💖', '🌟', '🎈'];
@@ -1723,7 +1768,6 @@
             return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
         }});
 
-        // Need handedness so the gallery is controlled specifically by the RIGHT hand.
         hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.5, minTrackingConfidence: 0.5 });
 
         hands.onResults((results) => {
@@ -1731,7 +1775,6 @@
             const landmarksList = results.multiHandLandmarks || [];
             const handednessList = results.multiHandedness || [];
 
-            // During the 3-2-1 unlock, preserve the original behaviour and use the first detected hand.
             if (!countdownFinished) {
                 if (landmarksList.length > 0) {
                     const handLandmarks = landmarksList[0];
@@ -1760,8 +1803,6 @@
                 return;
             }
 
-            // Prefer the RIGHT hand. MediaPipe's handedness is from the user's mirrored camera view,
-            // but the label itself is already normalized by MediaPipe.
             let rightLandmarks = null;
             let rightIndex = -1;
             for (let i=0; i<landmarksList.length; i++) {
@@ -1769,8 +1810,6 @@
                 if (label === 'Right') { rightLandmarks = landmarksList[i]; rightIndex=i; break; }
             }
 
-            // If only one hand is visible, MediaPipe can occasionally miss handedness for a frame.
-            // Use the single hand as a temporary fallback so the interaction does not freeze.
             if (!rightLandmarks && landmarksList.length === 1) {
                 rightLandmarks = landmarksList[0];
                 rightIndex = 0;
@@ -1778,7 +1817,7 @@
 
             if (!rightLandmarks) {
                 if (statusBadge) {
-                    statusBadge.innerText = candlePlaced ? '🖐️ 请伸出右手控制媒体库' : '🤏 请用手捏住蜡烛拖到蛋糕中央';
+                    statusBadge.innerText = candlePlaced ? '🖐️ 请用右手手势或划动屏幕选择媒体' : '🤏 请捏住蜡烛拖拽或滑动屏幕';
                     statusBadge.style.background='rgba(255,118,117,.8)';
                 }
                 isHoldingCandle=false;
@@ -1799,16 +1838,11 @@
             const worldX=(0.5-midX)*16, worldY=(0.5-midY)*12+1;
 
             if (!candlePlaced) {
-                // 🕯️ Candle placement finishes automatically as soon as the
-                // user pinches and actually moves the candle.
-                // There is NO center-position requirement, NO release confirmation,
-                // and NO double-click confirmation.
                 if (isPinching) {
                     const previousX = candleSystem.position.x;
                     const previousY = candleSystem.position.y;
 
                     isHoldingCandle = true;
-
                     candleSystem.position.x += (worldX - candleSystem.position.x) * 0.15;
                     candleSystem.position.y += (worldY - candleSystem.position.y) * 0.15;
 
@@ -1817,7 +1851,6 @@
                         candleSystem.position.y - previousY
                     );
 
-                    // The first real gesture movement ends the candle session.
                     if (movement > 0.003) {
                         candlePlaced = true;
                         isHoldingCandle = false;
@@ -1851,14 +1884,11 @@
                 return;
             }
 
-            // ----- AFTER CANDLE: real-time particle scaling + media gallery -----
-            // Open hand = larger, closed hand = smaller. This continuously drives both systems.
             const openness=fingerCount/5;
             const liveScale=0.65 + openness*0.95;
             targetScale=Math.max(0.55,Math.min(liveScale,1.65));
             galleryTargetScale=0.62 + openness*0.78;
 
-            // Swipe detection from right-hand wrist movement.
             if (gallerySwipeLastX !== null) {
                 const deltaX=wrist.x-gallerySwipeLastX;
                 if (Math.abs(deltaX)>0.018 && now-gallerySwipeCooldown>250) {
@@ -1875,7 +1905,6 @@
             }
             gallerySwipeLastX=wrist.x;
 
-            // Pinch has edge-trigger semantics: one pinch = one play. Holding the pinch won't restart it.
             if (isPinching && !galleryPinchWasActive) {
                 playSelectedCakeGalleryItem();
             }
@@ -1886,7 +1915,7 @@
                     statusBadge.innerText=`🤏 已选择：${galleryItems[galleryIndex]?.title || '媒体'}｜松开后再次捏合可重新播放`;
                     statusBadge.style.background='rgba(0,184,148,.9)';
                 } else {
-                    statusBadge.innerText=`👉 右手挥动旋转｜🖐️ 手指 ${fingerCount} 根：媒体库 ${(galleryTargetScale).toFixed(1)}x｜粒子 ${(targetScale).toFixed(1)}x`;
+                    statusBadge.innerText=`👉 右手/滑动选择｜🖐️ 手指 ${fingerCount} 根：媒体库 ${(galleryTargetScale).toFixed(1)}x`;
                     statusBadge.style.background='rgba(108,92,231,.9)';
                 }
             }
@@ -1918,6 +1947,47 @@
         if (galleryInitialized) updateCakeGalleryVisuals(true);
     }
 
+    // 1. SCREEN SCROLL & TOUCH SWIPE LISTENERS FOR GALLERY
+    function addGalleryTouchSwipeListeners() {
+        const gallery = document.getElementById('cake-media-gallery');
+        if (!gallery || gallery.dataset.swipeBound === 'true') return;
+        gallery.dataset.swipeBound = 'true';
+
+        let touchStartX = 0;
+        let touchStartY = 0;
+
+        gallery.addEventListener('touchstart', (e) => {
+            if (e.touches && e.touches.length > 0) {
+                touchStartX = e.touches[0].clientX;
+                touchStartY = e.touches[0].clientY;
+            }
+        }, { passive: true });
+
+        gallery.addEventListener('touchend', (e) => {
+            if (e.changedTouches && e.changedTouches.length > 0) {
+                const diffX = e.changedTouches[0].clientX - touchStartX;
+                const diffY = e.changedTouches[0].clientY - touchStartY;
+                if (Math.abs(diffX) > 25 && Math.abs(diffX) > Math.abs(diffY)) {
+                    if (diffX < 0) {
+                        spinCakeGallery(1); // Swipe left -> next item
+                    } else {
+                        spinCakeGallery(-1); // Swipe right -> prev item
+                    }
+                }
+            }
+        }, { passive: true });
+
+        // 支持 PC 端滚轮滚动 (Wheel Listener)
+        gallery.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            if (e.deltaY > 0 || e.deltaX > 0) {
+                spinCakeGallery(1);
+            } else if (e.deltaY < 0 || e.deltaX < 0) {
+                spinCakeGallery(-1);
+            }
+        }, { passive: false });
+    }
+
     function buildCakeMediaGallery() {
         const track=document.getElementById('gallery-track');
         if (!track) return;
@@ -1933,11 +2003,37 @@
             } else {
                 media=`<div class="gallery-art">${item.icon}</div>`;
             }
-            card.innerHTML=`${media}<div class="gallery-label"><span>${item.icon}</span>${item.title}<span class="gallery-type">${item.type==='video'?'VIDEO':'MUSIC'}</span></div><div class="gallery-now-playing">▶ 播放中</div>`;
+            card.innerHTML=`
+                ${media}
+                <div class="gallery-play-btn" onclick="onGalleryPlayBtnClick(event, ${i})">▶ 播放</div>
+                <div class="gallery-label">
+                    <span>${item.icon}</span>${item.title}
+                    <span class="gallery-type">${item.type==='video'?'VIDEO':'MUSIC'}</span>
+                </div>
+                <div class="gallery-now-playing">▶ 播放中</div>
+            `;
+            // 点击卡片直接切换并播放
+            card.onclick = (e) => {
+                if (galleryIndex !== i) {
+                    galleryIndex = i;
+                    updateCakeGalleryVisuals(false);
+                    playSound(880, 0.08, 'sine');
+                } else {
+                    playSelectedCakeGalleryItem();
+                }
+            };
             track.appendChild(card);
         });
         galleryInitialized=true;
+        addGalleryTouchSwipeListeners();
         updateCakeGalleryVisuals(true);
+    }
+
+    function onGalleryPlayBtnClick(e, index) {
+        e.stopPropagation();
+        galleryIndex = index;
+        updateCakeGalleryVisuals(false);
+        playSelectedCakeGalleryItem();
     }
 
     function spinCakeGallery(direction) {
@@ -1974,9 +2070,10 @@
             card.classList.toggle('playing', galleryMediaElement && galleryMediaElement.dataset && Number(galleryMediaElement.dataset.galleryIndex)===i && !galleryMediaElement.paused);
         });
         const help=document.getElementById('gallery-help');
-        if (help && galleryItems[galleryIndex]) help.innerText=`当前：${galleryItems[galleryIndex].icon} ${galleryItems[galleryIndex].title}｜左右挥动旋转｜捏合播放`;
+        if (help && galleryItems[galleryIndex]) help.innerText=`当前：${galleryItems[galleryIndex].icon} ${galleryItems[galleryIndex].title}｜划动/挥手旋转｜捏合/点击播放`;
     }
 
+    // 2. PLAY MEDIA & EXIT BUTTON WITH ZOOM-OUT ANIMATION
     function playSelectedCakeGalleryItem() {
         if (!galleryItems.length) return;
         const item=galleryItems[galleryIndex];
@@ -2007,7 +2104,6 @@
         updateCakeGalleryVisuals(false);
     }
 
-    // Keep gallery scale/particle response smooth every animation frame.
     function updateCakeGestureVisuals() {
         galleryCurrentScale += (galleryTargetScale-galleryCurrentScale)*0.18;
         const gallery=document.getElementById('cake-media-gallery');
@@ -2038,18 +2134,31 @@
         }, 25);
     }
 
+    // 缩小淡出 (Zoom-Out Animation) 退出 3D 全息模式
     function close3DHologramCake() {
-        document.getElementById('hologram-container').style.display = 'none';
-        cancelAnimationFrame(animationId);
-        if (mediapipeCamera) {
-            mediapipeCamera.stop();
-            mediapipeCamera = null;
-        }
-        if (cakeCompletionToastTimer) { clearTimeout(cakeCompletionToastTimer); cakeCompletionToastTimer=null; }
-        const toast=document.getElementById('cake-completion-toast');
-        if (toast) toast.style.display='none';
-        resetCakeMediaGallery();
-        playBGM('song3'); 
+        const container = document.getElementById('hologram-container');
+        if (!container) return;
+
+        stopCakeGalleryMedia();
+
+        // 触发 Zoom-Out 动画类
+        container.classList.add('zoom-out-exit');
+
+        setTimeout(() => {
+            container.style.display = 'none';
+            container.classList.remove('zoom-out-exit');
+
+            if (animationId) cancelAnimationFrame(animationId);
+            if (mediapipeCamera) {
+                try { mediapipeCamera.stop(); } catch(e){}
+                mediapipeCamera = null;
+            }
+            if (cakeCompletionToastTimer) { clearTimeout(cakeCompletionToastTimer); cakeCompletionToastTimer = null; }
+            const toast = document.getElementById('cake-completion-toast');
+            if (toast) toast.style.display = 'none';
+            resetCakeMediaGallery();
+            playBGM('song3'); 
+        }, 450);
     }
 
     // -----------------------------------------------------------
@@ -2230,7 +2339,6 @@
         setTimeout(() => { drop.remove(); }, duration * 1000);
     }
 
-    // 升起飘飞气球动画函数 (在蛋糕环节结束后触发)
     function generateBalloons() {
         const balloonContainer = document.getElementById('balloon-container');
         const balloonEmojis = ['🎈', '🎁', '✨', '🎂', '🎉', '🥳', '🧁'];
@@ -2347,33 +2455,31 @@
         }
     }
 
-function waterPlant() {
-    const today = getTodayString();
-    if (lastWateredDate === today) {
-        alert("今天已经浇过水啦，明天再来吧！");
-        return;
+    function waterPlant() {
+        const today = getTodayString();
+        if (lastWateredDate === today) {
+            alert("今天已经浇过水啦，明天再来吧！");
+            return;
+        }
+
+        bonusDays += 2;
+        lastWateredDate = today;
+
+        localStorage.setItem('dawan_bonus_days', bonusDays);
+        localStorage.setItem('dawan_last_watered_date', lastWateredDate);
+
+        updateTreeVisual();
+        checkWaterButton();
+        updateCountdownTimer();
+
+        syncCloudHistory();
+
+        confetti({
+            particleCount: 50,
+            spread: 60,
+            origin: { y: 0.7 }
+        });
     }
-
-    bonusDays += 2;
-    lastWateredDate = today;
-
-    localStorage.setItem('dawan_bonus_days', bonusDays);
-    localStorage.setItem('dawan_last_watered_date', lastWateredDate);
-
-    updateTreeVisual();
-    checkWaterButton();
-    updateCountdownTimer();
-
-    // 🚀 NEW: Immediately sync watering progress to JSONBin cloud
-    syncCloudHistory();
-
-    // Visual celebration effects
-    confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.7 }
-    });
-}
 
     function enterGameFromCountdown() {
         document.getElementById('countdown-screen').classList.add('hidden');
@@ -2402,7 +2508,9 @@ function waterPlant() {
             document.getElementById('landing-screen').style.display = 'none';
             if (document.getElementById('upload-screen')) document.getElementById('upload-screen').style.display = 'none';
             if (document.getElementById('countdown-screen')) document.getElementById('countdown-screen').style.display = 'none';
-            playBGM('song3'); return;
+            playBGM('song3'); 
+            openAdminPanel();
+            return;
         }
         if (pwdInput.length === 4) {
             recordPasswordAttempt(pwdInput);
@@ -2450,538 +2558,452 @@ function waterPlant() {
         const p1 = document.getElementById('petal-audio-1'); const p2 = document.getElementById('petal-audio-2');
         [p1, p2].forEach(a => { if (a) a.load(); });
         const bombVid = document.getElementById('bomb-video'); const fuVid = document.getElementById('fu-video');
-        [bombVid, fuVid].forEach(v => {
-            if (v) {
-                v.muted = true; const p = v.play();
-                if (p !== undefined) p.then(() => { v.pause(); v.currentTime = 0; v.muted = false; }).catch(() => {});
-            }
-        });
-        initShakeDetection();
-        document.removeEventListener('click', unlockAudio); document.removeEventListener('touchstart', unlockAudio);
-    }
-    document.addEventListener('click', unlockAudio); document.addEventListener('touchstart', unlockAudio);
-    document.addEventListener("WeixinJSBridgeReady", function () { unlockAudio(); }, false);
-
-    function initAudio() {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
+        [bombVid, fuVid].forEach(v => { if (v) v.load(); });
     }
 
-    function playHappyBirthdaySynth() {
-        stopSynth(); initAudio();
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-        const notes = [
-            { f: 261.63, d: 0.3 }, { f: 261.63, d: 0.3 }, { f: 293.66, d: 0.6 }, { f: 261.63, d: 0.6 }, { f: 349.23, d: 0.6 }, { f: 329.63, d: 1.2 },
-            { f: 261.63, d: 0.3 }, { f: 261.63, d: 0.3 }, { f: 293.66, d: 0.6 }, { f: 261.63, d: 0.6 }, { f: 392.00, d: 0.6 }, { f: 349.23, d: 1.2 },
-            { f: 261.63, d: 0.3 }, { f: 261.63, d: 0.3 }, { f: 523.25, d: 0.6 }, { f: 440.00, d: 0.6 }, { f: 349.23, d: 0.6 }, { f: 329.63, d: 0.6 }, { f: 293.66, d: 1.2 },
-            { f: 466.16, d: 0.3 }, { f: 466.16, d: 0.3 }, { f: 440.00, d: 0.6 }, { f: 349.23, d: 0.6 }, { f: 392.00, d: 0.6 }, { f: 349.23, d: 1.5 }
-        ];
-        let step = 0;
-        function playNextNote() {
-            if (currentTrack !== 'song3') return;
-            const note = notes[step];
-            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-            osc.type = 'sine'; osc.frequency.setValueAtTime(note.f, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.4, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + note.d);
-            osc.connect(gain); gain.connect(audioCtx.destination);
-            osc.start(); osc.stop(audioCtx.currentTime + note.d);
-            step = (step + 1) % notes.length;
-            synthInterval = setTimeout(playNextNote, note.d * 1000);
-        }
-        playNextNote();
-    }
-
-    function stopSynth() { if (synthInterval) { clearTimeout(synthInterval); synthInterval = null; } }
-
-    function playBGM(songKey) {
-        if (!playlist[songKey]) return;
-        initAudio(); document.querySelectorAll('.bgm-btn').forEach(btn => btn.classList.remove('active'));
-        if (songKey === 'song3') {
-            bgmAudio.pause(); currentTrack = 'song3'; playHappyBirthdaySynth();
-            document.getElementById('btn-song3').classList.add('active'); audioStatus.style.display = 'none'; return;
-        }
-        stopSynth(); const targetFile = playlist[songKey];
-        if (currentTrack !== songKey) { bgmAudio.src = targetFile; currentTrack = songKey; }
-        const playPromise = bgmAudio.play();
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                const btn = document.getElementById(`btn-${songKey}`); if (btn) btn.classList.add('active');
-                audioStatus.style.display = 'none';
-            }).catch(err => {
-                audioStatus.style.display = 'block'; audioStatus.style.color = '#ffd700';
-                audioStatus.innerText = `⚠️ 提示：请点击页面任意处激活播放`;
-            });
-        }
-    }
-
-    function pauseBGM() { stopSynth(); bgmAudio.pause(); currentTrack = null; document.querySelectorAll('.bgm-btn').forEach(btn => btn.classList.remove('active')); }
-
-    let score = 0; let timeLeft = 10; let gameInterval = null; let spawnInterval = null; let avatarClickCount = 0; let avatarTimer = null;
-    let streak = 0; let isFever = false; let feverTimer = null; let eggKnockCount = 0; let scratchRevealed = false;
-
-    const arena = document.getElementById('arena'); const overlay = document.getElementById('overlay');
-    const scoreDisplay = document.getElementById('score'); const timerDisplay = document.getElementById('timer');
-    const resultModal = document.getElementById('result-modal'); const caishenFace = document.getElementById('caishen-face');
-    const items = ['🎂', '🎁', '🎈', '🥳', '🧁', '🥣', '🍜', '💰', '福', '💣'];
-
-    function playSound(freq, duration, type = 'sine') {
+    function playSound(freq, duration = 0.15, type = 'sine') {
         try {
-            initAudio(); if (!audioCtx) return;
-            const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
-            osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
-            gain.gain.setValueAtTime(0.3, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = type; osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
             osc.connect(gain); gain.connect(audioCtx.destination);
             osc.start(); osc.stop(audioCtx.currentTime + duration);
         } catch(e) {}
     }
 
-    function openFuVideo() {
-        const modal = document.getElementById('fu-video-modal'); const video = document.getElementById('fu-video'); const errBanner = document.getElementById('fu-video-error-msg');
-        if (modal && video) {
-            errBanner.style.display = 'none'; if (bgmAudio && !bgmAudio.paused) bgmAudio.pause();
-            modal.classList.add('show'); video.currentTime = 0; video.muted = false;
-            video.onerror = () => { errBanner.style.display = 'block'; };
-            const playPromise = video.play();
-            if (playPromise !== undefined) playPromise.catch(err => { video.muted = true; video.play().catch(() => { errBanner.style.display = 'block'; }); });
+    function playBGM(key) {
+        unlockAudio();
+        document.querySelectorAll('.bgm-btn').forEach(btn => btn.classList.remove('active'));
+        const activeBtn = document.getElementById(`btn-${key}`);
+        if(activeBtn) activeBtn.classList.add('active');
+        currentTrack = key;
+
+        if (synthInterval) { clearInterval(synthInterval); synthInterval = null; }
+
+        if (key === 'song3') {
+            if (bgmAudio) bgmAudio.pause();
+            playSynthBoxBGM();
+            if (audioStatus) audioStatus.style.display = 'none';
+            return;
         }
-    }
-    function forcePlayFuVideo() { const video = document.getElementById('fu-video'); if (video) { video.muted = false; video.play().catch(e=>console.warn(e)); } }
-    function closeFuVideo() {
-        const modal = document.getElementById('fu-video-modal'); const video = document.getElementById('fu-video');
-        if (modal && video) { video.pause(); modal.classList.remove('show'); if (currentTrack && currentTrack !== 'song3') bgmAudio.play().catch(()=>{}); }
-    }
 
-    function triggerBombVideo() {
-        const modal = document.getElementById('bomb-video-modal'); const video = document.getElementById('bomb-video'); const errBanner = document.getElementById('video-error-msg');
-        if (modal && video) {
-            errBanner.style.display = 'none'; if (bgmAudio && !bgmAudio.paused) bgmAudio.pause();
-            modal.classList.add('show'); video.currentTime = 0; video.muted = false;
-            video.onerror = () => { errBanner.style.display = 'block'; };
-            const playPromise = video.play();
-            if (playPromise !== undefined) playPromise.catch(err => { video.muted = true; video.play().catch(() => { errBanner.style.display = 'block'; }); });
-            video.onended = () => { closeBombVideo(); };
-        }
-    }
-    function forcePlayVideo() { const video = document.getElementById('bomb-video'); if (video) { video.muted = false; video.play().catch(e=>console.warn(e)); } }
-    function closeBombVideo() {
-        const modal = document.getElementById('bomb-video-modal'); const video = document.getElementById('bomb-video');
-        if (modal && video) { video.pause(); modal.classList.remove('show'); if (currentTrack && currentTrack !== 'song3') bgmAudio.play().catch(()=>{}); }
-    }
-
-    let candleBlows = 0;
-    function blowCandle(e) {
-        candleBlows++; playSound(400 + candleBlows * 150, 0.2, 'triangle');
-        const candleFlame = document.getElementById('candle-flame');
-        if (candleBlows === 1) candleFlame.style.transform = 'scale(0.6) translateX(-80%)';
-        else if (candleBlows === 2) candleFlame.style.transform = 'scale(0.3) translateX(-150%)';
-        else if (candleBlows >= 3) {
-            candleFlame.style.display = 'none'; playSound(880, 0.4, 'sine'); confetti({ particleCount: 60, spread: 60, origin: { y: 0.6 } });
-            const startBtn = document.getElementById('start-btn'); startBtn.style.display = 'inline-block'; startBtn.classList.add('shake');
-        }
-    }
-
-    function handleAvatarClick() {
-        avatarClickCount++; playSound(300 + avatarClickCount * 100, 0.1);
-        caishenFace.style.transform = 'scale(1.3) rotate(15deg)'; setTimeout(() => caishenFace.style.transform = 'scale(1) rotate(0deg)', 150);
-        clearTimeout(avatarTimer); avatarTimer = setTimeout(() => { avatarClickCount = 0; }, 3000);
-        if (avatarClickCount >= 5) { avatarClickCount = 0; openAdminPanel(); }
-    }
-
-    function triggerFeverMode() {
-        isFever = true; document.getElementById('fever-banner').style.display = 'block'; arena.classList.add('fever-mode'); playSound(880, 0.5, 'square');
-        if (feverTimer) clearTimeout(feverTimer); feverTimer = setTimeout(() => { endFeverMode(); }, 3500);
-    }
-    function endFeverMode() {
-        isFever = false; document.getElementById('fever-banner').style.display = 'none'; arena.classList.remove('fever-mode');
-        streak = 0; updateStreakBar();
-    }
-    function updateStreakBar() {
-        document.getElementById('combo-count').innerText = streak; const percent = Math.min((streak / 5) * 100, 100);
-        document.getElementById('fever-bar').style.width = `${percent}%`; document.getElementById('fever-txt').innerText = isFever ? "🔥 FEVER 暴走中!" : "普通模式";
-    }
-
-    function showFloatingText(x, y, text) {
-        const pop = document.createElement('div'); pop.className = 'floating-combo'; pop.innerText = text; pop.style.left = `${x}px`; pop.style.top = `${y}px`;
-        document.body.appendChild(pop); setTimeout(() => pop.remove(), 700);
-    }
-
-    function startGame() {
-        score = 0;
-        timeLeft = 10;
-        streak = 0;
-        isFever = false;
-        
-        scoreDisplay.innerText = score;
-        timerDisplay.innerText = timeLeft;
-        overlay.style.display = 'none';
-        
-        updateStreakBar();
-        
-        if (gameInterval) clearInterval(gameInterval);
-        if (spawnInterval) clearInterval(spawnInterval);
-        
-        gameInterval = setInterval(() => {
-            timeLeft--;
-            timerDisplay.innerText = timeLeft;
-            if (timeLeft <= 0) {
-                endGame();
-            }
-        }, 1000);
-        
-        spawnInterval = setInterval(() => {
-            spawnItem();
-        }, isFever ? 250 : 450);
-    }
-
-    function spawnItem() {
-        const item = document.createElement('div');
-        item.className = 'falling-item';
-        const isBomb = Math.random() < 0.15;
-        const emoji = isBomb ? '💣' : items[Math.floor(Math.random() * (items.length - 1))];
-        item.innerText = emoji;
-        item.style.left = `${Math.random() * 85 + 5}%`;
-        
-        const speed = isFever ? (1.2 + Math.random() * 0.8) : (2.0 + Math.random() * 1.5);
-        item.style.animationDuration = `${speed}s`;
-        
-        const handleTouch = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            const rect = item.getBoundingClientRect();
-            const clickX = rect.left + rect.width / 2;
-            const clickY = rect.top;
-            
-            if (emoji === '💣') {
-                playSound(150, 0.4, 'sawtooth');
-                streak = 0;
-                updateStreakBar();
-                endFeverMode();
-                showFloatingText(clickX, clickY, "💣 踩雷!");
-                item.remove();
-                triggerBombVideo();
-            } else {
-                let pts = 10;
-                if (['🎂', '🎁', '🥣', '🍜', '福'].includes(emoji)) pts = 20;
-                if (isFever) pts *= 2;
-                
-                score += pts;
-                scoreDisplay.innerText = score;
-                streak++;
-                
-                playSound(500 + streak * 50, 0.15, 'sine');
-                showFloatingText(clickX, clickY, `+${pts}`);
-                
-                updateStreakBar();
-                if (streak >= 5 && !isFever) {
-                    triggerFeverMode();
-                }
-                item.remove();
-            }
-        };
-        
-        item.addEventListener('touchstart', handleTouch, { passive: false });
-        item.addEventListener('click', handleTouch);
-        
-        arena.appendChild(item);
-        setTimeout(() => { if (item.parentNode) item.remove(); }, speed * 1000);
-    }
-
-    function endGame() {
-        clearInterval(gameInterval);
-        clearInterval(spawnInterval);
-        document.querySelectorAll('.falling-item').forEach(el => el.remove());
-        
-        endFeverMode();
-        
-        resultModal.classList.add('show');
-        document.getElementById('egg-stage').style.display = 'block';
-        document.getElementById('scratch-stage').style.display = 'none';
-        eggKnockCount = 0;
-        document.getElementById('egg-knock-txt').innerText = eggKnockCount;
-        document.getElementById('golden-egg').innerText = '🥚';
-        
-        let prizeStr = "￥388.88";
-        let titleStr = "🥉 纳福奖";
-        let descStr = "祝大碗生日快乐！福气满满，好运连连！";
-        
-        if (score >= 200) {
-            prizeStr = "￥988.88";
-            titleStr = "🥇 金碗福气大奖";
-            descStr = "太厉害啦！大碗手速惊人！把财神爷的金碗、生日蛋糕与福气装得满满当当，祝大碗生日快乐、福气满满、财源滚滚！";
-            document.getElementById('tier-grand').classList.add('won');
-            document.getElementById('tier-mid').classList.remove('won');
-            document.getElementById('tier-small').classList.remove('won');
-        } else if (score >= 100) {
-            prizeStr = "￥688.88";
-            titleStr = "🥈 聚财奖";
-            descStr = "太棒啦！碗里装满了财富、蛋糕与福气！祝大碗生日快乐，新的一岁事事顺心、天天吃大碗美味";
-            document.getElementById('tier-mid').classList.add('won');
-            document.getElementById('tier-grand').classList.remove('won');
-            document.getElementById('tier-small').classList.remove('won');
-        } else {
-            prizeStr = "￥388.88";
-            titleStr = "🥉 纳福奖";
-            descStr = "恭喜大碗！为你解锁专属生日红包，祝你生日快乐、金碗常满、福气连连、健康平安";
-            document.getElementById('tier-small').classList.add('won');
-            document.getElementById('tier-grand').classList.remove('won');
-            document.getElementById('tier-mid').classList.remove('won');
-        }
-        
-        document.getElementById('prize-amount').innerText = prizeStr;
-        document.getElementById('prize-title').innerText = `🎉 恭喜获得 ${titleStr}!`;
-        document.getElementById('prize-desc').innerText = descStr;
-        
-        saveGameHistory(score, titleStr, prizeStr);
-    }
-
-    function knockEgg(e) {
-        if (eggKnockCount >= 3) return;
-        
-        eggKnockCount++;
-        document.getElementById('egg-knock-txt').innerText = eggKnockCount;
-        
-        const egg = document.getElementById('golden-egg');
-        const hammer = document.getElementById('hammer');
-        
-        hammer.classList.remove('hammer-swing');
-        void hammer.offsetWidth;
-        hammer.classList.add('hammer-swing');
-        
-        egg.classList.remove('egg-crack');
-        void egg.offsetWidth;
-        egg.classList.add('egg-crack');
-        
-        playSound(300 + eggKnockCount * 150, 0.2, 'square');
-        
-        if (eggKnockCount === 1) egg.innerText = '🥚';
-        else if (eggKnockCount === 2) egg.innerText = '🐣';
-        else if (eggKnockCount >= 3) {
-            egg.innerText = '💥';
-            confetti({ particleCount: 80, spread: 80, origin: { y: 0.6 } });
-            playSound(800, 0.3, 'sine');
-            
-            setTimeout(() => {
-                document.getElementById('egg-stage').style.display = 'none';
-                document.getElementById('scratch-stage').style.display = 'block';
-                initScratchCanvas();
-            }, 600);
-        }
-    }
-
-    function initScratchCanvas() {
-        const canvas = document.getElementById('scratch-canvas');
-        const ctx = canvas.getContext('2d');
-        const box = canvas.parentElement;
-        
-        canvas.width = box.clientWidth;
-        canvas.height = box.clientHeight;
-        
-        ctx.fillStyle = '#b2bec3';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        ctx.fillStyle = '#636e72';
-        ctx.font = 'bold 16px "ZCOOL KuaiLe", sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('🎁 刮开此图层 🎁', canvas.width / 2, canvas.height / 2);
-        
-        document.getElementById('prize-amount').style.opacity = '1';
-        
-        let isDrawing = false;
-        scratchRevealed = false;
-        
-        function scratch(x, y) {
-            ctx.globalCompositeOperation = 'destination-out';
-            ctx.beginPath();
-            ctx.arc(x, y, 18, 0, Math.PI * 2);
-            ctx.fill();
-            
-            checkScratchPercent();
-        }
-        
-        function checkScratchPercent() {
-            if (scratchRevealed) return;
-            
-            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            let clearedPixels = 0;
-            for (let i = 3; i < imgData.data.length; i += 4) {
-                if (imgData.data[i] === 0) clearedPixels++;
-            }
-            
-            const totalPixels = canvas.width * canvas.height;
-            if (clearedPixels / totalPixels > 0.35) {
-                scratchRevealed = true;
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-                confetti({ particleCount: 100, spread: 100, origin: { y: 0.5 } });
-                playSound(900, 0.4, 'sine');
-                document.getElementById('scratch-result-details').style.display = 'block';
+        const src = playlist[key];
+        if (bgmAudio) {
+            bgmAudio.src = src;
+            const playPromise = bgmAudio.play();
+            if (playPromise !== undefined) {
+                playPromise.then(() => { if (audioStatus) audioStatus.style.display = 'none'; })
+                .catch(err => {
+                    if (audioStatus) {
+                        audioStatus.innerText = "⚠️ 无法自动播放音频：请检查文件同目录下是否有 " + src;
+                        audioStatus.style.display = 'block';
+                    }
+                });
             }
         }
-        
-        function getPos(e) {
-            const rect = canvas.getBoundingClientRect();
-            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
-            return { x: clientX - rect.left, y: clientY - rect.top };
-        }
-        
-        canvas.onmousedown = (e) => { isDrawing = true; const pos = getPos(e); scratch(pos.x, pos.y); };
-        canvas.onmousemove = (e) => { if (isDrawing) { const pos = getPos(e); scratch(pos.x, pos.y); } };
-        canvas.onmouseup = () => { isDrawing = false; };
-        
-        canvas.ontouchstart = (e) => { isDrawing = true; const pos = getPos(e); scratch(pos.x, pos.y); };
-        canvas.ontouchmove = (e) => { if (isDrawing) { const pos = getPos(e); scratch(pos.x, pos.y); } };
-        canvas.ontouchend = () => { isDrawing = false; };
     }
 
-    function playVoiceWish() {
-        const voice = document.getElementById('voice-audio');
-        if (voice) {
-            voice.currentTime = 0;
-            voice.play().catch(e => { alert("🔊 语音播放受阻，请点击允许网页播放音频！"); });
-        }
+    function pauseBGM() {
+        if (bgmAudio) bgmAudio.pause();
+        if (synthInterval) { clearInterval(synthInterval); synthInterval = null; }
+        document.querySelectorAll('.bgm-btn').forEach(btn => btn.classList.remove('active'));
     }
 
-    function exportPoster() {
-        const card = document.getElementById('result-card');
-        html2canvas(card, { backgroundColor: '#1b0826' }).then(canvas => {
-            const link = document.createElement('a');
-            link.download = '大碗生日抢宝纪念卡.png';
-            link.href = canvas.toDataURL();
-            link.click();
-        });
+    function playSynthBoxBGM() {
+        const notes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25];
+        let step = 0;
+        synthInterval = setInterval(() => {
+            const freq = notes[step % notes.length];
+            playSound(freq, 0.25, 'triangle');
+            step++;
+        }, 400);
     }
 
-    function resetGame() {
-        resultModal.classList.remove('show');
-        overlay.style.display = 'flex';
-        candleBlows = 0;
-        document.getElementById('candle-flame').style.display = 'block';
-        document.getElementById('candle-flame').style.transform = 'none';
-        document.getElementById('start-btn').style.display = 'none';
-        scoreDisplay.innerText = 0;
-        timerDisplay.innerText = 10;
-    }
-
-    function saveGameHistory(scoreVal, prizeName, amountVal) {
-        const history = getLocalHistory();
-        const sessionTime = sessionStorage.getItem('current_session_time') || new Date().toLocaleString('zh-CN');
-        const lastPwd = sessionStorage.getItem('dawan_last_pwd') || '未知';
-        
-        const existingIndex = history.findIndex(item => item.time === sessionTime);
-        const record = {
-            time: sessionTime,
-            score: scoreVal,
-            prize: prizeName,
-            amount: amountVal,
-            device: getDeviceId(),
-            password: lastPwd,
-            qrcode: uploadedQRBase64 || ""
-        };
-        
-        if (existingIndex >= 0) {
-            history[existingIndex] = record;
-        } else {
-            history.unshift(record);
-        }
-        
-        localStorage.setItem('dawan_game_history', JSON.stringify(history));
-        syncCloudHistory(history);
-    }
-
+    // -----------------------------------------------------------
+    // CLOUD & HISTORY LOGIC
+    // -----------------------------------------------------------
     function getLocalHistory() {
         const data = localStorage.getItem('dawan_game_history');
         return data ? JSON.parse(data) : [];
     }
 
-async function syncCloudHistory(records = null, wishes = null) {
-    if (!JSONBIN_API_KEY || JSONBIN_API_KEY.includes('YOUR_')) return;
-    try {
-        const getRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-            headers: { 'X-Master-Key': JSONBIN_API_KEY }
-        });
-        let cloudData = { records: [], wishes: [] };
-        if (getRes.ok) {
-            const json = await getRes.json();
-            if (json.record) cloudData = json.record;
-        }
-
-        let finalRecords = records !== null ? records : (cloudData.records || []);
-        let finalWishes = wishes !== null ? wishes : (cloudData.wishes || []);
-
-        await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Master-Key': JSONBIN_API_KEY
-            },
-            // 🚀 NEW: Include bonusDays and lastWateredDate in the cloud storage
-            body: JSON.stringify({
-                records: finalRecords,
-                wishes: finalWishes,
-                bonusDays: bonusDays,
-                lastWateredDate: lastWateredDate
-            })
-        });
-    } catch (e) {
-        console.error("云端同步失败", e);
-    }
-}
-
-async function fetchCloudHistory() {
-    if (!JSONBIN_API_KEY || JSONBIN_API_KEY.includes('YOUR_')) return;
-    try {
-        const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-            headers: { 'X-Master-Key': JSONBIN_API_KEY }
-        });
-        if (res.ok) {
-            const json = await res.json();
-            if (json.record) {
-                if (Array.isArray(json.record.records)) {
-                    localStorage.setItem('dawan_game_history', JSON.stringify(json.record.records));
-                }
-                if (Array.isArray(json.record.wishes)) {
-                    localStorage.setItem('dawan_saved_wishes', JSON.stringify(json.record.wishes));
-                }
-
-                // 🚀 NEW: Retrieve watering progress from cloud
-                if (json.record.bonusDays !== undefined) {
-                    const cloudBonus = parseInt(json.record.bonusDays || 0);
-                    const cloudWateredDate = json.record.lastWateredDate || '';
-
-                    // If cloud has equal or higher bonus days, sync local to cloud
-                    if (cloudBonus >= bonusDays) {
-                        bonusDays = cloudBonus;
-                        lastWateredDate = cloudWateredDate;
-                        localStorage.setItem('dawan_bonus_days', bonusDays);
-                        localStorage.setItem('dawan_last_watered_date', lastWateredDate);
-                    } 
-                    // If local device has higher bonus days (watered previously on Device A), push to cloud
-                    else if (bonusDays > cloudBonus) {
-                        syncCloudHistory();
-                    }
-
-                    // Refresh UI countdown and plant status
-                    updateTreeVisual();
-                    checkWaterButton();
-                    updateCountdownTimer();
-                }
-
-                if (document.getElementById('admin-modal').classList.contains('show')) {
-                    renderAdminHistory();
-                    renderAdminWishes();
+    async function fetchCloudHistory() {
+        try {
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+                headers: { "X-Master-Key": JSONBIN_API_KEY }
+            });
+            if (res.ok) {
+                const json = await res.json();
+                if (json.record && Array.isArray(json.record)) {
+                    localStorage.setItem('dawan_game_history', JSON.stringify(json.record));
                 }
             }
-        }
-    } catch (e) {
-        console.error("云端拉取失败", e);
+        } catch(e) { console.warn("Cloud fetch error:", e); }
     }
-}
 
+    async function syncCloudHistory(historyData) {
+        const data = historyData || getLocalHistory();
+        try {
+            await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': JSONBIN_API_KEY
+                },
+                body: JSON.stringify(data)
+            });
+        } catch(e) { console.warn("Cloud sync error:", e); }
+    }
+
+    // -----------------------------------------------------------
+    // MAIN GAME LOGIC
+    // -----------------------------------------------------------
+    let gameScore = 0;
+    let gameTimer = 10;
+    let gameInterval = null;
+    let spawnInterval = null;
+    let comboCount = 0;
+    let isFeverMode = false;
+    let candleBlowCount = 0;
+
+    function blowCandle(e) {
+        if (e) e.stopPropagation();
+        candleBlowCount++;
+        playSound(400 + candleBlowCount * 100, 0.1, 'sine');
+        
+        const flame = document.getElementById('candle-flame');
+        if (flame) {
+            flame.style.transform = `translateX(-50%) scale(${1 - candleBlowCount * 0.3})`;
+        }
+
+        if (candleBlowCount >= 3) {
+            if (flame) flame.style.display = 'none';
+            document.getElementById('start-btn').style.display = 'inline-block';
+            playSound(800, 0.3, 'sine');
+            confetti({ particleCount: 30, spread: 50, origin: { y: 0.6 } });
+        }
+    }
+
+    function startGame() {
+        unlockAudio();
+        document.getElementById('overlay').style.display = 'none';
+        gameScore = 0;
+        gameTimer = 10;
+        comboCount = 0;
+        isFeverMode = false;
+        
+        document.getElementById('score').innerText = '0';
+        document.getElementById('timer').innerText = '10';
+        document.getElementById('combo-count').innerText = '0';
+        document.getElementById('fever-bar').style.width = '0%';
+        document.getElementById('fever-txt').innerText = '普通模式';
+        document.getElementById('fever-banner').style.display = 'none';
+        document.getElementById('arena').classList.remove('fever-mode');
+
+        gameInterval = setInterval(() => {
+            gameTimer--;
+            document.getElementById('timer').innerText = gameTimer;
+            if (gameTimer <= 0) endGame();
+        }, 1000);
+
+        spawnInterval = setInterval(spawnFallingItem, 450);
+    }
+
+    function spawnFallingItem() {
+        const arena = document.getElementById('arena');
+        if (!arena) return;
+
+        const item = document.createElement('div');
+        item.className = 'falling-item';
+
+        const itemTypes = [
+            { icon: '🎂', score: 20, type: 'good' },
+            { icon: '🎁', score: 20, type: 'good' },
+            { icon: '🥣', score: 20, type: 'good' },
+            { icon: '🍜', score: 20, type: 'good' },
+            { icon: '福', score: 20, type: 'good' },
+            { icon: '💰', score: 10, type: 'good' },
+            { icon: '💣', score: -30, type: 'bomb' }
+        ];
+
+        const selected = itemTypes[Math.floor(Math.random() * itemTypes.length)];
+        item.innerText = selected.icon;
+        item.dataset.type = selected.type;
+        item.dataset.score = selected.score;
+
+        item.style.left = `${Math.random() * 85 + 5}%`;
+        const speed = isFeverMode ? 1.2 + Math.random() * 0.8 : 2.0 + Math.random() * 1.0;
+        item.style.animationDuration = `${speed}s`;
+
+        item.onmousedown = item.ontouchstart = (e) => {
+            e.preventDefault();
+            handleItemClick(e, selected);
+            item.remove();
+        };
+
+        arena.appendChild(item);
+        setTimeout(() => { if (item.parentNode) item.remove(); }, speed * 1000);
+    }
+
+    function handleItemClick(e, itemObj) {
+        if (itemObj.type === 'bomb') {
+            playSound(150, 0.4, 'sawtooth');
+            comboCount = 0;
+            isFeverMode = false;
+            document.getElementById('fever-bar').style.width = '0%';
+            document.getElementById('fever-txt').innerText = '普通模式';
+            document.getElementById('fever-banner').style.display = 'none';
+            document.getElementById('arena').classList.remove('fever-mode');
+
+            openBombVideo();
+            return;
+        }
+
+        comboCount++;
+        let gain = itemObj.score;
+        if (isFeverMode) gain *= 2;
+        gameScore += gain;
+
+        playSound(500 + comboCount * 50, 0.1, 'sine');
+        document.getElementById('score').innerText = gameScore;
+        document.getElementById('combo-count').innerText = comboCount;
+
+        showFloatingText(e, `+${gain}`);
+
+        if (comboCount >= 5 && !isFeverMode) {
+            isFeverMode = true;
+            document.getElementById('fever-txt').innerText = '🔥狂暴双倍';
+            document.getElementById('fever-banner').style.display = 'block';
+            document.getElementById('arena').classList.add('fever-mode');
+            confetti({ particleCount: 30, spread: 60, origin: { y: 0.6 } });
+        }
+
+        const barFill = Math.min((comboCount / 5) * 100, 100);
+        document.getElementById('fever-bar').style.width = `${barFill}%`;
+    }
+
+    function showFloatingText(e, txt) {
+        const floatTxt = document.createElement('div');
+        floatTxt.className = 'floating-combo';
+        floatTxt.innerText = txt;
+        
+        let clientX = window.innerWidth / 2;
+        let clientY = window.innerHeight / 2;
+        if (e.touches && e.touches.length > 0) {
+            clientX = e.touches[0].clientX; clientY = e.touches[0].clientY;
+        } else if (e.clientX) {
+            clientX = e.clientX; clientY = e.clientY;
+        }
+
+        floatTxt.style.left = `${clientX}px`;
+        floatTxt.style.top = `${clientY - 20}px`;
+        document.body.appendChild(floatTxt);
+        setTimeout(() => floatTxt.remove(), 700);
+    }
+
+    function endGame() {
+        clearInterval(gameInterval);
+        clearInterval(spawnInterval);
+
+        const arena = document.getElementById('arena');
+        if (arena) {
+            const items = arena.querySelectorAll('.falling-item');
+            items.forEach(i => i.remove());
+        }
+
+        playSound(900, 0.4, 'sine');
+        confetti({ particleCount: 80, spread: 80, origin: { y: 0.5 } });
+
+        saveGameRecord(gameScore);
+
+        setTimeout(() => {
+            document.getElementById('result-modal').classList.add('show');
+            document.getElementById('egg-stage').style.display = 'block';
+            document.getElementById('scratch-stage').style.display = 'none';
+        }, 500);
+    }
+
+    let eggKnockCount = 0;
+    function knockEgg(e) {
+        eggKnockCount++;
+        playSound(300 + eggKnockCount * 150, 0.15, 'triangle');
+
+        const hammer = document.getElementById('hammer');
+        const egg = document.getElementById('golden-egg');
+        document.getElementById('egg-knock-txt').innerText = eggKnockCount;
+
+        if (hammer) { hammer.classList.remove('hammer-swing'); void hammer.offsetWidth; hammer.classList.add('hammer-swing'); }
+        if (egg) { egg.classList.remove('egg-crack'); void egg.offsetWidth; egg.classList.add('egg-crack'); }
+
+        if (eggKnockCount >= 3) {
+            setTimeout(() => {
+                confetti({ particleCount: 100, spread: 90, origin: { y: 0.5 } });
+                document.getElementById('egg-stage').style.display = 'none';
+                document.getElementById('scratch-stage').style.display = 'block';
+                initScratchCard();
+            }, 300);
+        }
+    }
+
+    function initScratchCard() {
+        const canvas = document.getElementById('scratch-canvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const box = canvas.parentNode;
+        
+        canvas.width = box.clientWidth;
+        canvas.height = box.clientHeight;
+
+        ctx.fillStyle = '#b2bec3';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillStyle = '#636e72';
+        ctx.textAlign = 'center';
+        ctx.fillText('✨ 涂层 (在此滑动/刮开) ✨', canvas.width / 2, canvas.height / 2 + 5);
+
+        let isScratching = false;
+
+        function scratch(e) {
+            if (!isScratching) return;
+            const rect = canvas.getBoundingClientRect();
+            let x, y;
+            if (e.touches && e.touches.length > 0) {
+                x = e.touches[0].clientX - rect.left;
+                y = e.touches[0].clientY - rect.top;
+            } else {
+                x = e.clientX - rect.left;
+                y = e.clientY - rect.top;
+            }
+
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.beginPath();
+            ctx.arc(x, y, 18, 0, Math.PI * 2);
+            ctx.fill();
+
+            checkScratchProgress(ctx, canvas);
+        }
+
+        canvas.onmousedown = canvas.ontouchstart = (e) => { isScratching = true; scratch(e); };
+        canvas.onmousemove = canvas.ontouchmove = (e) => scratch(e);
+        canvas.onmouseup = canvas.ontouchend = () => { isScratching = false; };
+    }
+
+    let isScratchRevealed = false;
+    function checkScratchProgress(ctx, canvas) {
+        if (isScratchRevealed) return;
+        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        let clearPixels = 0;
+        for (let i = 3; i < imgData.data.length; i += 4) {
+            if (imgData.data[i] === 0) clearPixels++;
+        }
+        if (clearPixels / (imgData.data.length / 4) > 0.35) {
+            isScratchRevealed = true;
+            canvas.style.transition = 'opacity 0.5s ease';
+            canvas.style.opacity = '0';
+            setTimeout(() => { canvas.style.display = 'none'; revealScratchPrize(); }, 500);
+        }
+    }
+
+    function revealScratchPrize() {
+        document.getElementById('prize-amount').style.opacity = '1';
+        document.getElementById('scratch-result-details').style.display = 'block';
+        document.getElementById('scratch-hint').innerText = '🎉 大奖已成功揭晓！';
+
+        document.querySelectorAll('.tier-box').forEach(b => b.classList.remove('won'));
+        if (gameScore >= 120) {
+            document.getElementById('tier-grand').classList.add('won');
+        } else if (gameScore >= 60) {
+            document.getElementById('tier-mid').classList.add('won');
+        } else {
+            document.getElementById('tier-small').classList.add('won');
+        }
+
+        confetti({ particleCount: 120, spread: 100, origin: { y: 0.5 } });
+    }
+
+    function saveGameRecord(finalScore) {
+        const history = getLocalHistory();
+        const currentSessionTime = sessionStorage.getItem('current_session_time');
+        const lastPwd = sessionStorage.getItem('dawan_last_pwd') || "";
+
+        let prizeName = "纳福奖";
+        let prizeAmt = "388.88";
+        if (finalScore >= 120) { prizeName = "金碗福气大奖"; prizeAmt = "988.88"; } 
+        else if (finalScore >= 60) { prizeName = "聚财奖"; prizeAmt = "688.88"; }
+
+        if (history.length > 0 && history[0].time === currentSessionTime) {
+            history[0].score = finalScore;
+            history[0].prize = prizeName;
+            history[0].amount = prizeAmt;
+        } else {
+            const record = {
+                time: new Date().toLocaleString('zh-CN'),
+                score: finalScore,
+                prize: prizeName,
+                amount: prizeAmt,
+                device: getDeviceId(),
+                password: lastPwd,
+                qrcode: uploadedQRBase64 || ""
+            };
+            history.unshift(record);
+        }
+
+        localStorage.setItem('dawan_game_history', JSON.stringify(history));
+        syncCloudHistory(history);
+    }
+
+    function resetGame() {
+        document.getElementById('result-modal').classList.remove('show');
+        document.getElementById('overlay').style.display = 'flex';
+        candleBlowCount = 0;
+        eggKnockCount = 0;
+        isScratchRevealed = false;
+
+        const flame = document.getElementById('candle-flame');
+        if (flame) { flame.style.display = 'inline-block'; flame.style.transform = 'translateX(-50%) scale(1)'; }
+        document.getElementById('start-btn').style.display = 'none';
+
+        const scratchCanvas = document.getElementById('scratch-canvas');
+        if (scratchCanvas) { scratchCanvas.style.display = 'block'; scratchCanvas.style.opacity = '1'; }
+        document.getElementById('prize-amount').style.opacity = '0';
+    }
+
+    function playVoiceWish() {
+        const v = document.getElementById('voice-audio');
+        if (v) {
+            v.currentTime = 0;
+            v.play().catch(() => alert("🔊 语音播放受阻，请确保声音已开启！"));
+        }
+    }
+
+    function exportPoster() {
+        const card = document.getElementById('result-card');
+        if (typeof html2canvas !== 'undefined') {
+            html2canvas(card, { backgroundColor: '#11051b', scale: 2 }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = '大碗生日大奖纪念卡.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            });
+        } else {
+            alert("📸 截图功能初始化中，请用手机自带截图保存哦！");
+        }
+    }
+
+    // -----------------------------------------------------------
+    // ADMIN PANEL & MODAL HANDLERS
+    // -----------------------------------------------------------
     function openAdminPanel() {
-        document.getElementById('admin-modal').classList.add('show');
-        switchAdminTab('history');
+        fetchCloudHistory().then(() => {
+            renderAdminHistory();
+            renderAdminWishes();
+            document.getElementById('admin-modal').classList.add('show');
+        });
     }
 
     function closeAdminPanel() {
@@ -2989,92 +3011,82 @@ async function fetchCloudHistory() {
     }
 
     function switchAdminTab(tab) {
-        const histList = document.getElementById('history-list');
-        const wishList = document.getElementById('wishes-list');
-        const btnHist = document.getElementById('tab-btn-history');
-        const btnWish = document.getElementById('tab-btn-wishes');
-        
         if (tab === 'history') {
-            histList.style.display = 'flex';
-            wishList.style.display = 'none';
-            btnHist.style.background = 'var(--gold)';
-            btnHist.style.color = '#2b1055';
-            btnWish.style.background = '#6c5ce7';
-            btnWish.style.color = '#ffffff';
-            renderAdminHistory();
+            document.getElementById('history-list').style.display = 'flex';
+            document.getElementById('wishes-list').style.display = 'none';
+            document.getElementById('tab-btn-history').style.background = 'var(--gold)';
+            document.getElementById('tab-btn-history').style.color = '#2b1055';
+            document.getElementById('tab-btn-wishes').style.background = '#6c5ce7';
+            document.getElementById('tab-btn-wishes').style.color = 'white';
         } else {
-            histList.style.display = 'none';
-            wishList.style.display = 'flex';
-            btnWish.style.background = 'var(--gold)';
-            btnWish.style.color = '#2b1055';
-            btnHist.style.background = '#6c5ce7';
-            btnHist.style.color = '#ffffff';
-            renderAdminWishes();
+            document.getElementById('history-list').style.display = 'none';
+            document.getElementById('wishes-list').style.display = 'flex';
+            document.getElementById('tab-btn-wishes').style.background = 'var(--gold)';
+            document.getElementById('tab-btn-wishes').style.color = '#2b1055';
+            document.getElementById('tab-btn-history').style.background = '#6c5ce7';
+            document.getElementById('tab-btn-history').style.color = 'white';
         }
     }
 
     function renderAdminHistory() {
+        const list = document.getElementById('history-list');
         const history = getLocalHistory();
         document.getElementById('admin-total-plays').innerText = history.length;
-        const container = document.getElementById('history-list');
-        container.innerHTML = '';
-        
+        list.innerHTML = '';
+
         if (history.length === 0) {
-            container.innerHTML = '<div style="font-size:12px; color:#aaa; text-align:center; padding:10px;">暂无战报数据</div>';
+            list.innerHTML = '<div style="text-align:center; font-size:12px; color:#aaa;">暂无战报记录</div>';
             return;
         }
-        
+
         history.forEach(item => {
             const div = document.createElement('div');
             div.className = 'history-item';
-            
-            let qrBtnHtml = item.qrcode ? `<button onclick="showQRModal('${item.qrcode}')" style="background:var(--gold); border:none; border-radius:4px; font-size:10px; cursor:pointer; padding:2px 6px; font-weight:bold;">📷 收款码</button>` : '';
-            
             div.innerHTML = `
                 <div>
-                    <div class="history-item-time">${item.time} (${item.device || '未知设备'})</div>
-                    <div style="font-size:11px; color:#ffeaa7;">🔑 口令: ${item.password || '无'} | 🎯 得分: ${item.score}</div>
+                    <div><b>${item.prize || '体验游玩'}</b> (得分: ${item.score})</div>
+                    <div class="history-item-time">${item.time} | 暗号: ${item.password || '无'}</div>
                 </div>
                 <div style="text-align:right;">
-                    <div class="history-item-prize">${item.prize}</div>
-                    ${qrBtnHtml}
+                    <span class="history-item-prize">￥${item.amount || '0.00'}</span>
+                    ${item.qrcode ? `<button onclick="showQRModal('${item.qrcode}')" style="display:block; margin-top:2px; font-size:10px; background:var(--gold); border:none; border-radius:4px; cursor:pointer;">查看收款码</button>` : ''}
                 </div>
             `;
-            container.appendChild(div);
+            list.appendChild(div);
         });
     }
 
     function renderAdminWishes() {
+        const list = document.getElementById('wishes-list');
         const wishes = getSavedWishes();
         document.getElementById('admin-total-wishes').innerText = wishes.length;
-        const container = document.getElementById('wishes-list');
-        container.innerHTML = '';
-        
+        list.innerHTML = '';
+
         if (wishes.length === 0) {
-            container.innerHTML = '<div style="font-size:12px; color:#aaa; text-align:center; padding:10px;">暂无许愿数据</div>';
+            list.innerHTML = '<div style="text-align:center; font-size:12px; color:#aaa;">暂无愿望记录</div>';
             return;
         }
-        
+
         wishes.forEach(item => {
             const div = document.createElement('div');
             div.className = 'history-item';
             div.innerHTML = `
                 <div>
-                    <div class="history-item-time">${item.time} (${item.device || '未知设备'})</div>
-                    <div style="font-size:12px; color:var(--gold); font-weight:bold; margin-top:2px;">🏮 ${item.wish}</div>
+                    <div>🕯️ <b>${item.wish}</b></div>
+                    <div class="history-item-time">${item.time} | 设备: ${item.device || '未知'}</div>
                 </div>
             `;
-            container.appendChild(div);
+            list.appendChild(div);
         });
     }
 
     function clearHistory() {
-        if (confirm("确定要清空所有记录吗？")) {
+        if (confirm("确定要清空战报和愿望记录吗？")) {
             localStorage.removeItem('dawan_game_history');
             localStorage.removeItem('dawan_saved_wishes');
+            syncCloudHistory([]);
             renderAdminHistory();
             renderAdminWishes();
-            syncCloudHistory([]);
         }
     }
 
@@ -3086,6 +3098,80 @@ async function fetchCloudHistory() {
     function closeQRModal() {
         document.getElementById('qr-modal').classList.remove('show');
     }
+
+    function handleAvatarClick() {
+        let clicks = (parseInt(sessionStorage.getItem('avatar_clicks')) || 0) + 1;
+        sessionStorage.setItem('avatar_clicks', clicks);
+        playSound(500 + clicks * 50, 0.1, 'sine');
+        if (clicks >= 5) {
+            sessionStorage.setItem('avatar_clicks', 0);
+            openAdminPanel();
+        }
+    }
+
+    function openBombVideo() {
+        pauseBGM();
+        const modal = document.getElementById('bomb-video-modal');
+        const video = document.getElementById('bomb-video');
+        modal.classList.add('show');
+        
+        if (video) {
+            video.currentTime = 0;
+            const p = video.play();
+            if (p !== undefined) {
+                p.catch(() => {
+                    document.getElementById('video-error-msg').style.display = 'block';
+                });
+            }
+            video.onended = () => closeBombVideo();
+        }
+    }
+
+    function forcePlayVideo() {
+        const video = document.getElementById('bomb-video');
+        if (video) video.play().catch(e=>alert("播放失败，请确认视频文件 bigboom.mp4 存在。"));
+    }
+
+    function closeBombVideo() {
+        const video = document.getElementById('bomb-video');
+        if (video) video.pause();
+        document.getElementById('bomb-video-modal').classList.remove('show');
+        if (currentTrack) playBGM(currentTrack);
+    }
+
+    function openFuVideo() {
+        pauseBGM();
+        const modal = document.getElementById('fu-video-modal');
+        const video = document.getElementById('fu-video');
+        modal.classList.add('show');
+        if (video) {
+            video.currentTime = 0;
+            const p = video.play();
+            if (p !== undefined) {
+                p.catch(() => {
+                    document.getElementById('fu-video-error-msg').style.display = 'block';
+                });
+            }
+            video.onended = () => closeFuVideo();
+        }
+    }
+
+    function forcePlayFuVideo() {
+        const video = document.getElementById('fu-video');
+        if (video) video.play().catch(e=>alert("播放失败，请确认视频文件 jealosy.mp4 存在。"));
+    }
+
+    function closeFuVideo() {
+        const video = document.getElementById('fu-video');
+        if (video) video.pause();
+        document.getElementById('fu-video-modal').classList.remove('show');
+        if (currentTrack) playBGM(currentTrack);
+    }
+
+    window.onload = function() {
+        fetchCloudHistory();
+        generateBalloons();
+    };
 </script>
 </body>
 </html>
