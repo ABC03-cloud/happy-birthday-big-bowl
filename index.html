@@ -1337,28 +1337,6 @@
     </div>
 </div>
 
-<!-- UPLOAD SCREEN -->
-<div class="landing-screen hidden" id="upload-screen" style="z-index: 998;">
-    <div class="envelope-card" style="max-width: 400px;">
-        <div class="party-sticker">📱 领取奖金必备</div>
-        <h2 class="envelope-title" style="margin-bottom: 4px;">上传微信收款码 💰</h2>
-        <p style="font-size: 12px; color: #ffeaa7; margin-top: 0; margin-bottom: 10px;">请上传您的微信收款码，方便财神爷直接为您派送生日大奖红包！</p>
-
-        <div class="qr-upload-box" onclick="document.getElementById('qr-input-file').click()">
-            <div id="qr-upload-placeholder">
-                <div style="font-size: 36px; margin-bottom: 4px;">📷</div>
-                <div style="font-size: 13px; color: var(--gold); font-weight: bold;">点击选择/上传微信收款码照片</div>
-                <div style="font-size: 10px; color: #aaa; margin-top: 4px;">支持 PNG, JPG 等格式</div>
-            </div>
-            <img id="qr-preview-img" class="qr-preview-img" alt="微信收款码预览" />
-        </div>
-
-        <input type="file" id="qr-input-file" accept="image/*" style="display: none;" onchange="handleQRCodeSelect(event)">
-
-        <button class="btn-action" id="confirm-upload-btn" onclick="submitQRCodeAndProceed()" style="width: 100%; margin-top: 10px;">确认提交，开启养树 🚀</button>
-    </div>
-</div>
-
 <!-- COUNTDOWN & TREE SCREEN -->
 <div class="landing-screen hidden" id="countdown-screen" style="z-index: 999;">
     <div class="envelope-card" style="max-width: 400px;">
@@ -2848,7 +2826,6 @@
             if (document.getElementById('upload-screen')) document.getElementById('upload-screen').style.display = 'none';
             if (document.getElementById('countdown-screen')) document.getElementById('countdown-screen').style.display = 'none';
             playBGM('song3'); 
-            openAdminPanel();
             return;
         }
         if (pwdInput.length === 4) {
@@ -2952,15 +2929,37 @@
         document.querySelectorAll('.bgm-btn').forEach(btn => btn.classList.remove('active'));
     }
 
-    function playSynthBoxBGM() {
-        const notes = [261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25];
-        let step = 0;
-        synthInterval = setInterval(() => {
-            const freq = notes[step % notes.length];
-            playSound(freq, 0.25, 'triangle');
-            step++;
-        }, 400);
+function playSynthBoxBGM() {
+    const notes = [
+        // Happy birthday to you
+        { f: 261.63, d: 0.3 }, { f: 261.63, d: 0.3 }, { f: 293.66, d: 0.6 }, { f: 261.63, d: 0.6 }, { f: 349.23, d: 0.6 }, { f: 329.63, d: 1.2 },
+        // Happy birthday to you
+        { f: 261.63, d: 0.3 }, { f: 261.63, d: 0.3 }, { f: 293.66, d: 0.6 }, { f: 261.63, d: 0.6 }, { f: 392.00, d: 0.6 }, { f: 349.23, d: 1.2 },
+        // Happy birthday dear friend
+        { f: 261.63, d: 0.3 }, { f: 261.63, d: 0.3 }, { f: 523.25, d: 0.6 }, { f: 440.00, d: 0.6 }, { f: 349.23, d: 0.6 }, { f: 329.63, d: 0.6 }, { f: 293.66, d: 1.2 },
+        // Happy birthday to you
+        { f: 466.16, d: 0.3 }, { f: 466.16, d: 0.3 }, { f: 440.00, d: 0.6 }, { f: 349.23, d: 0.6 }, { f: 392.00, d: 0.6 }, { f: 349.23, d: 1.5 }
+    ];
+
+    let step = 0;
+
+    function playNextNote() {
+        // Stop playing if track changes or pauses
+        if (currentTrack !== 'song3') return;
+
+        const note = notes[step % notes.length];
+        
+        // Pass frequency, duration in seconds, and waveform to existing playSound()
+        playSound(note.f, note.d, 'triangle');
+
+        step++;
+        
+        // Schedule the next note based on the current note's length
+        synthInterval = setTimeout(playNextNote, note.d * 1000);
     }
+
+    playNextNote();
+}
 
     // -----------------------------------------------------------
     // CLOUD & HISTORY LOGIC
