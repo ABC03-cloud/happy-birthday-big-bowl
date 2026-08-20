@@ -2889,20 +2889,28 @@
             document.getElementById('polaroid-text').innerText = slides[slideIdx].text;
         }
 
-        function saveWishRecord(wishText) {
-            const wishes = getSavedWishes();
+        async function saveWishRecord(wishText) {
             const record = { wish: wishText, time: new Date().toLocaleString('zh-CN'), device: getDeviceId() };
-            wishes.unshift(record);
-            localStorage.setItem('dawan_saved_wishes', JSON.stringify(wishes));
+
+            // Wishes must be stored in the shared cloud state, not only this device's localStorage.
+            const state = await updateCloudState(cloud => {
+                cloud.wishes = Array.isArray(cloud.wishes) ? cloud.wishes : [];
+                cloud.wishes.unshift(record);
+            });
+
+            localStorage.setItem('dawan_saved_wishes', JSON.stringify(state.wishes));
+            return record;
         }
 
-        function getSavedWishes() { const data = localStorage.getItem('dawan_saved_wishes'); return data ? JSON.parse(
-                data) : []; }
+        function getSavedWishes() {
+            const data = localStorage.getItem('dawan_saved_wishes');
+            return data ? JSON.parse(data) : [];
+        }
 
-        function sendWishLantern() {
+        async function sendWishLantern() {
             const input = document.getElementById('wish-input');
             const text = input.value.trim() || "大碗生日快乐！";
-            saveWishRecord(text);
+            try { await saveWishRecord(text); } catch (e) { console.warn('Wish cloud sync failed:', e); }
             const lantern = document.createElement('div');
             lantern.className = 'sky-lantern';
             lantern.innerHTML = `🏮 <span>${text}</span>`;
@@ -2926,8 +2934,17 @@
         let bonusDays = parseInt(localStorage.getItem('dawan_bonus_days')) || 0;
         let lastWateredDate = localStorage.getItem('dawan_last_watered_date') || "";
         let countdownInterval = null;
+        let cloudStateReady = false;
 
-        function getTodayString() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+        function getTodayString() {
+            // Use the birthday/event timezone (Malaysia UTC+8), so every device
+            // agrees on what "today" means even if a device has another timezone.
+            const parts = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Kuala_Lumpur', year: 'numeric', month: '2-digit', day: '2-digit'
+            }).formatToParts(new Date());
+            const map = Object.fromEntries(parts.map(p => [p.type, p.value]));
+            return `${map.year}-${map.month}-${map.day}`;
+        }
 
         function updateTreeVisual() {
             const treeEl = document.getElementById('tree-display');
@@ -2981,30 +2998,55 @@
             }
         }
 
-        function waterPlant() {
+        async function waterPlant() {
+            const btn = document.getElementById('water-tree-btn');
+            const msg = document.getElementById('water-msg');
             const today = getTodayString();
-            if (lastWateredDate === today) {
-                alert("今天已经浇过水啦，明天再来吧！");
-                return;
+
+            if (btn.disabled) return;
+            btn.disabled = true;
+            msg.innerText = '☁️ 正在同步浇水记录，请稍候...';
+
+            try {
+                // ALWAYS read the latest cloud state first. This is what makes Device B see
+                // the watering already done by Device A instead of using stale localStorage.
+                const state = await fetchCloudState();
+                const watering = state.watering;
+                const wateredDates = Array.isArray(watering.wateredDates) ? watering.wateredDates : [];
+
+                if (wateredDates.includes(today)) {
+                    bonusDays = Number(watering.bonusDays) || 0;
+                    lastWateredDate = today;
+                    localStorage.setItem('dawan_bonus_days', bonusDays);
+                    localStorage.setItem('dawan_last_watered_date', lastWateredDate);
+                    updateTreeVisual();
+                    checkWaterButton();
+                    updateCountdownTimer();
+                    alert('今天已经浇过水啦，明天再来吧！');
+                    return;
+                }
+
+                // The cloud is the source of truth. Do not add +2 to a stale local value.
+                watering.bonusDays = (Number(watering.bonusDays) || 0) + 2;
+                watering.wateredDates = [...wateredDates, today].slice(-400);
+                watering.lastWateredDate = today;
+                watering.lastWateredDevice = getDeviceId();
+                watering.lastWateredAt = new Date().toISOString();
+
+                const savedState = await putCloudState(state);
+                applyCloudState(savedState);
+
+                updateTreeVisual();
+                checkWaterButton();
+                updateCountdownTimer();
+
+                confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+            } catch (e) {
+                console.warn('Water cloud sync failed:', e);
+                btn.disabled = false;
+                msg.innerText = '⚠️ 云端同步失败，请检查网络后再试。';
+                alert('浇水记录同步失败，没有扣除天数。请检查网络后再试。');
             }
-
-            bonusDays += 2;
-            lastWateredDate = today;
-
-            localStorage.setItem('dawan_bonus_days', bonusDays);
-            localStorage.setItem('dawan_last_watered_date', lastWateredDate);
-
-            updateTreeVisual();
-            checkWaterButton();
-            updateCountdownTimer();
-
-            syncCloudHistory();
-
-            confetti({
-                particleCount: 50,
-                spread: 60,
-                origin: { y: 0.7 }
-            });
         }
 
         function enterGameFromCountdown() {
@@ -3014,16 +3056,19 @@
             playBGM('song3');
         }
 
-        function recordPasswordAttempt(pwd) {
-            const history = getLocalHistory();
+        async function recordPasswordAttempt(pwd) {
             const sessionTime = new Date().toLocaleString('zh-CN');
-            const record = { time: sessionTime, score: '未完成', prize: '浇水/等待中', amount: '0.00', device: getDeviceId(),
-                password: pwd };
-            history.unshift(record);
-            localStorage.setItem('dawan_game_history', JSON.stringify(history));
+            const record = { time: sessionTime, score: '未完成', prize: '浇水/等待中', amount: '0.00', device: getDeviceId(), password: pwd };
+
             sessionStorage.setItem('current_session_time', sessionTime);
             sessionStorage.setItem('dawan_last_pwd', pwd);
-            syncCloudHistory(history);
+
+            const state = await updateCloudState(cloud => {
+                cloud.history = Array.isArray(cloud.history) ? cloud.history : [];
+                cloud.history.unshift(record);
+            });
+            localStorage.setItem('dawan_game_history', JSON.stringify(state.history));
+            return record;
         }
 
         async function verifyPassword() {
@@ -3041,7 +3086,7 @@
             }
 
             if (pwdInput.length === 4) {
-                recordPasswordAttempt(pwdInput);
+                await recordPasswordAttempt(pwdInput);
                 playSound(600, 0.2, 'sine');
                 document.getElementById('landing-screen').classList.add('hidden');
                 setTimeout(() => { document.getElementById('landing-screen').style.display = 'none'; }, 600);
@@ -3187,39 +3232,103 @@
     playNextNote();
 }
         // -----------------------------------------------------------
-        // CLOUD & HISTORY LOGIC
+        // SHARED CLOUD STATE
         // -----------------------------------------------------------
+        // JSONBin now stores one object instead of only the game-history array:
+        // { history: [], wishes: [], watering: { bonusDays, wateredDates, ... } }
+        // Old array-format bins are automatically migrated.
         function getLocalHistory() {
             const data = localStorage.getItem('dawan_game_history');
             return data ? JSON.parse(data) : [];
         }
 
+        function getEmptyCloudState() {
+            return {
+                history: [],
+                wishes: [],
+                watering: { bonusDays: 0, wateredDates: [], lastWateredDate: '', lastWateredDevice: '', lastWateredAt: '' }
+            };
+        }
+
+        function normalizeCloudState(record) {
+            const empty = getEmptyCloudState();
+            // Backward compatibility: previous version stored only history as an array.
+            if (Array.isArray(record)) {
+                empty.history = record;
+                return empty;
+            }
+            const state = record && typeof record === 'object' ? record : empty;
+            state.history = Array.isArray(state.history) ? state.history : [];
+            state.wishes = Array.isArray(state.wishes) ? state.wishes : [];
+            state.watering = state.watering && typeof state.watering === 'object' ? state.watering : {};
+            state.watering.bonusDays = Number(state.watering.bonusDays) || 0;
+            state.watering.wateredDates = Array.isArray(state.watering.wateredDates) ? state.watering.wateredDates : [];
+            state.watering.lastWateredDate = state.watering.lastWateredDate || '';
+            state.watering.lastWateredDevice = state.watering.lastWateredDevice || '';
+            state.watering.lastWateredAt = state.watering.lastWateredAt || '';
+            return state;
+        }
+
+        function applyCloudState(state) {
+            state = normalizeCloudState(state);
+            localStorage.setItem('dawan_game_history', JSON.stringify(state.history));
+            localStorage.setItem('dawan_saved_wishes', JSON.stringify(state.wishes));
+
+            bonusDays = state.watering.bonusDays;
+            lastWateredDate = state.watering.lastWateredDate ||
+                (state.watering.wateredDates.length ? state.watering.wateredDates[state.watering.wateredDates.length - 1] : '');
+            localStorage.setItem('dawan_bonus_days', String(bonusDays));
+            localStorage.setItem('dawan_last_watered_date', lastWateredDate);
+            cloudStateReady = true;
+            return state;
+        }
+
+        async function fetchCloudState() {
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+                cache: 'no-store',
+                headers: { 'X-Master-Key': JSONBIN_API_KEY }
+            });
+            if (!res.ok) throw new Error(`Cloud fetch HTTP ${res.status}`);
+            const json = await res.json();
+            return applyCloudState(json.record);
+        }
+
+        async function putCloudState(state) {
+            const normalized = normalizeCloudState(state);
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': JSONBIN_API_KEY
+                },
+                body: JSON.stringify(normalized)
+            });
+            if (!res.ok) throw new Error(`Cloud PUT HTTP ${res.status}`);
+            return normalized;
+        }
+
+        async function updateCloudState(mutator) {
+            // Re-fetch immediately before every write so a second device does not
+            // accidentally overwrite newer cloud data with stale localStorage.
+            const latest = await fetchCloudState();
+            await mutator(latest);
+            const saved = await putCloudState(latest);
+            return applyCloudState(saved);
+        }
+
+        // Kept for compatibility with the rest of the original code.
         async function fetchCloudHistory() {
-            try {
-                const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-                    headers: { "X-Master-Key": JSONBIN_API_KEY }
-                });
-                if (res.ok) {
-                    const json = await res.json();
-                    if (json.record && Array.isArray(json.record)) {
-                        localStorage.setItem('dawan_game_history', JSON.stringify(json.record));
-                    }
-                }
-            } catch (e) { console.warn("Cloud fetch error:", e); }
+            return fetchCloudState();
         }
 
         async function syncCloudHistory(historyData) {
-            const data = historyData || getLocalHistory();
             try {
-                await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': JSONBIN_API_KEY
-                    },
-                    body: JSON.stringify(data)
-                });
-            } catch (e) { console.warn("Cloud sync error:", e); }
+                if (Array.isArray(historyData)) {
+                    await updateCloudState(cloud => { cloud.history = historyData; });
+                } else {
+                    await fetchCloudState();
+                }
+            } catch (e) { console.warn('Cloud sync error:', e); }
         }
 
         // -----------------------------------------------------------
@@ -3499,35 +3608,37 @@
             confetti({ particleCount: 120, spread: 100, origin: { y: 0.5 } });
         }
 
-        function saveGameRecord(finalScore) {
-            const history = getLocalHistory();
+        async function saveGameRecord(finalScore) {
             const currentSessionTime = sessionStorage.getItem('current_session_time');
-            const lastPwd = sessionStorage.getItem('dawan_last_pwd') || "";
+            const lastPwd = sessionStorage.getItem('dawan_last_pwd') || '';
 
-            let prizeName = "纳福奖";
-            let prizeAmt = "388.88";
-            if (finalScore >= 120) { prizeName = "金碗福气大奖";
-                prizeAmt = "988.88"; } else if (finalScore >= 60) { prizeName = "聚财奖";
-                prizeAmt = "688.88"; }
+            let prizeName = '纳福奖';
+            let prizeAmt = '388.88';
+            if (finalScore >= 120) { prizeName = '金碗福气大奖'; prizeAmt = '988.88'; }
+            else if (finalScore >= 60) { prizeName = '聚财奖'; prizeAmt = '688.88'; }
 
-            if (history.length > 0 && history[0].time === currentSessionTime) {
-                history[0].score = finalScore;
-                history[0].prize = prizeName;
-                history[0].amount = prizeAmt;
-            } else {
-                const record = {
-                    time: new Date().toLocaleString('zh-CN'),
-                    score: finalScore,
-                    prize: prizeName,
-                    amount: prizeAmt,
-                    device: getDeviceId(),
-                    password: lastPwd
-                };
-                history.unshift(record);
+            try {
+                const state = await updateCloudState(cloud => {
+                    const history = cloud.history;
+                    if (history.length > 0 && history[0].time === currentSessionTime && history[0].device === getDeviceId()) {
+                        history[0].score = finalScore;
+                        history[0].prize = prizeName;
+                        history[0].amount = prizeAmt;
+                    } else {
+                        history.unshift({
+                            time: currentSessionTime || new Date().toLocaleString('zh-CN'),
+                            score: finalScore,
+                            prize: prizeName,
+                            amount: prizeAmt,
+                            device: getDeviceId(),
+                            password: lastPwd
+                        });
+                    }
+                });
+                localStorage.setItem('dawan_game_history', JSON.stringify(state.history));
+            } catch (e) {
+                console.warn('Game history cloud sync failed:', e);
             }
-
-            localStorage.setItem('dawan_game_history', JSON.stringify(history));
-            syncCloudHistory(history);
         }
 
         function resetGame() {
@@ -3573,12 +3684,12 @@
         // -----------------------------------------------------------
         // ADMIN PANEL & MODAL HANDLERS
         // -----------------------------------------------------------
-        function openAdminPanel() {
-            fetchCloudHistory().then(() => {
-                renderAdminHistory();
-                renderAdminWishes();
-                document.getElementById('admin-modal').classList.add('show');
-            });
+        async function openAdminPanel() {
+            try { await fetchCloudState(); }
+            catch (e) { console.warn('Admin cloud refresh failed:', e); }
+            renderAdminHistory();
+            renderAdminWishes();
+            document.getElementById('admin-modal').classList.add('show');
         }
 
         function closeAdminPanel() {
@@ -3654,13 +3765,20 @@
             });
         }
 
-        function clearHistory() {
+        async function clearHistory() {
             if (confirm("确定要清空战报和愿望记录吗？")) {
-                localStorage.removeItem('dawan_game_history');
-                localStorage.removeItem('dawan_saved_wishes');
-                syncCloudHistory([]);
-                renderAdminHistory();
-                renderAdminWishes();
+                try {
+                    const state = await updateCloudState(cloud => {
+                        cloud.history = [];
+                        cloud.wishes = [];
+                    });
+                    applyCloudState(state);
+                    renderAdminHistory();
+                    renderAdminWishes();
+                } catch (e) {
+                    console.warn('Cloud clear error:', e);
+                    alert('清空失败，请检查网络后再试。');
+                }
             }
         }
 
@@ -3733,8 +3851,18 @@
             if (currentTrack) playBGM(currentTrack);
         }
 
-        window.onload = function() {
-            fetchCloudHistory();
+        window.onload = async function() {
+            try {
+                await fetchCloudState();
+                updateTreeVisual();
+                checkWaterButton();
+                updateCountdownTimer();
+            } catch (e) {
+                console.warn('Initial cloud sync failed:', e);
+                updateTreeVisual();
+                checkWaterButton();
+                updateCountdownTimer();
+            }
             generateBalloons();
         };
     </script>
