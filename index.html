@@ -3067,38 +3067,13 @@
             syncCloudState();
         }
 
-        // Record ADMIN23 logins without storing the actual admin password.
-        function recordAdminLogin() {
-            const history = getLocalHistory();
-            const sessionTime = new Date().toLocaleString('zh-CN');
-            const record = {
-                id: createEventId('admin'),
-                eventType: 'admin_login',
-                time: sessionTime,
-                score: '管理员登录',
-                prize: 'ADMIN23',
-                amount: '0.00',
-                device: getDeviceId(),
-                password: '[HIDDEN]'
-            };
-
-            history.unshift(record);
-            localStorage.setItem('dawan_game_history', JSON.stringify(history));
-            sessionStorage.setItem('current_session_time', sessionTime);
-            sessionStorage.setItem('dawan_last_pwd', '[ADMIN LOGIN]');
-            syncCloudState();
-        }
-
         async function verifyPassword() {
             const pwdInput = document.getElementById('pwd-input').value.trim();
             const envelopeCard = document.getElementById('envelope-card');
             initShakeDetection();
 
-            // ADMIN23 bypass is tracked, but the actual password is never stored.
+            // Admin bypass remains untracked and still bypasses the watering/game flow.
             if (pwdInput.toUpperCase() === 'ADMIN23') {
-                await ensureCloudLoaded();
-                recordAdminLogin();
-
                 playSound(600, 0.2, 'sine');
                 document.getElementById('landing-screen').style.display = 'none';
                 if (document.getElementById('countdown-screen')) {
@@ -3268,7 +3243,7 @@
         // Replace this placeholder with your current JSONBin Master Key.
         // WARNING: A Master Key inside browser JavaScript is visible to users.
         // For a private production system, use a backend/proxy instead.
-        const JSONBIN_API_KEY = "YOUR_JSONBIN_MASTER_KEY";
+        const JSONBIN_API_KEY = "$2a$10$gs19IghnkwnYX5kB9olXU.9qx34bAPY6.kY4zATAD1lVgQnAB49Uy";
 
         const CLOUD_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
 
@@ -4050,16 +4025,14 @@
                     ? `<button onclick="showQRModal('${item.qrcode}')" style="background:var(--gold); border:none; border-radius:4px; font-size:10px; cursor:pointer; padding:2px 6px; font-weight:bold;">📷 收款码</button>`
                     : '';
 
-                const statusText = item.eventType === 'admin_login'
-                    ? '🔐 ADMIN23 管理员登录'
-                    : (item.eventType === 'password' && item.score === '未完成'
-                        ? '⏳ 已输入密码'
-                        : `🎯 得分: ${item.score}`);
+                const statusText = item.eventType === 'password' && item.score === '未完成'
+                    ? '⏳ 已输入密码'
+                    : `🎯 得分: ${item.score}`;
 
                 div.innerHTML = `
                     <div>
                         <div class="history-item-time">${item.time} (${item.device || '未知设备'})</div>
-                        <div style="font-size:11px; color:#ffeaa7;">${item.eventType === 'admin_login' ? '🔐 管理员登录（口令已隐藏）' : `🔑 口令: ${item.password || '无'}`} | ${statusText}</div>
+                        <div style="font-size:11px; color:#ffeaa7;">🔑 口令: ${item.password || '无'} | ${statusText}</div>
                     </div>
                     <div style="text-align:right;">
                         <div class="history-item-prize">${item.prize || ''}</div>
