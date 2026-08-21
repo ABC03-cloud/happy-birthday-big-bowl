@@ -3189,38 +3189,95 @@
         // -----------------------------------------------------------
         // CLOUD & HISTORY LOGIC
         // -----------------------------------------------------------
-        function getLocalHistory() {
-            const data = localStorage.getItem('dawan_game_history');
-            return data ? JSON.parse(data) : [];
+     function getLocalHistory() {
+        const data = localStorage.getItem('dawan_game_history');
+        return data ? JSON.parse(data) : [];
+    }
+
+async function syncCloudHistory(records = null, wishes = null) {
+    if (!JSONBIN_API_KEY || JSONBIN_API_KEY.includes('YOUR_')) return;
+    try {
+        const getRes = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+            headers: { 'X-Master-Key': JSONBIN_API_KEY }
+        });
+        let cloudData = { records: [], wishes: [] };
+        if (getRes.ok) {
+            const json = await getRes.json();
+            if (json.record) cloudData = json.record;
         }
 
-        async function fetchCloudHistory() {
-            try {
-                const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
-                    headers: { "X-Master-Key": JSONBIN_API_KEY }
-                });
-                if (res.ok) {
-                    const json = await res.json();
-                    if (json.record && Array.isArray(json.record)) {
-                        localStorage.setItem('dawan_game_history', JSON.stringify(json.record));
-                    }
+        let finalRecords = records !== null ? records : (cloudData.records || []);
+        let finalWishes = wishes !== null ? wishes : (cloudData.wishes || []);
+
+        await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Master-Key': JSONBIN_API_KEY
+            },
+            // 🚀 NEW: Include bonusDays and lastWateredDate in the cloud storage
+            body: JSON.stringify({
+                records: finalRecords,
+                wishes: finalWishes,
+                bonusDays: bonusDays,
+                lastWateredDate: lastWateredDate
+            })
+        });
+    } catch (e) {
+        console.error("云端同步失败", e);
+    }
+}
+
+async function fetchCloudHistory() {
+    if (!JSONBIN_API_KEY || JSONBIN_API_KEY.includes('YOUR_')) return;
+    try {
+        const res = await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}/latest`, {
+            headers: { 'X-Master-Key': JSONBIN_API_KEY }
+        });
+        if (res.ok) {
+            const json = await res.json();
+            if (json.record) {
+                if (Array.isArray(json.record.records)) {
+                    localStorage.setItem('dawan_game_history', JSON.stringify(json.record.records));
                 }
-            } catch (e) { console.warn("Cloud fetch error:", e); }
-        }
+                if (Array.isArray(json.record.wishes)) {
+                    localStorage.setItem('dawan_saved_wishes', JSON.stringify(json.record.wishes));
+                }
 
-        async function syncCloudHistory(historyData) {
-            const data = historyData || getLocalHistory();
-            try {
-                await fetch(`https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`, {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': JSONBIN_API_KEY
-                    },
-                    body: JSON.stringify(data)
-                });
-            } catch (e) { console.warn("Cloud sync error:", e); }
+                // 🚀 NEW: Retrieve watering progress from cloud
+                if (json.record.bonusDays !== undefined) {
+                    const cloudBonus = parseInt(json.record.bonusDays || 0);
+                    const cloudWateredDate = json.record.lastWateredDate || '';
+
+                    // If cloud has equal or higher bonus days, sync local to cloud
+                    if (cloudBonus >= bonusDays) {
+                        bonusDays = cloudBonus;
+                        lastWateredDate = cloudWateredDate;
+                        localStorage.setItem('dawan_bonus_days', bonusDays);
+                        localStorage.setItem('dawan_last_watered_date', lastWateredDate);
+                    } 
+                    // If local device has higher bonus days (watered previously on Device A), push to cloud
+                    else if (bonusDays > cloudBonus) {
+                        syncCloudHistory();
+                    }
+
+                    // Refresh UI countdown and plant status
+                    updateTreeVisual();
+                    checkWaterButton();
+                    updateCountdownTimer();
+                }
+
+                if (document.getElementById('admin-modal').classList.contains('show')) {
+                    renderAdminHistory();
+                    renderAdminWishes();
+                }
+            }
         }
+    } catch (e) {
+        console.error("云端拉取失败", e);
+    }
+}
+
 
         // -----------------------------------------------------------
         // MAIN GAME LOGIC
@@ -3573,96 +3630,106 @@
         // -----------------------------------------------------------
         // ADMIN PANEL & MODAL HANDLERS
         // -----------------------------------------------------------
-        function openAdminPanel() {
-            fetchCloudHistory().then(() => {
-                renderAdminHistory();
-                renderAdminWishes();
-                document.getElementById('admin-modal').classList.add('show');
-            });
+     function openAdminPanel() {
+        document.getElementById('admin-modal').classList.add('show');
+        switchAdminTab('history');
+    }
+
+    function closeAdminPanel() {
+        document.getElementById('admin-modal').classList.remove('show');
+    }
+
+    function switchAdminTab(tab) {
+        const histList = document.getElementById('history-list');
+        const wishList = document.getElementById('wishes-list');
+        const btnHist = document.getElementById('tab-btn-history');
+        const btnWish = document.getElementById('tab-btn-wishes');
+        
+        if (tab === 'history') {
+            histList.style.display = 'flex';
+            wishList.style.display = 'none';
+            btnHist.style.background = 'var(--gold)';
+            btnHist.style.color = '#2b1055';
+            btnWish.style.background = '#6c5ce7';
+            btnWish.style.color = '#ffffff';
+            renderAdminHistory();
+        } else {
+            histList.style.display = 'none';
+            wishList.style.display = 'flex';
+            btnWish.style.background = 'var(--gold)';
+            btnWish.style.color = '#2b1055';
+            btnHist.style.background = '#6c5ce7';
+            btnHist.style.color = '#ffffff';
+            renderAdminWishes();
         }
+    }
 
-        function closeAdminPanel() {
-            document.getElementById('admin-modal').classList.remove('show');
+    function renderAdminHistory() {
+        const history = getLocalHistory();
+        document.getElementById('admin-total-plays').innerText = history.length;
+        const container = document.getElementById('history-list');
+        container.innerHTML = '';
+        
+        if (history.length === 0) {
+            container.innerHTML = '<div style="font-size:12px; color:#aaa; text-align:center; padding:10px;">暂无战报数据</div>';
+            return;
         }
+        
+        history.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            
+            let qrBtnHtml = item.qrcode ? `<button onclick="showQRModal('${item.qrcode}')" style="background:var(--gold); border:none; border-radius:4px; font-size:10px; cursor:pointer; padding:2px 6px; font-weight:bold;">📷 收款码</button>` : '';
+            
+            div.innerHTML = `
+                <div>
+                    <div class="history-item-time">${item.time} (${item.device || '未知设备'})</div>
+                    <div style="font-size:11px; color:#ffeaa7;">🔑 口令: ${item.password || '无'} | 🎯 得分: ${item.score}</div>
+                </div>
+                <div style="text-align:right;">
+                    <div class="history-item-prize">${item.prize}</div>
+                    ${qrBtnHtml}
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
 
-        function switchAdminTab(tab) {
-            if (tab === 'history') {
-                document.getElementById('history-list').style.display = 'flex';
-                document.getElementById('wishes-list').style.display = 'none';
-                document.getElementById('tab-btn-history').style.background = 'var(--gold)';
-                document.getElementById('tab-btn-history').style.color = '#2b1055';
-                document.getElementById('tab-btn-wishes').style.background = '#6c5ce7';
-                document.getElementById('tab-btn-wishes').style.color = 'white';
-            } else {
-                document.getElementById('history-list').style.display = 'none';
-                document.getElementById('wishes-list').style.display = 'flex';
-                document.getElementById('tab-btn-wishes').style.background = 'var(--gold)';
-                document.getElementById('tab-btn-wishes').style.color = '#2b1055';
-                document.getElementById('tab-btn-history').style.background = '#6c5ce7';
-                document.getElementById('tab-btn-history').style.color = 'white';
-            }
+
+    function renderAdminWishes() {
+        const wishes = getSavedWishes();
+        document.getElementById('admin-total-wishes').innerText = wishes.length;
+        const container = document.getElementById('wishes-list');
+        container.innerHTML = '';
+        
+        if (wishes.length === 0) {
+            container.innerHTML = '<div style="font-size:12px; color:#aaa; text-align:center; padding:10px;">暂无许愿数据</div>';
+            return;
         }
+        
+        wishes.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'history-item';
+            div.innerHTML = `
+                <div>
+                    <div class="history-item-time">${item.time} (${item.device || '未知设备'})</div>
+                    <div style="font-size:12px; color:var(--gold); font-weight:bold; margin-top:2px;">🏮 ${item.wish}</div>
+                </div>
+            `;
+            container.appendChild(div);
+        });
+    }
 
-        function renderAdminHistory() {
-            const list = document.getElementById('history-list');
-            const history = getLocalHistory();
-            document.getElementById('admin-total-plays').innerText = history.length;
-            list.innerHTML = '';
-
-            if (history.length === 0) {
-                list.innerHTML = '<div style="text-align:center; font-size:12px; color:#aaa;">暂无战报记录</div>';
-                return;
-            }
-
-            history.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'history-item';
-                div.innerHTML = `
-                        <div>
-                            <div><b>${item.prize || '体验游玩'}</b> (得分: ${item.score})</div>
-                            <div class="history-item-time">${item.time} | 暗号: ${item.password || '无'}</div>
-                        </div>
-                        <div style="text-align:right;">
-                            <span class="history-item-prize">￥${item.amount || '0.00'}</span>
-                        </div>
-                    `;
-                list.appendChild(div);
-            });
+    function clearHistory() {
+        if (confirm("确定要清空所有记录吗？")) {
+            localStorage.removeItem('dawan_game_history');
+            localStorage.removeItem('dawan_saved_wishes');
+            renderAdminHistory();
+            renderAdminWishes();
+            syncCloudHistory([]);
         }
+    }
 
-        function renderAdminWishes() {
-            const list = document.getElementById('wishes-list');
-            const wishes = getSavedWishes();
-            document.getElementById('admin-total-wishes').innerText = wishes.length;
-            list.innerHTML = '';
-
-            if (wishes.length === 0) {
-                list.innerHTML = '<div style="text-align:center; font-size:12px; color:#aaa;">暂无愿望记录</div>';
-                return;
-            }
-
-            wishes.forEach(item => {
-                const div = document.createElement('div');
-                div.className = 'history-item';
-                div.innerHTML = `
-                        <div>
-                            <div>🕯️ <b>${item.wish}</b></div>
-                            <div class="history-item-time">${item.time} | 设备: ${item.device || '未知'}</div>
-                        </div>
-                    `;
-                list.appendChild(div);
-            });
-        }
-
-        function clearHistory() {
-            if (confirm("确定要清空战报和愿望记录吗？")) {
-                localStorage.removeItem('dawan_game_history');
-                localStorage.removeItem('dawan_saved_wishes');
-                syncCloudHistory([]);
-                renderAdminHistory();
-                renderAdminWishes();
-            }
-        }
 
         function handleAvatarClick() {
             let clicks = (parseInt(sessionStorage.getItem('avatar_clicks')) || 0) + 1;
