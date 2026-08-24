@@ -2945,6 +2945,9 @@
         }
         let lastWateredDate = localStorage.getItem('dawan_last_watered_date') || "";
         let wateringHistory = [];
+        let cloudLoaded = false;
+        let cloudLoadPromise = null;
+        let cloudSyncPromise = Promise.resolve();
         let countdownInterval = null;
 
         function getTodayString() { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
@@ -2988,7 +2991,9 @@
             const today = getTodayString();
             const btn = document.getElementById('water-tree-btn');
             const msg = document.getElementById('water-msg');
-            if (lastWateredDate === today) {
+            const alreadyWateredToday = lastWateredDate === today ||
+                wateringHistory.some(item => item.date === today);
+            if (alreadyWateredToday) {
                 btn.disabled = true;
                 btn.style.opacity = '0.6';
                 btn.innerText = '🚿 今日已浇水 (明天再来)';
@@ -3002,9 +3007,112 @@
         }
 
         async function waterPlant() {
-            // Shared cloud-first watering. The cloud decides whether today has
-            // already been used, so Device A/B/C share one daily lock.
-            return performSharedWatering();
+            // WATERING IS CLOUD-AUTHORITATIVE.
+            // A watering claim is keyed by the calendar date, not by device ID.
+            // Therefore Device A/B/C all share the same once-per-day lock.
+            const today = getTodayString();
+            const waterBtn = document.getElementById('water-tree-btn');
+            if (waterBtn) waterBtn.disabled = true;
+
+            try {
+                // Always fetch the newest cloud state immediately before watering.
+                // Do NOT trust this device's localStorage for the once-per-day check.
+                if (!cloudConfigured()) {
+                    alert('☁️ 云端尚未配置，无法安全确认今天是否已经浇过水。请先配置云端同步。');
+                    return;
+                }
+
+                const cloudState = await getCloudState();
+                const cloudWatering = normalizeRecords(cloudState.wateringHistory, 'watering');
+
+                // A date-based record is the shared lock. Device ID is deliberately
+                // NOT part of the lock, so another device cannot water again today.
+                const todayWatering = cloudWatering.find(item => item.date === today);
+
+                if (todayWatering || cloudState.lastWateredDate === today) {
+                    applyCloudStateToLocal({
+                        ...cloudState,
+                        wateringHistory: cloudWatering
+                    });
+                    refreshAdminViews();
+                    alert('今天已经浇过水啦！无论换 Device A、B 还是 C，每天只能浇水一次。');
+                    return;
+                }
+
+                // Use a deterministic ID for today's watering claim.
+                // This prevents the same date from becoming multiple logical claims.
+                const wateringId = `watering_${today}`;
+                const previousBonusDays = Math.max(
+                    INITIAL_BONUS_DAYS,
+                    parseInt(cloudState.bonusDays, 10) || INITIAL_BONUS_DAYS
+                );
+                const newBonusDays = previousBonusDays + 2;
+                const wateringRecord = {
+                    eventType: 'watering',
+                    id: wateringId,
+                    time: new Date().toLocaleString('zh-CN'),
+                    date: today,
+                    device: getDeviceId(),
+                    daysAdded: 2,
+                    previousTotalDays: previousBonusDays,
+                    totalDays: newBonusDays
+                };
+
+                const proposedState = {
+                    records: normalizeRecords(cloudState.records, 'history'),
+                    wishes: normalizeRecords(cloudState.wishes, 'wish'),
+                    wateringHistory: [wateringRecord, ...cloudWatering],
+                    bonusDays: newBonusDays,
+                    lastWateredDate: today
+                };
+
+                // Keep the date lock unique even if old records contain duplicates.
+                proposedState.wateringHistory = Array.from(
+                    new Map(proposedState.wateringHistory.map(item => [item.id, item])).values()
+                ).sort((a, b) => (Date.parse(b.time || '') || 0) - (Date.parse(a.time || '') || 0));
+
+                // Write the complete shared state, then READ IT BACK from the cloud.
+                // We only treat watering as successful when the cloud confirms the
+                // date-based claim. This is much safer than updating localStorage first.
+                await putCloudState(proposedState);
+                const verified = await getCloudState();
+                const verifiedWatering = normalizeRecords(verified.wateringHistory, 'watering');
+                const verifiedToday = verifiedWatering.find(item => item.date === today);
+
+                if (!verifiedToday || verified.lastWateredDate !== today) {
+                    // Another device may have won the shared claim between GET/PUT.
+                    applyCloudStateToLocal({ ...verified, wateringHistory: verifiedWatering });
+                    refreshAdminViews();
+                    alert('⚠️ 今天的浇水已经被另一台设备完成了。你的这次操作没有重复扣天数。');
+                    return;
+                }
+
+                // Cloud confirmed today's shared watering. Now update this device.
+                applyCloudStateToLocal({
+                    ...verified,
+                    wateringHistory: verifiedWatering
+                });
+                refreshAdminViews();
+
+                setCloudStatus('ok', `💧 浇水同步成功 · 今日已浇水 · 累计加速 ${bonusDays} 天`);
+
+                confetti({
+                    particleCount: 50,
+                    spread: 60,
+                    origin: { y: 0.7 }
+                });
+            } catch (e) {
+                console.error('☁️ Shared watering failed:', e);
+                // Never deduct locally when cloud confirmation failed.
+                try {
+                    const latest = await getCloudState();
+                    applyCloudStateToLocal(latest);
+                    refreshAdminViews();
+                } catch (_) {}
+                alert('❌ 浇水同步失败，这次不会扣除天数。请检查网络后再试。');
+            } finally {
+                checkWaterButton();
+            }
         }
 
         function enterGameFromCountdown() {
@@ -3034,78 +3142,25 @@
             syncCloudState();
         }
 
-
-        // SHARED ONCE-PER-DAY WATERING LOCK
-        function getTodayKey() {
-            const d = new Date();
-            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-        }
-
-        function hasWateredTodayInState(state) {
-            const today = getTodayKey();
-            if (state && state.lastWateredDate === today) return true;
-            const list = Array.isArray(state?.wateringHistory) ? state.wateringHistory : [];
-            return list.some(x => String(x?.dateKey || x?.date || '').slice(0,10) === today);
-        }
-
-        function makeDailyWateringId() {
-            return `watering_${getTodayKey()}`;
-        }
-
-        async function performSharedWatering() {
-            const latest = await getCloudStateWithDiagnostic();
-            if (!latest) {
-                alert('☁️ 暂时无法确认云端浇水状态，请稍后再试。');
-                return false;
-            }
-
-            if (hasWateredTodayInState(latest)) {
-                applyCloudStateToLocal(latest);
-                refreshAdminViews();
-                alert('💧 今天已经浇过水了！\n无论使用哪一台设备，每天只能浇水一次。');
-                return false;
-            }
-
-            const today = getTodayKey();
-            const record = {
-                id: makeDailyWateringId(),
-                eventType: 'watering',
-                dateKey: today,
-                date: today,
-                time: new Date().toLocaleString('zh-CN'),
+        // Track ADMIN23 login without storing the actual password.
+        function recordAdminLogin() {
+            const history = getLocalHistory();
+            const sessionTime = new Date().toLocaleString('zh-CN');
+            history.unshift({
+                eventType: 'admin_login',
+                id: createEventId('admin'),
+                time: sessionTime,
+                score: '管理员登录',
+                prize: 'ADMIN23',
+                amount: '0.00',
                 device: getDeviceId(),
-                daysAdded: 2
-            };
-
-            const merged = mergeRecords(latest.wateringHistory || [], [record], 'watering');
-            if ((latest.wateringHistory || []).some(x => x.id === record.id)) {
-                applyCloudStateToLocal(latest);
-                alert('💧 今天已经由另一台设备浇过水了！');
-                return false;
-            }
-
-            const currentDays = Math.max(INITIAL_BONUS_DAYS, parseInt(latest.bonusDays,10) || INITIAL_BONUS_DAYS);
-            const newState = {
-                records: latest.records || [],
-                wishes: latest.wishes || [],
-                bonusDays: Math.max(INITIAL_BONUS_DAYS, currentDays + 2),
-                lastWateredDate: today,
-                wateringHistory: merged
-            };
-
-            const ok = await putCloudStateWithDiagnostic(newState);
-            if (!ok) {
-                alert('☁️ 浇水未能同步到云端，因此没有扣除天数。请检查网络后再试。');
-                return false;
-            }
-
-            applyCloudStateToLocal(newState);
-            refreshAdminViews();
-            return true;
+                password: '[HIDDEN]'
+            });
+            localStorage.setItem('dawan_game_history', JSON.stringify(history));
+            sessionStorage.setItem('current_session_time', sessionTime);
+            sessionStorage.setItem('dawan_last_pwd', '[ADMIN LOGIN]');
+            syncCloudState();
         }
-
-        // Expose a safe handler for the existing watering button.
-        window.waterPlantShared = performSharedWatering;
 
         async function verifyPassword() {
             const pwdInput = document.getElementById('pwd-input').value.trim();
@@ -3115,21 +3170,7 @@
             // ADMIN23 is tracked, but the actual admin password is never stored.
             if (pwdInput.toUpperCase() === 'ADMIN23') {
                 await ensureCloudLoaded();
-                const adminHistory = getLocalHistory();
-                const adminTime = new Date().toLocaleString('zh-CN');
-                adminHistory.unshift({
-                    eventType: 'admin_login',
-                    id: createEventId('admin'),
-                    time: adminTime,
-                    score: '管理员登录',
-                    prize: 'ADMIN23',
-                    amount: '0.00',
-                    device: getDeviceId(),
-                    password: '[HIDDEN]'
-                });
-                localStorage.setItem('dawan_game_history', JSON.stringify(adminHistory));
-                setCloudStatus('testing', '正在上传 ADMIN23 登录记录…');
-                await syncCloudState();
+                recordAdminLogin();
                 playSound(600, 0.2, 'sine');
                 document.getElementById('landing-screen').style.display = 'none';
                 if (document.getElementById('countdown-screen')) {
@@ -3287,53 +3328,44 @@
         // -----------------------------------------------------------
         // CLOUD & HISTORY LOGIC - SHARED ACROSS ALL DEVICES
         // -----------------------------------------------------------
-        // JSONBin Free-plan safe design:
-        //   CONTROL   = bonusDays + lastWateredDate
-        //   HISTORY   = password/game/admin tracking
-        //   WISHES    = wishes
-        //   WATERING  = watering history
-        //
-        // The old bin is READ during one-time migration only.
-        // We NEVER delete or overwrite the old bin from this page.
-        // -----------------------------------------------------------
-        const LEGACY_JSONBIN_BIN_ID = "6a77b481f5f4af5e29fcd624";
-
-        const CLOUD_CONTROL_BIN_ID = "6a8a7890da38895dfe05cc33";
-        const CLOUD_HISTORY_BIN_ID = "6a8a79c7da38895dfe05ceaf";
-        const CLOUD_WISHES_BIN_ID = "6a8a79fcda38895dfe05cf31";
-        const CLOUD_WATERING_BIN_ID = "6a8a7a16f5f4af5e29375f2c";
-
-        // IMPORTANT: paste the CURRENT JSONBin Master Key/API key here.
-        // Do not paste or send the key in chat.
-        const JSONBIN_API_KEY = "$2a$10$gs19IghnkwnYX5kB9olXU.9qx34bAPY6.kY4zATAD1lVgQnAB49Uy";
-
-        const LEGACY_CLOUD_URL = `https://api.jsonbin.io/v3/b/${LEGACY_JSONBIN_BIN_ID}`;
-        const CONTROL_CLOUD_URL = `https://api.jsonbin.io/v3/b/${CLOUD_CONTROL_BIN_ID}`;
-        const HISTORY_CLOUD_URL = `https://api.jsonbin.io/v3/b/${CLOUD_HISTORY_BIN_ID}`;
-        const WISHES_CLOUD_URL = `https://api.jsonbin.io/v3/b/${CLOUD_WISHES_BIN_ID}`;
-        const WATERING_CLOUD_URL = `https://api.jsonbin.io/v3/b/${CLOUD_WATERING_BIN_ID}`;
-
-        let cloudStatus = {
-            state: 'unknown', message: '尚未测试', lastSuccess: '', lastError: '', lastEvent: ''
-        };
-        let cloudLoaded = false;
-        let cloudLoadPromise = null;
-        let cloudSyncPromise = Promise.resolve();
-        let cloudMigrationPending = false;
-
+        // Cloud status helper used by watering/sync diagnostics.
+        // Safe even when the admin panel is not currently open.
         function setCloudStatus(state, message, detail = '') {
-            cloudStatus.state = state;
-            cloudStatus.message = message;
-            if (state === 'ok') cloudStatus.lastSuccess = new Date().toLocaleString('zh-CN');
-            if (state === 'error') cloudStatus.lastError = detail || message;
             const el = document.getElementById('cloud-status');
             if (!el) return;
-            const icon = state === 'ok' ? '🟢' : state === 'testing' ? '🟡' : state === 'error' ? '🔴' : '⚪';
-            const safe = v => String(v ?? '').replace(/[<>]/g, '');
-            const extra = detail ? `<br><span style="color:#ffb3b3;">${safe(detail)}</span>` : '';
-            const last = cloudStatus.lastSuccess ? `<br><span style="color:#a7f3d0;">上次成功：${safe(cloudStatus.lastSuccess)}</span>` : '';
-            el.innerHTML = `${icon} 云端状态：${safe(message)}${extra}${last}`;
+
+            const icon = state === 'ok' ? '🟢'
+                : state === 'testing' ? '🟡'
+                : state === 'error' ? '🔴'
+                : '⚪';
+
+            const safe = value => String(value ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+
+            el.innerHTML = `${icon} 云端状态：${safe(message)}`
+                + (detail ? `<br><span style="color:#ffb3b3;">${safe(detail)}</span>` : '');
         }
+
+
+        // IMPORTANT:
+        // 1. All devices use the SAME JSONBin.
+        // 2. Every device keeps a small local cache, but the cloud is the
+        //    shared source of truth for password/game/wish/watering history.
+        // 3. Every upload first GETs the latest cloud state and MERGES it
+        //    with the current device's local state before PUTting it back.
+        //    This prevents Device B/C from replacing Device A's history.
+        // -----------------------------------------------------------
+        const JSONBIN_BIN_ID = "6a77b481f5f4af5e29fcd624";
+        // Replace this placeholder with your current JSONBin Master Key.
+        // WARNING: A Master Key inside browser JavaScript is visible to users.
+        // For a private production system, use a backend/proxy instead.
+        const JSONBIN_API_KEY = "$2a$10$gs19IghnkwnYX5kB9olXU.9qx34bAPY6.kY4zATAD1lVgQnAB49Uy";
+
+        const CLOUD_URL = `https://api.jsonbin.io/v3/b/${JSONBIN_BIN_ID}`;
 
         function safeParseArray(storageKey) {
             try {
@@ -3347,18 +3379,30 @@
         }
 
         function createEventId(prefix = 'evt') {
-            if (window.crypto && typeof window.crypto.randomUUID === 'function') return `${prefix}_${window.crypto.randomUUID()}`;
+            if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+                return `${prefix}_${window.crypto.randomUUID()}`;
+            }
             return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
         }
 
         function makeStableRecordId(item, fallbackType = 'event') {
             if (item && item.id) return String(item.id);
+
             const raw = [
-                item?.eventType || fallbackType, item?.time || '', item?.date || '',
-                item?.device || '', item?.password || '', item?.wish || '',
-                item?.score ?? '', item?.prize || '', item?.amount || '',
-                item?.daysAdded ?? '', item?.totalDays ?? ''
+                item?.eventType || fallbackType,
+                item?.time || '',
+                item?.date || '',
+                item?.device || '',
+                item?.password || '',
+                item?.wish || '',
+                item?.score ?? '',
+                item?.prize || '',
+                item?.amount || '',
+                item?.daysAdded ?? '',
+                item?.totalDays ?? ''
             ].join('|');
+
+            // Deterministic hash so old records without IDs can still be merged.
             let hash = 2166136261;
             for (let i = 0; i < raw.length; i++) {
                 hash ^= raw.charCodeAt(i);
@@ -3368,14 +3412,29 @@
         }
 
         function normalizeRecords(arr, fallbackType = 'event') {
-            return (Array.isArray(arr) ? arr : []).map(item => ({ ...item, id: makeStableRecordId(item, fallbackType) }));
+            return (Array.isArray(arr) ? arr : []).map(item => ({
+                ...item,
+                id: makeStableRecordId(item, fallbackType)
+            }));
         }
 
         function mergeRecords(cloudArr, localArr, fallbackType = 'event') {
             const merged = new Map();
-            normalizeRecords(cloudArr, fallbackType).forEach(item => merged.set(item.id, item));
-            normalizeRecords(localArr, fallbackType).forEach(item => merged.set(item.id, item));
-            return Array.from(merged.values()).sort((a, b) => (Date.parse(b.time || '') || 0) - (Date.parse(a.time || '') || 0));
+
+            // Cloud first, local second. Local wins if the same record exists,
+            // which also preserves any newer fields added locally.
+            normalizeRecords(cloudArr, fallbackType).forEach(item => {
+                merged.set(item.id, item);
+            });
+            normalizeRecords(localArr, fallbackType).forEach(item => {
+                merged.set(item.id, item);
+            });
+
+            return Array.from(merged.values()).sort((a, b) => {
+                const ta = Date.parse(a.time || '') || 0;
+                const tb = Date.parse(b.time || '') || 0;
+                return tb - ta;
+            });
         }
 
         function getLocalHistory() {
@@ -3408,7 +3467,7 @@
             return {
                 records: getLocalHistory(),
                 wishes: getSavedWishes(),
-                bonusDays: Math.max(INITIAL_BONUS_DAYS, parseInt(bonusDays, 10) || INITIAL_BONUS_DAYS),
+                bonusDays: Math.max(INITIAL_BONUS_DAYS, parseInt(bonusDays, 10) || 0),
                 lastWateredDate: lastWateredDate || '',
                 wateringHistory: getLocalWateringHistory()
             };
@@ -3416,325 +3475,262 @@
 
         function cloudConfigured() {
             return !!JSONBIN_API_KEY &&
-                !JSONBIN_API_KEY.includes('PASTE_CURRENT_JSONBIN_API_KEY_HERE') &&
                 !JSONBIN_API_KEY.includes('YOUR_JSONBIN_MASTER_KEY');
         }
 
-        function getNetworkErrorMessage(error, label, method) {
-            if (error?.name === 'AbortError') return `${label} ${method} 超时（15秒）。`;
-            if (error instanceof TypeError && /fetch/i.test(error.message || '')) {
-                return `${label} ${method} 无法连接 JSONBin。可能是网络、浏览器扩展、CORS/预检请求或当前页面环境阻止了请求。`;
+        async function getCloudState() {
+            if (!cloudConfigured()) return null;
+
+            const res = await fetch(`${CLOUD_URL}/latest`, {
+                method: 'GET',
+                cache: 'no-store',
+                headers: {
+                    'X-Master-Key': JSONBIN_API_KEY
+                }
+            });
+
+            if (!res.ok) {
+                throw new Error(`Cloud GET HTTP ${res.status}`);
             }
-            return error?.message || String(error);
-        }
 
-        async function fetchBin(url, label = 'Cloud') {
-            if (!cloudConfigured()) throw new Error('JSONBin API Key 未配置。');
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 15000);
-            try {
-                const res = await fetch(`${url}/latest?ts=${Date.now()}`, {
-                    method: 'GET', cache: 'no-store', signal: controller.signal,
-                    headers: { 'X-Master-Key': JSONBIN_API_KEY, 'Accept': 'application/json' }
-                });
-                const text = await res.text();
-                if (!res.ok) throw new Error(`${label} GET HTTP ${res.status}: ${text.slice(0,300)}`);
-                let json;
-                try { json = JSON.parse(text); } catch (_) { throw new Error(`${label} 返回的不是 JSON。`); }
-                return json && json.record ? json.record : {};
-            } catch (e) {
-                throw new Error(getNetworkErrorMessage(e, label, 'GET'));
-            } finally { clearTimeout(timeout); }
-        }
+            const json = await res.json();
+            const record = json && json.record ? json.record : {};
 
-        async function putBin(url, state, label = 'Cloud') {
-            if (!cloudConfigured()) throw new Error('JSONBin API Key 未配置。');
-            const payload = JSON.stringify(state);
-            const bytes = new Blob([payload]).size;
-            // Stay below the Free-plan 100 KB limit with a large safety margin.
-            if (bytes >= 90000) throw new Error(`${label} 数据过大：${Math.round(bytes / 1024)} KB。已停止写入，避免超过 JSONBin Free 100 KB 限制。`);
-
-            const controller = new AbortController();
-            const timeout = setTimeout(() => controller.abort(), 15000);
-            try {
-                const res = await fetch(`${url}?ts=${Date.now()}`, {
-                    method: 'PUT', cache: 'no-store', signal: controller.signal,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Master-Key': JSONBIN_API_KEY,
-                        'X-Bin-Versioning': 'false'
-                    },
-                    body: payload
-                });
-                const text = await res.text();
-                if (!res.ok) throw new Error(`${label} PUT HTTP ${res.status}: ${text.slice(0,300)}`);
-                return true;
-            } catch (e) {
-                throw new Error(getNetworkErrorMessage(e, label, 'PUT'));
-            } finally { clearTimeout(timeout); }
-        }
-
-        async function readNewCloudState() {
-            // Sequential reads make it obvious which bin fails and avoid four
-            // simultaneous requests during initial setup.
-            const control = await fetchBin(CONTROL_CLOUD_URL, 'Control');
-            const history = await fetchBin(HISTORY_CLOUD_URL, 'History');
-            const wishes = await fetchBin(WISHES_CLOUD_URL, 'Wishes');
-            const watering = await fetchBin(WATERING_CLOUD_URL, 'Watering');
             return {
-                bonusDays: Number.isFinite(parseInt(control.bonusDays, 10)) ? parseInt(control.bonusDays, 10) : INITIAL_BONUS_DAYS,
-                lastWateredDate: control.lastWateredDate || '',
-                records: Array.isArray(history.records) ? history.records : [],
-                wishes: Array.isArray(wishes.wishes) ? wishes.wishes : [],
-                wateringHistory: Array.isArray(watering.wateringHistory) ? watering.wateringHistory : []
+                records: Array.isArray(record.records) ? record.records : [],
+                wishes: Array.isArray(record.wishes) ? record.wishes : [],
+                wateringHistory: Array.isArray(record.wateringHistory)
+                    ? record.wateringHistory
+                    : [],
+                bonusDays: Number.isFinite(parseInt(record.bonusDays, 10))
+                    ? parseInt(record.bonusDays, 10)
+                    : INITIAL_BONUS_DAYS,
+                lastWateredDate: record.lastWateredDate || ''
             };
         }
 
-        async function writeNewCloudState(state) {
-            // Sequential writes: if one fails, the error tells us exactly which bin.
-            await putBin(CONTROL_CLOUD_URL, {
-                bonusDays: Math.max(INITIAL_BONUS_DAYS, parseInt(state.bonusDays, 10) || INITIAL_BONUS_DAYS),
-                lastWateredDate: state.lastWateredDate || '',
-                updatedAt: new Date().toISOString()
-            }, 'Control');
-
-            await putBin(HISTORY_CLOUD_URL, {
-                records: normalizeRecords(state.records, 'history'),
-                updatedAt: new Date().toISOString()
-            }, 'History');
-
-            await putBin(WISHES_CLOUD_URL, {
-                wishes: normalizeRecords(state.wishes, 'wish'),
-                updatedAt: new Date().toISOString()
-            }, 'Wishes');
-
-            await putBin(WATERING_CLOUD_URL, {
-                wateringHistory: normalizeRecords(state.wateringHistory, 'watering'),
-                updatedAt: new Date().toISOString()
-            }, 'Watering');
-
-            return true;
-        }
-
         function applyCloudStateToLocal(state) {
-            localStorage.setItem('dawan_game_history', JSON.stringify(normalizeRecords(state.records, 'history')));
-            localStorage.setItem('dawan_saved_wishes', JSON.stringify(normalizeRecords(state.wishes, 'wish')));
+            const records = normalizeRecords(state.records, 'history');
+            const wishes = normalizeRecords(state.wishes, 'wish');
             const cloudWatering = normalizeRecords(state.wateringHistory, 'watering');
+
+            localStorage.setItem('dawan_game_history', JSON.stringify(records));
+            localStorage.setItem('dawan_saved_wishes', JSON.stringify(wishes));
             localStorage.setItem('dawan_watering_history', JSON.stringify(cloudWatering));
-            bonusDays = Math.max(INITIAL_BONUS_DAYS, parseInt(state.bonusDays, 10) || INITIAL_BONUS_DAYS);
+
+            bonusDays = Math.max(
+                INITIAL_BONUS_DAYS,
+                parseInt(state.bonusDays, 10) || INITIAL_BONUS_DAYS
+            );
             lastWateredDate = state.lastWateredDate || '';
             wateringHistory = cloudWatering;
+
             localStorage.setItem('dawan_bonus_days', String(bonusDays));
             localStorage.setItem('dawan_last_watered_date', lastWateredDate);
         }
 
-        // Compatibility wrappers used by the watering code.
-        async function getCloudStateWithDiagnostic() {
-            try {
-                if (!cloudConfigured()) {
-                    setCloudStatus('error', 'JSONBin API Key 未配置', '请在代码中填入当前有效的 JSONBin key。');
-                    return null;
-                }
-                return await readNewCloudState();
-            } catch (e) {
-                const msg = e?.message || String(e);
-                console.error('☁️ Shared cloud read failed:', e);
-                setCloudStatus('error', '云端读取失败', msg);
-                return null;
-            }
-        }
-
-        async function putCloudStateWithDiagnostic(state) {
-            try {
-                if (!cloudConfigured()) {
-                    setCloudStatus('error', 'JSONBin API Key 未配置', '没有进行任何云端写入。');
-                    return false;
-                }
-                await writeNewCloudState(state);
-                return true;
-            } catch (e) {
-                const msg = e?.message || String(e);
-                console.error('☁️ Shared cloud write failed:', e);
-                setCloudStatus('error', '云端写入失败', msg);
-                return false;
-            }
-        }
-
         function refreshAdminViews() {
-            try {
-                if (typeof updateAdminWaterSummary === 'function') updateAdminWaterSummary();
-                if (typeof renderAdminHistory === 'function') renderAdminHistory();
-                if (typeof renderAdminWishes === 'function') renderAdminWishes();
-                if (typeof renderAdminWatering === 'function') renderAdminWatering();
-            } catch (e) {
-                console.warn('⚠️ refreshAdminViews failed:', e);
-            }
-        }
-
-        async function migrateLegacyCloudIfNeeded() {
-            if (localStorage.getItem('dawan_cloud_migration_v2') === 'done') return true;
-            if (!cloudConfigured()) return false;
-
-            setCloudStatus('testing', '正在读取旧 JSONBin，准备迁移…');
-            try {
-                // First read the old bin. We do not modify it.
-                const legacy = await fetchBin(LEGACY_CLOUD_URL, 'Legacy');
-                const existingNew = await readNewCloudState();
-                const local = getCloudStateFromLocal();
-
-                const merged = {
-                    records: mergeRecords(
-                        mergeRecords(Array.isArray(legacy.records) ? legacy.records : [], existingNew.records, 'history'),
-                        local.records, 'history'
-                    ),
-                    wishes: mergeRecords(
-                        mergeRecords(Array.isArray(legacy.wishes) ? legacy.wishes : [], existingNew.wishes, 'wish'),
-                        local.wishes, 'wish'
-                    ),
-                    wateringHistory: mergeRecords(
-                        mergeRecords(Array.isArray(legacy.wateringHistory) ? legacy.wateringHistory : [], existingNew.wateringHistory, 'watering'),
-                        local.wateringHistory, 'watering'
-                    ),
-                    // Never lower watering progress during migration.
-                    bonusDays: Math.max(
-                        INITIAL_BONUS_DAYS,
-                        parseInt(legacy.bonusDays, 10) || INITIAL_BONUS_DAYS,
-                        parseInt(existingNew.bonusDays, 10) || INITIAL_BONUS_DAYS,
-                        parseInt(local.bonusDays, 10) || INITIAL_BONUS_DAYS
-                    ),
-                    lastWateredDate: existingNew.lastWateredDate || legacy.lastWateredDate || local.lastWateredDate || ''
-                };
-
-                await writeNewCloudState(merged);
-                applyCloudStateToLocal(merged);
-                localStorage.setItem('dawan_cloud_migration_v2', 'done');
-                cloudMigrationPending = false;
-                console.log('✅ Legacy data migrated successfully.', {
-                    records: merged.records.length,
-                    wishes: merged.wishes.length,
-                    watering: merged.wateringHistory.length,
-                    bonusDays: merged.bonusDays,
-                    lastWateredDate: merged.lastWateredDate
-                });
-                return true;
-            } catch (e) {
-                cloudMigrationPending = true;
-                const msg = e?.message || String(e);
-                console.error('❌ Cloud migration failed:', e);
-                setCloudStatus('error', '云端迁移失败', msg);
-                // CRITICAL: do not clear local watering progress when migration fails.
-                return false;
-            }
+            updateTreeVisual();
+            checkWaterButton();
+            updateCountdownTimer();
+            updateAdminWaterSummary();
+            renderAdminHistory();
+            renderAdminWishes();
+            renderAdminWatering();
         }
 
         async function fetchCloudHistory(forceRefresh = false) {
-            if (cloudLoaded && !forceRefresh) return true;
             if (!cloudConfigured()) {
-                setCloudStatus('error', 'JSONBin API Key 未配置', '请填写当前有效的 JSONBin key。');
+                console.warn('☁️ JSONBin key is not configured. Cloud tracking is disabled.');
                 return false;
             }
+
+            if (cloudLoaded && !forceRefresh) return true;
             if (cloudLoadPromise && !forceRefresh) return cloudLoadPromise;
 
             cloudLoadPromise = (async () => {
-                setCloudStatus('testing', '正在连接新的 JSONBin 云端…');
                 try {
-                    const migrationOK = await migrateLegacyCloudIfNeeded();
+                    // Capture this device's current data BEFORE replacing it.
+                    // This is important for old Device A/B/C local histories.
+                    const localState = getCloudStateFromLocal();
+                    const cloudState = await getCloudState();
 
-                    // If migration failed, still try the new bins. This gives a
-                    // useful diagnostic instead of failing at the old bin only.
-                    const cloud = await readNewCloudState();
-                    const local = getCloudStateFromLocal();
+                    // Merge local + cloud instead of treating cloud as the only source.
                     const merged = {
-                        records: mergeRecords(cloud.records, local.records, 'history'),
-                        wishes: mergeRecords(cloud.wishes, local.wishes, 'wish'),
-                        wateringHistory: mergeRecords(cloud.wateringHistory, local.wateringHistory, 'watering'),
-                        bonusDays: Math.max(INITIAL_BONUS_DAYS, parseInt(cloud.bonusDays,10) || INITIAL_BONUS_DAYS, parseInt(local.bonusDays,10) || INITIAL_BONUS_DAYS),
-                        lastWateredDate: cloud.lastWateredDate || local.lastWateredDate || ''
+                        records: mergeRecords(cloudState.records, localState.records, 'history'),
+                        wishes: mergeRecords(cloudState.wishes, localState.wishes, 'wish'),
+                        wateringHistory: mergeRecords(
+                            cloudState.wateringHistory,
+                            localState.wateringHistory,
+                            'watering'
+                        ),
+                        bonusDays: Math.max(
+                            INITIAL_BONUS_DAYS,
+                            parseInt(cloudState.bonusDays, 10) || INITIAL_BONUS_DAYS,
+                            parseInt(localState.bonusDays, 10) || INITIAL_BONUS_DAYS
+                        ),
+                        lastWateredDate: (
+                            cloudState.lastWateredDate || localState.lastWateredDate || ''
+                        )
                     };
-
-                    // Never automatically write the merged state if the legacy
-                    // migration is still pending. This protects old progress.
-                    if (migrationOK) {
-                        const changed =
-                            merged.records.length !== cloud.records.length ||
-                            merged.wishes.length !== cloud.wishes.length ||
-                            merged.wateringHistory.length !== cloud.wateringHistory.length ||
-                            merged.bonusDays !== cloud.bonusDays ||
-                            merged.lastWateredDate !== cloud.lastWateredDate;
-                        if (changed) await writeNewCloudState(merged);
-                    }
 
                     applyCloudStateToLocal(merged);
                     cloudLoaded = true;
                     refreshAdminViews();
-                    const note = migrationOK ? ' · 迁移完成' : ' · 旧资料迁移待重试（未覆盖旧资料）';
-                    setCloudStatus('ok', `云端连接成功${note} · 记录 ${merged.records.length} / 愿望 ${merged.wishes.length} / 浇水 ${merged.wateringHistory.length}`);
+
+                    // If local data was not already in the cloud, push the merged state.
+                    const changed =
+                        merged.records.length !== cloudState.records.length ||
+                        merged.wishes.length !== cloudState.wishes.length ||
+                        merged.wateringHistory.length !== cloudState.wateringHistory.length ||
+                        merged.bonusDays !== Math.max(
+                            INITIAL_BONUS_DAYS,
+                            parseInt(cloudState.bonusDays, 10) || INITIAL_BONUS_DAYS
+                        ) ||
+                        merged.lastWateredDate !== (cloudState.lastWateredDate || '');
+
+                    if (changed) {
+                        await putCloudState(merged);
+                    }
+
+                    console.log('☁️ Shared cloud state loaded:', merged);
                     return true;
                 } catch (e) {
+                    console.error('☁️ 云端拉取失败:', e);
                     cloudLoaded = false;
-                    const msg = e?.message || String(e);
-                    setCloudStatus('error', '云端连接失败', msg);
-                    console.error('☁️ Cloud load/merge failed:', e);
                     return false;
-                } finally { cloudLoadPromise = null; }
+                } finally {
+                    cloudLoadPromise = null;
+                }
             })();
+
             return cloudLoadPromise;
         }
 
-        async function ensureCloudLoaded() { return cloudLoaded ? true : fetchCloudHistory(false); }
+        async function ensureCloudLoaded() {
+            if (cloudLoaded) return true;
+            return await fetchCloudHistory();
+        }
+
+        async function putCloudState(state) {
+            const res = await fetch(CLOUD_URL, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Master-Key': JSONBIN_API_KEY
+                },
+                body: JSON.stringify(state)
+            });
+
+            if (!res.ok) {
+                throw new Error(`Cloud PUT HTTP ${res.status}`);
+            }
+
+            return true;
+        }
 
         function syncCloudState() {
-            if (!cloudLoaded || !cloudConfigured()) return Promise.resolve(false);
+            if (!cloudConfigured()) {
+                console.warn('☁️ JSONBin key is not configured. Cloud tracking is disabled.');
+                return Promise.resolve(false);
+            }
+
+            // Queue writes on this browser so rapid events cannot overwrite one another.
+            // Each queued write GETs the newest cloud record FIRST, merges it with the
+            // current local state, then PUTs the merged result.
             cloudSyncPromise = cloudSyncPromise.then(async () => {
                 try {
-                    setCloudStatus('testing', '正在同步最新记录…');
-                    const cloud = await readNewCloudState();
-                    const local = getCloudStateFromLocal();
+                    await ensureCloudLoaded();
+                    if (!cloudLoaded) return false;
+
+                    const localState = getCloudStateFromLocal();
+                    const cloudState = await getCloudState();
+
                     const merged = {
-                        records: mergeRecords(cloud.records, local.records, 'history'),
-                        wishes: mergeRecords(cloud.wishes, local.wishes, 'wish'),
-                        wateringHistory: mergeRecords(cloud.wateringHistory, local.wateringHistory, 'watering'),
-                        // A stale device must never reduce accelerated days.
-                        bonusDays: Math.max(INITIAL_BONUS_DAYS, parseInt(cloud.bonusDays,10) || INITIAL_BONUS_DAYS, parseInt(local.bonusDays,10) || INITIAL_BONUS_DAYS),
-                        lastWateredDate: cloud.lastWateredDate || local.lastWateredDate || ''
+                        records: mergeRecords(cloudState.records, localState.records, 'history'),
+                        wishes: mergeRecords(cloudState.wishes, localState.wishes, 'wish'),
+                        wateringHistory: mergeRecords(
+                            cloudState.wateringHistory,
+                            localState.wateringHistory,
+                            'watering'
+                        ),
+                        bonusDays: Math.max(
+                            INITIAL_BONUS_DAYS,
+                            parseInt(cloudState.bonusDays, 10) || INITIAL_BONUS_DAYS,
+                            parseInt(localState.bonusDays, 10) || INITIAL_BONUS_DAYS
+                        ),
+                        lastWateredDate: (
+                            cloudState.lastWateredDate || localState.lastWateredDate || ''
+                        )
                     };
 
-                    // Do not overwrite the new bins until the one-time migration
-                    // has succeeded. This prevents a stale device from erasing
-                    // the legacy watering progress.
-                    if (cloudMigrationPending && localStorage.getItem('dawan_cloud_migration_v2') !== 'done') {
-                        setCloudStatus('error', '同步暂停：旧资料尚未迁移', '请先修复 JSONBin 连接，然后刷新页面重试。');
-                        return false;
-                    }
-
-                    await writeNewCloudState(merged);
+                    // Make the merged state the local cache too.
                     applyCloudStateToLocal(merged);
-                    setCloudStatus('ok', `同步成功 · ${merged.records.length} 条记录 / ${merged.wishes.length} 条愿望 / ${merged.wateringHistory.length} 条浇水`);
+                    await putCloudState(merged);
                     refreshAdminViews();
+
+                    setCloudStatus('ok', `同步成功 · ${merged.records.length} 条记录 / ${merged.wishes.length} 条愿望 / ${merged.wateringHistory.length} 条浇水`);
+                    console.log('☁️ Shared cloud sync successful:', merged);
                     return true;
                 } catch (e) {
-                    const msg = e?.message || String(e);
-                    setCloudStatus('error', '云端同步失败', msg);
-                    console.error('☁️ Cloud sync failed:', e);
+                    setCloudStatus('error', '云端同步失败', e?.message || String(e));
+                    console.error('☁️ 云端同步失败:', e);
                     return false;
                 }
             });
+
             return cloudSyncPromise;
         }
 
-        async function testCloudConnection(showAlert = false) {
-            const ok = await fetchCloudHistory(true);
-            if (showAlert) alert(ok ? '✅ 云端连接成功！' : '❌ 云端连接失败。请查看云端状态。');
-            return ok;
+        // Explicitly clear shared password/game/wish history.
+        // Watering progress/history is intentionally preserved, matching the original UI text.
+        async function clearSharedTrackingHistory() {
+            if (!confirm("确定要清空所有设备的密码/游戏记录和愿望记录吗？浇水累计天数不会被清除。")) {
+                return;
+            }
+
+            await ensureCloudLoaded();
+
+            if (!cloudConfigured() || !cloudLoaded) {
+                localStorage.setItem('dawan_game_history', JSON.stringify([]));
+                localStorage.setItem('dawan_saved_wishes', JSON.stringify([]));
+                renderAdminHistory();
+                renderAdminWishes();
+                return;
+            }
+
+            cloudSyncPromise = cloudSyncPromise.then(async () => {
+                try {
+                    const cloudState = await getCloudState();
+                    const state = {
+                        records: [],
+                        wishes: [],
+                        wateringHistory: normalizeRecords(cloudState.wateringHistory, 'watering'),
+                        bonusDays: Math.max(
+                            INITIAL_BONUS_DAYS,
+                            parseInt(cloudState.bonusDays, 10) || INITIAL_BONUS_DAYS
+                        ),
+                        lastWateredDate: cloudState.lastWateredDate || ''
+                    };
+
+                    applyCloudStateToLocal(state);
+                    await putCloudState(state);
+                    refreshAdminViews();
+                    return true;
+                } catch (e) {
+                    console.error('☁️ 清空共享历史失败:', e);
+                    alert('清空共享历史失败，请检查网络或 JSONBin 设置。');
+                    return false;
+                }
+            });
+
+            await cloudSyncPromise;
         }
 
-        async function forceCloudRefresh() {
-            const ok = await fetchCloudHistory(true);
-            if (ok) alert('✅ 已从云端重新读取并合并共享记录。');
-            else alert('❌ 刷新失败，请查看云端状态。');
+        // Backward-compatible alias for any remaining code that calls syncCloudHistory().
+        function syncCloudHistory() {
+            return syncCloudState();
         }
-
-        function syncCloudHistory() { return syncCloudState(); }
 
         // MAIN GAME LOGIC
         // -----------------------------------------------------------
@@ -4223,13 +4219,7 @@
         }
 
         function clearHistory() {
-            if (confirm("确定要清空密码/游戏记录和愿望记录吗？浇水累计天数不会被清除。")) {
-                localStorage.setItem('dawan_game_history', JSON.stringify([]));
-                localStorage.setItem('dawan_saved_wishes', JSON.stringify([]));
-                renderAdminHistory();
-                renderAdminWishes();
-                syncCloudState();
-            }
+            clearSharedTrackingHistory();
         }
 
         function handleAvatarClick() {
