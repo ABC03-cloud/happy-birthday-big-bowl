@@ -651,20 +651,76 @@
         }
 
         .cake-candle-area {
-            font-size: 55px;
-            margin: 6px 0;
+            font-size: 62px;
+            line-height: 1;
+            margin: 4px auto;
             cursor: pointer;
             position: relative;
-            display: inline-block;
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            /* 整块蛋糕都是按钮：手指够大也点得到 */
+            width: 170px;
+            height: 130px;
+            padding: 26px 0 10px;
+            border-radius: 24px;
+            background: rgba(255, 215, 0, .07);
+            border: 2px dashed rgba(255, 215, 0, .35);
+            transition: transform .09s ease, background .2s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .cake-candle-area:active {
+            transform: scale(.92);
+            background: rgba(255, 215, 0, .18);
+        }
+
+        .cake-candle-area.done {
+            border-style: solid;
+            border-color: rgba(34, 197, 94, .8);
+            background: rgba(34, 197, 94, .12);
+        }
+
+        .cake-candle-area.tap-bounce {
+            animation: cakeTap .32s ease;
+        }
+
+        @keyframes cakeTap {
+            0%   { transform: scale(.9); }
+            45%  { transform: scale(1.12) rotate(-3deg); }
+            100% { transform: scale(1) rotate(0deg); }
         }
 
         .candle-flame {
             position: absolute;
-            top: -10px;
+            top: 14px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 22px;
+            font-size: 24px;
             animation: flicker 0.4s infinite alternate;
+            pointer-events: none;
+        }
+
+        .cake-progress {
+            display: flex;
+            gap: 7px;
+            justify-content: center;
+            margin-top: 6px;
+        }
+
+        .cake-dot {
+            width: 11px;
+            height: 11px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, .18);
+            border: 1px solid rgba(255, 215, 0, .5);
+            transition: all .2s ease;
+        }
+
+        .cake-dot.on {
+            background: var(--gold);
+            box-shadow: 0 0 8px var(--gold);
+            transform: scale(1.2);
         }
 
         @keyframes flicker {
@@ -1552,10 +1608,10 @@
         <div class="envelope-card" id="envelope-card">
             <div class="party-sticker">🎂 HAPPY BIRTHDAY!</div>
             <div class="envelope-seal" onclick="openFuVideo()" title="点击播放【福】字专属视频">福</div>
-            <div class="envelope-tag">🔐 恰好4字/词暗号解锁</div>
+            <div class="envelope-tag">🔐 3 字暗号解锁</div>
             <h2 class="envelope-title">财神到 · 福气封条 🎈</h2>
             <p class="envelope-subtitle">
-                这是一份只属于 <b>【大碗 🥣】</b> 的生日绝密礼包<br>输入<b>恰好 4 个</b>词语、字母或汉字即可拆封！
+                这是一份只属于 <b>【大碗 🥣】</b> 的生日绝密礼包<br>输入 <b>3 个字</b> 的暗号即可拆封！
             </p>
 
             <div class="polaroid-container" onclick="nextSlide()">
@@ -1569,7 +1625,7 @@
             </div>
 
             <div class="password-box">
-                <input type="text" id="pwd-input" class="password-input" placeholder="请输入恰好 4 个词/字 (如: 大碗福气)" onkeyup="if(event.key === 'Enter') verifyPassword()" />
+                <input type="text" id="pwd-input" class="password-input" placeholder="请输入 3 个字的暗号" onkeyup="if(event.key === 'Enter') verifyPassword()" />
                 <div class="error-msg" id="error-msg"></div>
             </div>
 
@@ -1658,11 +1714,17 @@
 
             <div class="game-overlay" id="overlay">
                 <h2 style="margin: 0 0 4px; color: var(--gold); font-size: 20px;">🎂 大碗生日吹蜡烛仪式</h2>
-                <p style="font-size: 12px; margin-bottom: 6px; color: #ffeaa7;">点击蜡烛 3 次“吹灭火焰”开启游戏！</p>
+                <p style="font-size: 12px; margin-bottom: 6px; color: #ffeaa7;">点蛋糕 3 下「吹灭蜡烛」，开启游戏！</p>
 
-                <div class="cake-candle-area" onclick="blowCandle(event)">
+                <div class="cake-candle-area" id="cake-candle-area" onclick="blowCandle(event)">
                     <span class="candle-flame" id="candle-flame">🔥</span>
                     🎂
+                </div>
+
+                <div class="cake-progress" id="cake-progress">
+                    <div class="cake-dot" id="cake-dot-1"></div>
+                    <div class="cake-dot" id="cake-dot-2"></div>
+                    <div class="cake-dot" id="cake-dot-3"></div>
                 </div>
 
                 <p style="font-size: 11px; color: #aaa; margin-top: 4px;">💡 提示：抢到【🎂/🎁/🥣/🍜/福】得双倍财气(+20分)！连续打中 5 次触发暴走！</p>
@@ -3151,7 +3213,7 @@
                 id: createEventId('admin'),
                 time: sessionTime,
                 score: '管理员登录',
-                prize: 'ADMIN23',
+                prize: 'BOWL',
                 amount: '0.00',
                 device: getDeviceId(),
                 password: '[HIDDEN]'
@@ -3168,7 +3230,7 @@
             initShakeDetection();
 
             // ADMIN23 is tracked, but the actual admin password is never stored.
-            if (pwdInput.toUpperCase() === 'ADMIN23') {
+            if (pwdInput.toUpperCase() === 'BOWL') {
                 await ensureCloudLoaded();
                 recordAdminLogin();
                 playSound(600, 0.2, 'sine');
@@ -3744,7 +3806,20 @@
 
         function blowCandle(e) {
             if (e) e.stopPropagation();
+            if (candleBlowCount >= 3) return;
+
             candleBlowCount++;
+
+            const area = document.getElementById('cake-candle-area');
+            if (area) {
+                area.classList.remove('tap-bounce');
+                void area.offsetWidth;
+                area.classList.add('tap-bounce');
+            }
+            for (let i = 1; i <= 3; i++) {
+                const dot = document.getElementById('cake-dot-' + i);
+                if (dot) dot.classList.toggle('on', i <= candleBlowCount);
+            }
             playSound(400 + candleBlowCount * 100, 0.1, 'sine');
 
             const flame = document.getElementById('candle-flame');
@@ -3754,6 +3829,7 @@
 
             if (candleBlowCount >= 3) {
                 if (flame) flame.style.display = 'none';
+                if (area) area.classList.add('done');
                 document.getElementById('start-btn').style.display = 'inline-block';
                 playSound(800, 0.3, 'sine');
                 confetti({ particleCount: 30, spread: 50, origin: { y: 0.6 } });
@@ -4051,6 +4127,15 @@
             const flame = document.getElementById('candle-flame');
             if (flame) { flame.style.display = 'inline-block';
                 flame.style.transform = 'translateX(-50%) scale(1)'; }
+
+            // 重置蛋糕点击区和进度点
+            const cakeArea = document.getElementById('cake-candle-area');
+            if (cakeArea) cakeArea.classList.remove('done', 'tap-bounce');
+            for (let i = 1; i <= 3; i++) {
+                const dot = document.getElementById('cake-dot-' + i);
+                if (dot) dot.classList.remove('on');
+            }
+
             document.getElementById('start-btn').style.display = 'none';
 
             const scratchCanvas = document.getElementById('scratch-canvas');
@@ -4148,7 +4233,7 @@
                     : '';
 
                 const statusText = item.eventType === 'admin_login'
-                    ? '🔐 ADMIN23 管理员登录'
+                    ? '🔐 BOWL 管理员登录'
                     : (item.eventType === 'password' && item.score === '未完成'
                         ? '⏳ 已输入密码'
                         : `🎯 得分: ${item.score}`);
@@ -4303,5 +4388,447 @@
             updateAdminWaterSummary();
         };
     </script>
+
+    <!-- ============================================================
+         🎂 大碗生日 · 加料补丁 V3（粉丝向 / 主播收礼版）
+         - 暗号改为 3 个字，绕过原本 length===4 的限制
+         - 她输入的文字一律不上传
+         - 摄像头 / 麦克风全部改成可跳过的加分项
+         - 名场面卡 / 生日签 / 结局信
+         ============================================================ -->
+
+    <style>
+        /* 中文字体兜底：Google Fonts 在大陆打不开，ZCOOL 会静默失效 */
+        body,
+        .title,
+        .envelope-title,
+        .btn-action {
+            font-family: 'ZCOOL KuaiLe', 'HYWenHei', 'PingFang SC', 'Hiragino Sans GB',
+                'Microsoft YaHei', 'WenQuanYi Micro Hei', sans-serif;
+        }
+
+        .addon-modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(12, 4, 20, .93);
+            z-index: 9500;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 18px;
+        }
+
+        .addon-modal.show { display: flex; }
+
+        .addon-card {
+            background: linear-gradient(180deg, #3a1550 0%, #2d103b 100%);
+            border: 3px solid var(--gold);
+            border-radius: 22px;
+            padding: 20px 18px;
+            max-width: 340px;
+            width: 100%;
+            box-shadow: 0 0 40px rgba(255, 215, 0, .45);
+            text-align: center;
+            max-height: 86vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .addon-card h3 { color: var(--gold); margin: 0 0 8px; font-size: 19px; }
+        .addon-card p { color: #ffeaa7; font-size: 13px; line-height: 1.65; margin: 6px 0; }
+
+        .addon-photo {
+            width: 100%;
+            border-radius: 14px;
+            border: 2px solid var(--gold);
+            margin: 8px 0;
+            display: block;
+        }
+
+        .privacy-note {
+            font-size: 10px;
+            color: #a29bfe;
+            line-height: 1.5;
+            margin-top: 8px;
+            padding: 6px 8px;
+            background: rgba(0, 0, 0, .25);
+            border-radius: 8px;
+        }
+
+        #blow-meter {
+            width: 150px;
+            height: 8px;
+            background: rgba(0, 0, 0, .45);
+            border-radius: 5px;
+            margin: 6px auto 2px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 215, 0, .4);
+            display: none;
+        }
+
+        #blow-meter-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #74b9ff, var(--gold));
+            transition: width .08s linear;
+        }
+
+        #blow-hint {
+            font-size: 11px;
+            color: #a29bfe;
+            min-height: 15px;
+            cursor: pointer;
+            text-decoration: underline dotted;
+        }
+
+        .fortune {
+            background: var(--yellow-card);
+            color: #2d103b;
+            border: 2px dashed #b8860b;
+            border-radius: 12px;
+            padding: 10px 12px;
+            margin: 7px 0;
+            text-align: left;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+
+        .skip-link {
+            display: block;
+            margin-top: 8px;
+            font-size: 11px;
+            color: #a29bfe;
+            text-decoration: underline;
+            cursor: pointer;
+            background: none;
+            border: none;
+            width: 100%;
+        }
+    </style>
+
+    <div class="addon-modal" id="memory-modal">
+        <div class="addon-card">
+            <div class="party-sticker">📼 名场面</div>
+            <h3 id="memory-title"></h3>
+            <img class="addon-photo" id="memory-photo" alt="" style="display:none">
+            <p id="memory-text"></p>
+            <button class="btn-action" style="width:100%;margin-top:6px" onclick="closeMemory()">哈哈哈好 🎉</button>
+        </div>
+    </div>
+
+    <div class="addon-modal" id="finale-modal">
+        <div class="addon-card">
+            <h3 id="finale-title">🎂 生日快乐</h3>
+            <p id="finale-text" style="text-align:left"></p>
+            <div id="fortune-list"></div>
+            <button class="btn-action" style="width:100%;margin-top:8px" onclick="closeFinale()">✕ 关上</button>
+        </div>
+    </div>
+
+    <script>
+        /* ============================================================
+           ❶ 只改这一段
+           ============================================================ */
+
+        // 嘿嘿嘿，不是一样一样了 —— 所以给足提示，3 次后直接送答案。
+        const SECRET_ANSWERS = ['刘富贵'];
+        const PWD_HINTS = [
+            '💭 嘿嘿嘿，不是一样一样了。提示:3 个字。关于你的。',
+            '💭 你的小名。',
+            '💭 最后一个字：贵。',
+            '💭 好啦，答案是「刘富贵」，直接抄 😄'
+        ];
+
+        // 抽签：轻松的祝福，不是承诺、不是欠条。
+        const FORTUNES = [
+            '🥣 本年运势：大碗福气满满，赚得盆满钵满，吃啥都香',
+            '🎤💃 宜跳舞开麦，忌 emo',
+            '💤 今年小目标：轻松下班，数钱数到自然醒',
+            '📈 直播间大哥大姐人数只涨不跌',
+            '🍜 遇到的每一碗面都不坨'
+        ];
+
+        // 结局：短。不提你花了多少功夫，不要她回应。
+        const FINALE_LETTER = `生日快乐，新的一岁顺顺利利，天天开心，身体健康，八方来财，赚得盆满钵满<br><br>
+烦恼像头发一样越掉越少，快乐像存款一样越变越多<br><br>
+允许自己偶尔摆烂，因为你已经做得够好了<br><br>
+烦恼彻底放空，钱包和心情一起慢慢变鼓`;
+
+        // 你的落款：一个 ID 就够了。
+        const SIGNATURE = 'From: 阿贝贝枕头🙈';
+
+        // 她放飞的愿望，我能不能看到？
+        //   true  = 能看到。页面会明确告诉她「这条会寄给我」，她自己决定要不要按。
+        //   false = 完全看不到，只存在她手机里。
+        const WISH_GOES_TO_ME = true;
+
+        /* ============================================================
+           ❷ 实现（一般不用动）
+           ============================================================ */
+
+        const buzz = (ms = 15) => { try { navigator.vibrate && navigator.vibrate(ms); } catch (e) {} };
+
+        /* --- 愿望：要么她知道我能看到，要么我就真的看不到 -------- */
+        if (!WISH_GOES_TO_ME && typeof window.saveWishRecord === 'function') {
+            window.saveWishRecord = function () {};   // 彻底不记录
+        }
+
+        // 密码尝试始终不记原文（她可能会乱打自己的东西进去）
+        if (typeof window.recordPasswordAttempt === 'function') {
+            window.__origRecordPwd = window.recordPasswordAttempt;
+            window.recordPasswordAttempt = function () { return window.__origRecordPwd('[已隐藏]'); };
+        }
+
+        function mountPrivacyNote() {
+            const box = document.querySelector('.lantern-box');
+            if (!box || document.getElementById('privacy-note')) return;
+            const n = document.createElement('div');
+            n.id = 'privacy-note';
+            n.className = 'privacy-note';
+            n.innerText = WISH_GOES_TO_ME
+                ? '🏮 放飞天灯'
+                : '🔒 ';
+            box.parentNode.insertBefore(n, box.nextSibling);
+
+            // 按钮文案跟着一起说实话
+            const btn = box.querySelector('.lantern-btn');
+            if (btn && WISH_GOES_TO_ME) btn.innerText = '放飞天灯🏮';
+        }
+
+        /* --- 吹蜡烛：默认点击，麦克风是可选加分项 --------------- */
+        let blowStream = null, blowRAF = null, blowHeld = 0, blowDone = false;
+
+        function mountBlowUI() {
+            const area = document.querySelector('.cake-candle-area');
+            if (!area || document.getElementById('blow-meter')) return;
+            const box = document.createElement('div');
+            box.innerHTML =
+                '<div id="blow-meter"><div id="blow-meter-fill"></div></div>' +
+                '<div id="blow-hint">🎤 想真的吹？点这里开麦（不开也能点蛋糕）</div>';
+            area.parentNode.insertBefore(box, area.nextSibling);
+            document.getElementById('blow-hint').onclick = startBlowDetection;
+        }
+
+        async function startBlowDetection() {
+            const hint = document.getElementById('blow-hint');
+            const meter = document.getElementById('blow-meter');
+            try {
+                blowStream = await navigator.mediaDevices.getUserMedia({
+                    audio: { echoCancellation: false, noiseSuppression: false }
+                });
+            } catch (e) {
+                hint.innerText = '🎤 开不了麦也没关系，点蛋糕 3 下一样吹得灭';
+                hint.style.textDecoration = 'none';
+                hint.onclick = null;
+                return;
+            }
+            meter.style.display = 'block';
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const an = ctx.createAnalyser();
+            an.fftSize = 1024;
+            ctx.createMediaStreamSource(blowStream).connect(an);
+            const data = new Uint8Array(an.frequencyBinCount);
+            hint.innerText = '😮‍💨 对着手机吹～';
+
+            (function loop() {
+                an.getByteFrequencyData(data);
+                let sum = 0, n = Math.floor(data.length / 6);
+                for (let i = 0; i < n; i++) sum += data[i];
+                const pct = Math.min(100, Math.max(0, (sum / n - 38)) * 2.6);
+                const fill = document.getElementById('blow-meter-fill');
+                if (fill) fill.style.width = pct + '%';
+                blowHeld = pct > 55 ? blowHeld + 1 : Math.max(0, blowHeld - 2);
+
+                if (blowHeld > 18 && !blowDone) {
+                    blowDone = true;
+                    buzz([30, 40, 60]);
+                    for (let i = 0; i < 3; i++) window.__origBlowCandle(null);
+                    hint.innerText = '🎂 吹灭了！';
+                    const fl = document.getElementById('candle-flame');
+                    if (fl) fl.style.display = 'none';
+                    if (blowRAF) cancelAnimationFrame(blowRAF);
+                    blowStream.getTracks().forEach(t => t.stop());
+                    try { ctx.close(); } catch (e) {}
+                    return;
+                }
+                blowRAF = requestAnimationFrame(loop);
+            })();
+        }
+
+        window.__origBlowCandle = window.blowCandle;
+        window.blowCandle = function (e) { buzz(12); return window.__origBlowCandle(e); };
+
+        /* --- 暗号（3 个字，直接解锁，不走原本的 length===4） ----- */
+        let pwdTries = 0;
+        window.__origVerify = window.verifyPassword;
+        window.verifyPassword = async function () {
+            const el = document.getElementById('pwd-input');
+            const v = (el ? el.value : '').trim();
+
+            // 管理员通道保留
+            if (v.toUpperCase() === 'BOWL') return window.__origVerify();
+
+            if (SECRET_ANSWERS.includes(v)) {
+                buzz([20, 30, 20]);
+                initShakeDetection();
+                try { await ensureCloudLoaded(); } catch (e) {}
+                try { recordPasswordAttempt(v); } catch (e) {}
+                playSound(600, 0.2, 'sine');
+
+                const landing = document.getElementById('landing-screen');
+                landing.classList.add('hidden');
+                setTimeout(() => { landing.style.display = 'none'; }, 600);
+
+                const cd = document.getElementById('countdown-screen');
+                if (cd) {
+                    cd.classList.remove('hidden');
+                    cd.style.display = 'flex';
+                    updateTreeVisual();
+                    checkWaterButton();
+                    updateCountdownTimer();
+                    if (typeof countdownInterval !== 'undefined' && countdownInterval) {
+                        clearInterval(countdownInterval);
+                    }
+                    countdownInterval = setInterval(updateCountdownTimer, 1000);
+                }
+                return;
+            }
+
+            buzz(60);
+            pwdTries++;
+            let hint = document.getElementById('pwd-hint');
+            if (!hint) {
+                hint = document.createElement('div');
+                hint.id = 'pwd-hint';
+                hint.style.cssText = 'font-size:11px;color:#a29bfe;margin-top:6px;line-height:1.5';
+                document.querySelector('.password-box').appendChild(hint);
+            }
+            hint.innerText = PWD_HINTS[Math.min(pwdTries - 1, PWD_HINTS.length - 1)];
+            const card = document.getElementById('envelope-card');
+            card.classList.remove('shake');
+            void card.offsetWidth;
+            card.classList.add('shake');
+            playSound(200, 0.3, 'sawtooth');
+        };
+
+        /* --- 浇水掉名场面卡 ------------------------------------- */
+        function showMemoryFor(i) {
+            if (!MEMORIES.length) return;
+            const m = MEMORIES[i % MEMORIES.length];
+            document.getElementById('memory-title').innerText = `名场面 #${(i % MEMORIES.length) + 1}`;
+            const img = document.getElementById('memory-photo');
+            if (m.photo) {
+                img.src = m.photo;
+                img.style.display = 'block';
+                img.onerror = () => { img.style.display = 'none'; };
+            } else {
+                img.style.display = 'none';
+            }
+            document.getElementById('memory-text').innerText = m.text;
+            document.getElementById('memory-modal').classList.add('show');
+            buzz([15, 40, 15]);
+            if (typeof confetti === 'function') confetti({ particleCount: 40, spread: 60, origin: { y: 0.5 } });
+        }
+
+        function closeMemory() { document.getElementById('memory-modal').classList.remove('show'); }
+
+        window.__origWater = window.waterPlant;
+        window.waterPlant = async function () {
+            const key = 'dawan_watering_history';
+            const before = (JSON.parse(localStorage.getItem(key) || '[]')).length;
+            await window.__origWater();
+            const after = (JSON.parse(localStorage.getItem(key) || '[]')).length;
+            if (after > before) {
+                const seen = parseInt(localStorage.getItem('dawan_memories_seen') || '0', 10);
+                localStorage.setItem('dawan_memories_seen', seen + 1);
+                setTimeout(() => showMemoryFor(seen), 700);
+            }
+        };
+
+        /* --- 生日签（替代假红包金额） --------------------------- */
+        function renderFortunes(el) {
+            if (!el) return;
+            const pick = FORTUNES.slice().sort(() => Math.random() - 0.5).slice(0, 3);
+            el.innerHTML =
+                '<p style="margin:12px 0 4px"><b style="color:var(--gold)">🎋 生日签</b></p>' +
+                pick.map(f => `<div class="fortune">${f}</div>`).join('');
+        }
+
+        window.__origReveal = window.revealScratchPrize;
+        window.revealScratchPrize = function () {
+            window.__origReveal();
+            buzz([30, 60, 30]);
+            const d = document.getElementById('scratch-result-details');
+            if (d && !document.getElementById('fortune-inline')) {
+                const w = document.createElement('div');
+                w.id = 'fortune-inline';
+                d.appendChild(w);
+                renderFortunes(w);
+            }
+        };
+
+        /* --- 结局信 --------------------------------------------- */
+        function showFinale() {
+            if (localStorage.getItem('dawan_finale_seen')) return;
+            localStorage.setItem('dawan_finale_seen', '1');
+            document.getElementById('finale-text').innerHTML =
+                FINALE_LETTER +
+                '<br><br><span style="color:#a29bfe;font-size:12px">' + SIGNATURE + '</span>';
+            renderFortunes(document.getElementById('fortune-list'));
+            document.getElementById('finale-modal').classList.add('show');
+            buzz([40, 80, 40, 80, 120]);
+            if (typeof confetti === 'function') {
+                confetti({ particleCount: 160, spread: 120, origin: { y: 0.5 } });
+                setTimeout(() => confetti({ particleCount: 120, spread: 100, origin: { y: 0.4 } }), 600);
+            }
+        }
+
+        function closeFinale() { document.getElementById('finale-modal').classList.remove('show'); }
+
+        window.__origCloseHolo = window.close3DHologramCake;
+        window.close3DHologramCake = function () {
+            window.__origCloseHolo();
+            setTimeout(showFinale, 800);
+        };
+
+        /* --- 全息蛋糕：加「跳过」，摄像头失败不卡死 ------------- */
+        function unlockGalleryWithoutCamera() {
+            countdownFinished = true;
+            const g = document.getElementById('countdown-gesture-box');
+            if (g) g.style.display = 'none';
+            const i = document.getElementById('hologram-instruction');
+            if (i) i.style.display = 'block';
+            const b = document.getElementById('hand-status');
+            if (b) {
+                b.innerText = '👉 直接用手指左右滑动就能选，点一下播放';
+                b.style.background = 'rgba(108,92,231,.9)';
+            }
+            if (typeof showCakeMediaGallery === 'function') showCakeMediaGallery();
+        }
+
+        window.__origInitHolo = window.init3DHologramCake;
+        window.init3DHologramCake = function () {
+            window.__origInitHolo();
+            const ui = document.querySelector('.hologram-ui');
+            if (ui && !document.getElementById('skip-gesture')) {
+                const s = document.createElement('button');
+                s.id = 'skip-gesture';
+                s.className = 'skip-link';
+                s.innerText = '用不了摄像头？点这里直接进媒体库 →';
+                s.onclick = unlockGalleryWithoutCamera;
+                ui.appendChild(s);
+            }
+            // 大陆加载 MediaPipe WASM 很可能超时，8 秒后自动放行
+            setTimeout(() => {
+                const b = document.getElementById('hand-status');
+                if (b && b.innerText.indexOf('正在启动') > -1) unlockGalleryWithoutCamera();
+            }, 8000);
+        };
+
+        /* --- 启动 ----------------------------------------------- */
+        document.addEventListener('DOMContentLoaded', () => { mountBlowUI(); mountPrivacyNote(); });
+        setTimeout(() => { mountBlowUI(); mountPrivacyNote(); }, 1200);
+    </script>
+
 </body>
 </html>
