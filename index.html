@@ -4616,13 +4616,13 @@
             n.id = 'privacy-note';
             n.className = 'privacy-note';
             n.innerText = WISH_GOES_TO_ME
-                ? '🏮 按下「放飞天灯」后，这条愿望会寄到我这边，我看得到。不想让我看到就先别按～'
-                : '🔒 你写的愿望只存在你自己手机里，不会上传，我也看不到。';
+                ? '🏮 放飞天灯'
+                : '🔒愿望实现中... ';
             box.parentNode.insertBefore(n, box.nextSibling);
 
             // 按钮文案跟着一起说实话
             const btn = box.querySelector('.lantern-btn');
-            if (btn && WISH_GOES_TO_ME) btn.innerText = '放飞天灯（我会看到）🏮';
+            if (btn && WISH_GOES_TO_ME) btn.innerText = '放飞天灯🏮';
         }
 
         /* --- 吹蜡烛：默认点击，麦克风是可选加分项 --------------- */
@@ -4744,9 +4744,11 @@
 
         /* --- 浇水掉名场面卡 ------------------------------------- */
         function showMemoryFor(i) {
-            if (!MEMORIES.length) return;
-            const m = MEMORIES[i % MEMORIES.length];
-            document.getElementById('memory-title').innerText = `名场面 #${(i % MEMORIES.length) + 1}`;
+            // MEMORIES 没定义或为空时直接跳过，不报错
+            const list = (typeof MEMORIES !== 'undefined' && Array.isArray(MEMORIES)) ? MEMORIES : [];
+            if (!list.length) return;
+            const m = list[i % list.length];
+            document.getElementById('memory-title').innerText = `名场面 #${(i % list.length) + 1}`;
             const img = document.getElementById('memory-photo');
             if (m.photo) {
                 img.src = m.photo;
@@ -4800,8 +4802,9 @@
 
         /* --- 结局信 --------------------------------------------- */
         function showFinale() {
-            if (localStorage.getItem('dawan_finale_seen')) return;
-            localStorage.setItem('dawan_finale_seen', '1');
+            // 彩蛋可以反复摇出来，不做一次性锁
+            const fm = document.getElementById('finale-modal');
+            if (!fm || fm.classList.contains('show')) return;
             document.getElementById('finale-text').innerHTML =
                 FINALE_LETTER +
                 '<br><br><span style="color:#a29bfe;font-size:12px">' + SIGNATURE + '</span>';
@@ -4816,11 +4819,78 @@
 
         function closeFinale() { document.getElementById('finale-modal').classList.remove('show'); }
 
-        window.__origCloseHolo = window.close3DHologramCake;
-        window.close3DHologramCake = function () {
-            window.__origCloseHolo();
-            setTimeout(showFinale, 800);
+        /* --- 🥚 隐藏彩蛋：摇一摇手机看结局信 ---------------------
+           页面上不显示任何提示，由你自己口头告诉她。
+           倒计时页面的摇一摇是「花瓣雨」，两者不冲突：
+           这个只在她已经进到主页面之后才生效。
+           调试用：在浏览器控制台直接输入 showFinale() 即可弹出。
+        --------------------------------------------------------- */
+        const FINALE_SHAKE_THRESHOLD = 20;   // 比浇水的 18 高一点，避免误触
+        let finaleShakeArmed = false;
+        let finaleShakeLast = 0;
+        let fAccX = null, fAccY = null, fAccZ = null;
+
+        function armFinaleShake() {
+            if (finaleShakeArmed) return;
+            if (typeof DeviceMotionEvent === 'undefined') return;
+            finaleShakeArmed = true;
+
+            // iOS 13+ 必须在用户手势里请求权限
+            if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                DeviceMotionEvent.requestPermission()
+                    .then(state => {
+                        if (state === 'granted') {
+                            window.addEventListener('devicemotion', handleFinaleMotion, false);
+                        }
+                    })
+                    .catch(() => {});
+            } else {
+                window.addEventListener('devicemotion', handleFinaleMotion, false);
+            }
+        }
+
+        function isScreenVisible(id) {
+            const el = document.getElementById(id);
+            if (!el) return false;
+            if (el.classList.contains('hidden')) return false;
+            return el.style.display !== 'none';
+        }
+
+        function handleFinaleMotion(event) {
+            // 还在封面页 / 倒计时页时不触发（那边的摇一摇是花瓣雨）
+            if (isScreenVisible('landing-screen')) return;
+            if (isScreenVisible('countdown-screen')) return;
+
+            const a = event.accelerationIncludingGravity;
+            if (!a) return;
+
+            const now = Date.now();
+            if (now - finaleShakeLast < 2500) return;
+
+            if (fAccX !== null) {
+                const delta = Math.abs(a.x - fAccX) + Math.abs(a.y - fAccY) + Math.abs(a.z - fAccZ);
+                if (delta > FINALE_SHAKE_THRESHOLD) {
+                    finaleShakeLast = now;
+                    showFinale();
+                }
+            }
+            fAccX = a.x; fAccY = a.y; fAccZ = a.z;
+        }
+
+        // 解锁暗号时顺便挂上（那一刻是点击事件，iOS 才肯给权限）
+        window.__verifyBeforeShake = window.verifyPassword;
+        window.verifyPassword = async function () {
+            armFinaleShake();
+            return window.__verifyBeforeShake();
         };
+
+        // 兜底：进到主页面之后，任意一次点击再尝试挂一次。
+        // 特意不在封面页就挂，免得她刚打开就被 iOS 弹「允许动作权限」吓到。
+        document.addEventListener('click', function tryArm() {
+            if (isScreenVisible('landing-screen')) return;
+            armFinaleShake();
+            document.removeEventListener('click', tryArm);
+        });
 
         /* --- 全息蛋糕：加「跳过」，摄像头失败不卡死 ------------- */
         function unlockGalleryWithoutCamera() {
