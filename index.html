@@ -591,7 +591,7 @@
         }
 
         .game-arena {
-            height: 280px;
+            height: 330px;
             background: radial-gradient(circle, #2a1b4e 0%, #0f0721 100%);
             border: 4px solid var(--dark-border);
             border-radius: 20px;
@@ -643,27 +643,31 @@
             display: flex;
             flex-direction: column;
             justify-content: center;
+            justify-content: safe center;   /* 内容超高时不会把顶部挤没 */
             align-items: center;
+            overflow-y: auto;               /* 兜底：小屏可以滚 */
+            gap: 2px;
             z-index: 20;
             color: #fff;
-            padding: 16px;
+            padding: 10px 14px 54px;
             text-align: center;
         }
 
         .cake-candle-area {
-            font-size: 62px;
+            font-size: 52px;
             line-height: 1;
-            margin: 4px auto;
+            margin: 2px auto;
+            flex: none;
             cursor: pointer;
             position: relative;
             display: flex;
             align-items: flex-end;
             justify-content: center;
             /* 整块蛋糕都是按钮：手指够大也点得到 */
-            width: 170px;
-            height: 130px;
-            padding: 26px 0 10px;
-            border-radius: 24px;
+            width: 152px;
+            height: 96px;
+            padding: 20px 0 6px;
+            border-radius: 20px;
             background: rgba(255, 215, 0, .07);
             border: 2px dashed rgba(255, 215, 0, .35);
             transition: transform .09s ease, background .2s ease;
@@ -693,7 +697,7 @@
 
         .candle-flame {
             position: absolute;
-            top: 14px;
+            top: 8px;
             left: 50%;
             transform: translateX(-50%);
             font-size: 24px;
@@ -701,11 +705,22 @@
             pointer-events: none;
         }
 
+        /* 开始按钮脱离文档流，钉死在底部 —— 不管上面内容多高都不会被挤出去 */
+        #start-btn {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 25;
+            white-space: nowrap;
+        }
+
         .cake-progress {
             display: flex;
             gap: 7px;
             justify-content: center;
-            margin-top: 6px;
+            margin-top: 4px;
+            flex: none;
         }
 
         .cake-dot {
@@ -715,6 +730,15 @@
             background: rgba(255, 255, 255, .18);
             border: 1px solid rgba(255, 215, 0, .5);
             transition: all .2s ease;
+        }
+
+        .btn-pulse {
+            animation: btnPulse 1s ease-in-out infinite;
+        }
+
+        @keyframes btnPulse {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50%      { transform: translateX(-50%) scale(1.07); }
         }
 
         .cake-dot.on {
@@ -1713,8 +1737,8 @@
             <div class="fever-banner" id="fever-banner">🔥 FEVER GOLDEN RAIN! 双倍暴击 🔥</div>
 
             <div class="game-overlay" id="overlay">
-                <h2 style="margin: 0 0 4px; color: var(--gold); font-size: 20px;">🎂 大碗生日吹蜡烛仪式</h2>
-                <p style="font-size: 12px; margin-bottom: 6px; color: #ffeaa7;">点蛋糕 3 下「吹灭蜡烛」，开启游戏！</p>
+                <h2 style="margin: 0; color: var(--gold); font-size: 17px;">🎂 大碗生日吹蜡烛仪式</h2>
+                <p style="font-size: 12px; margin: 2px 0 0; color: #ffeaa7;">👇 点蛋糕 3 下「吹灭蜡烛」</p>
 
                 <div class="cake-candle-area" id="cake-candle-area" onclick="blowCandle(event)">
                     <span class="candle-flame" id="candle-flame">🔥</span>
@@ -1727,8 +1751,8 @@
                     <div class="cake-dot" id="cake-dot-3"></div>
                 </div>
 
-                <p style="font-size: 11px; color: #aaa; margin-top: 4px;">💡 提示：抢到【🎂/🎁/🥣/🍜/福】得双倍财气(+20分)！连续打中 5 次触发暴走！</p>
-                <button class="btn-action" id="start-btn" onclick="startGame()" style="display:none; margin-top: 6px;">开始抢大奖 🚀</button>
+                <p style="font-size: 10px; color: #999; margin: 4px 0 0; line-height: 1.35;">💡 抢到【🎂🎁🥣🍜福】+20 分，连中 5 次触发暴走！</p>
+                <button class="btn-action" id="start-btn" onclick="startGame()" style="display:none; margin-top: 6px; flex: none;">开始抢大奖 🚀</button>
             </div>
         </div>
     </div>
@@ -3830,7 +3854,9 @@
             if (candleBlowCount >= 3) {
                 if (flame) flame.style.display = 'none';
                 if (area) area.classList.add('done');
-                document.getElementById('start-btn').style.display = 'inline-block';
+                const startBtn = document.getElementById('start-btn');
+                startBtn.style.display = 'inline-block';
+                startBtn.classList.add('btn-pulse');
                 playSound(800, 0.3, 'sine');
                 confetti({ particleCount: 30, spread: 50, origin: { y: 0.6 } });
             }
@@ -4131,6 +4157,8 @@
             // 重置蛋糕点击区和进度点
             const cakeArea = document.getElementById('cake-candle-area');
             if (cakeArea) cakeArea.classList.remove('done', 'tap-bounce');
+            const sb = document.getElementById('start-btn');
+            if (sb) sb.classList.remove('btn-pulse');
             for (let i = 1; i <= 3; i++) {
                 const dot = document.getElementById('cake-dot-' + i);
                 if (dot) dot.classList.remove('on');
@@ -4533,11 +4561,13 @@
         // 嘿嘿嘿，不是一样一样了 —— 所以给足提示，3 次后直接送答案。
         const SECRET_ANSWERS = ['刘富贵'];
         const PWD_HINTS = [
-            '💭 嘿嘿嘿，不是一样一样了。提示:3 个字。关于你的。',
+            '💭 嘿嘿嘿，这次不是一样一样了。提示: 3 个字。关于你的。',
             '💭 你的小名。',
             '💭 最后一个字：贵。',
             '💭 好啦，答案是「刘富贵」，直接抄 😄'
         ];
+
+
 
         // 抽签：轻松的祝福，不是承诺、不是欠条。
         const FORTUNES = [
@@ -4586,13 +4616,13 @@
             n.id = 'privacy-note';
             n.className = 'privacy-note';
             n.innerText = WISH_GOES_TO_ME
-                ? '🏮 放飞天灯'
-                : '🔒 ';
+                ? '🏮 按下「放飞天灯」后，这条愿望会寄到我这边，我看得到。不想让我看到就先别按～'
+                : '🔒 你写的愿望只存在你自己手机里，不会上传，我也看不到。';
             box.parentNode.insertBefore(n, box.nextSibling);
 
             // 按钮文案跟着一起说实话
             const btn = box.querySelector('.lantern-btn');
-            if (btn && WISH_GOES_TO_ME) btn.innerText = '放飞天灯🏮';
+            if (btn && WISH_GOES_TO_ME) btn.innerText = '放飞天灯（我会看到）🏮';
         }
 
         /* --- 吹蜡烛：默认点击，麦克风是可选加分项 --------------- */
@@ -4604,7 +4634,8 @@
             const box = document.createElement('div');
             box.innerHTML =
                 '<div id="blow-meter"><div id="blow-meter-fill"></div></div>' +
-                '<div id="blow-hint">🎤 想真的吹？点这里开麦（不开也能点蛋糕）</div>';
+                '<div id="blow-hint">🎤 想真的用嘴吹？点这里开麦</div>';
+            box.style.flex = 'none';
             area.parentNode.insertBefore(box, area.nextSibling);
             document.getElementById('blow-hint').onclick = startBlowDetection;
         }
@@ -4617,7 +4648,7 @@
                     audio: { echoCancellation: false, noiseSuppression: false }
                 });
             } catch (e) {
-                hint.innerText = '🎤 开不了麦也没关系，点蛋糕 3 下一样吹得灭';
+                hint.innerText = '🎤 开不了麦，点蛋糕 3 下也一样';
                 hint.style.textDecoration = 'none';
                 hint.onclick = null;
                 return;
