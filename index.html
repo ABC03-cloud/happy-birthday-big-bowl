@@ -1702,6 +1702,7 @@
                 <input type="text" id="wish-input" class="lantern-input" placeholder="写下你的生日愿望... 🕯️" />
                 <button class="lantern-btn" onclick="sendWishLantern()">放飞天灯 🏮</button>
             </div>
+            <div id="wish-mystery-hint" style="margin-top:8px;font-size:11px;color:rgba(255,255,255,.55);text-align:center;font-style:italic;line-height:1.6;">🌙 天灯飞远了，故事却还没讲完… 让这一页「动起来」，也许有人在等你</div>
         </div>
 
         <div class="bgm-card">
@@ -4929,6 +4930,31 @@
         /* --- 启动 ----------------------------------------------- */
         document.addEventListener('DOMContentLoaded', () => { mountBlowUI(); mountPrivacyNote(); });
         setTimeout(() => { mountBlowUI(); mountPrivacyNote(); }, 1200);
+    </script>
+
+    <script>
+        /* --- 结局信入口提示（谜题版）：刮完奖后，在最后偷偷提示 --- */
+        (function () {
+            if (typeof window.revealScratchPrize !== 'function') return;
+            const __prevReveal = window.revealScratchPrize;
+            window.revealScratchPrize = function () {
+                __prevReveal();                       // 先跑原本的（含生日签）
+                const d = document.getElementById('scratch-result-details');
+                if (d && !document.getElementById('mystery-teaser')) {
+                    const t = document.createElement('div');
+                    t.id = 'mystery-teaser';
+                    t.style.cssText =
+                        'margin-top:12px;padding:10px 12px;border:1px dashed var(--gold);' +
+                        'border-radius:12px;background:rgba(255,215,0,.08);color:#ffeaa7;' +
+                        'font-size:12px;line-height:1.6;text-align:center;' +
+                        'animation:fadeIn .6s ease forwards';
+                    t.innerHTML =
+                        '🔮 <b style="color:var(--gold)">这还不是结局…</b><br>' +
+                        '据说让整个世界「晃一晃」，信就会出现 🌙';
+                    d.appendChild(t);
+                }
+            };
+        })();
     </script>
 
 </body>
