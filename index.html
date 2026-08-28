@@ -1718,6 +1718,7 @@
             <audio id="voice-audio" src="money.mp3" playsinline webkit-playsinline></audio>
             <audio id="petal-audio-1" src="petal.mp3" playsinline webkit-playsinline></audio>
             <audio id="petal-audio-2" src="petal2.mp3" playsinline webkit-playsinline></audio>
+            <audio id="finale-audio" src="birthday.mp3" preload="auto" playsinline webkit-playsinline></audio>
         </div>
 
         <div class="game-stats">
@@ -4954,6 +4955,72 @@
                     d.appendChild(t);
                 }
             };
+        })();
+    </script>
+
+    <script>
+        /* --- 摇一摇：结局信 + 《生日祝福歌》一起触发 --- */
+        (function () {
+            const finaleAudio = document.getElementById('finale-audio');
+
+            // iOS：必须在一次真实点击里先「解锁」音频，之后摇一摇才能自动播放
+            function primeFinaleAudio() {
+                if (!finaleAudio || finaleAudio.dataset.primed) return;
+                finaleAudio.dataset.primed = '1';
+                const wasMuted = finaleAudio.muted;
+                finaleAudio.muted = true;
+                const restore = () => { try { finaleAudio.pause(); finaleAudio.currentTime = 0; } catch (e) {} finaleAudio.muted = wasMuted; };
+                try {
+                    const p = finaleAudio.play();
+                    if (p && p.then) p.then(restore).catch(() => { finaleAudio.muted = wasMuted; });
+                    else restore();
+                } catch (e) { finaleAudio.muted = wasMuted; }
+            }
+            ['click', 'touchend'].forEach(ev =>
+                document.addEventListener(ev, primeFinaleAudio, { once: true, passive: true }));
+
+            function showTapToPlay() {
+                const card = document.querySelector('#finale-modal .addon-card');
+                if (!card || card.querySelector('#finale-song-btn')) return;
+                const b = document.createElement('button');
+                b.id = 'finale-song-btn';
+                b.className = 'btn-action';
+                b.style.cssText = 'width:100%;margin-top:6px';
+                b.innerText = '🎵 点我播放生日祝福歌';
+                b.onclick = () => { finaleAudio.currentTime = 0; finaleAudio.play().catch(() => {}); b.remove(); };
+                card.insertBefore(b, card.lastElementChild);
+            }
+
+            function playFinaleSong() {
+                if (!finaleAudio) return;
+                try { if (typeof pauseBGM === 'function') pauseBGM(); } catch (e) {}
+                try {
+                    finaleAudio.currentTime = 0;
+                    const p = finaleAudio.play();
+                    if (p && p.catch) p.catch(() => showTapToPlay());
+                } catch (e) { showTapToPlay(); }
+            }
+
+            // 结局信一「新打开」就放歌（摇一摇 → showFinale → 这里）
+            if (typeof window.showFinale === 'function') {
+                const __prevShowFinale = window.showFinale;
+                window.showFinale = function () {
+                    const fm = document.getElementById('finale-modal');
+                    const wasOpen = fm && fm.classList.contains('show');
+                    __prevShowFinale.apply(this, arguments);
+                    const isOpen = fm && fm.classList.contains('show');
+                    if (isOpen && !wasOpen) playFinaleSong();
+                };
+            }
+
+            // 关掉结局卡时停歌
+            if (typeof window.closeFinale === 'function') {
+                const __prevCloseFinale = window.closeFinale;
+                window.closeFinale = function () {
+                    try { if (finaleAudio) { finaleAudio.pause(); finaleAudio.currentTime = 0; } } catch (e) {}
+                    return __prevCloseFinale.apply(this, arguments);
+                };
+            }
         })();
     </script>
 
