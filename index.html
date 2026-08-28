@@ -4,21 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>财神到·大碗生日抢宝大作战 🥣💰🎉</title>
-    <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+    <link href="https://fonts.loli.net/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
 
     <!-- 基础特效库 -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js">
+    <script src="https://fastly.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js">
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js">
+    <script src="https://fastly.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js">
     </script>
 
     <!-- 引入 Three.js 用于 3D 粒子系统 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
     </script>
     <!-- 引入 MediaPipe 用于红外/无接触手势追踪 -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js">
+    <script src="https://fastly.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js">
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js">
+    <script src="https://fastly.jsdelivr.net/npm/@mediapipe/hands/hands.js">
     </script>
 
     <style>
@@ -1702,7 +1702,7 @@
                 <input type="text" id="wish-input" class="lantern-input" placeholder="写下你的生日愿望... 🕯️" />
                 <button class="lantern-btn" onclick="sendWishLantern()">放飞天灯 🏮</button>
             </div>
-            <div id="wish-mystery-hint" style="margin-top:8px;font-size:11px;color:rgba(255,255,255,.55);text-align:center;font-style:italic;line-height:1.6;">🌙 天灯飞远了，故事却还没讲完… 让这一页「动起来」，也许有人在等你</div>
+            <div id="wish-mystery-hint" style="margin-top:8px;font-size:11px;color:rgba(255,255,255,.55);text-align:center;font-style:italic;line-height:1.6;">🌙 嘿嘿嘿，故事却还没讲完… 要不试看许愿，万一实现了呢</div>
         </div>
 
         <div class="bgm-card">
@@ -1719,6 +1719,7 @@
             <audio id="petal-audio-1" src="petal.mp3" playsinline webkit-playsinline></audio>
             <audio id="petal-audio-2" src="petal2.mp3" playsinline webkit-playsinline></audio>
             <audio id="finale-audio" src="birthday.mp3" preload="auto" playsinline webkit-playsinline></audio>
+            <audio id="lantern-audio" src="lantern.mp3" preload="auto" playsinline webkit-playsinline></audio>
         </div>
 
         <div class="game-stats">
@@ -2210,7 +2211,7 @@
             const hologramInstr = document.getElementById('hologram-instruction');
 
             const hands = new Hands({ locateFile: (file) => {
-                    return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+                    return `https://fastly.jsdelivr.net/npm/@mediapipe/hands/${file}`;
                 } });
 
             hands.setOptions({ maxNumHands: 2, modelComplexity: 1, minDetectionConfidence: 0.5,
@@ -4589,6 +4590,16 @@
         // 你的落款：一个 ID 就够了。
         const SIGNATURE = 'From: 阿贝贝枕头🙈';
 
+        // 名场面：每浇一次水按顺序解锁一张。photo 用同目录图片，text 改成你们真实的回忆。
+        // 想加就加、想删就删；留空 [] 就不会掉卡片。
+        const MEMORIES = [
+            { photo: 'photo4.jpeg', text: '第一次见你直播，弹幕里最不正经的那个就是我 😄（改成真实回忆）' },
+            { photo: 'photo2.jpg',  text: '那次聊到半夜，面都坨了也没舍得挂电话 🍜' },
+            { photo: 'photo5.jpeg', text: '你笑得最大声的那天，我偷偷截了图 📸' },
+            { photo: 'photo6.jpeg', text: '说好要一起去的地方，我都记着呢 ✈️' },
+            { photo: 'photo7.jpeg', text: '隔着一千多公里，还是想第一个跟你说生日快乐 💛' },
+        ];
+
         // 她放飞的愿望，我能不能看到？
         //   true  = 能看到。页面会明确告诉她「这条会寄给我」，她自己决定要不要按。
         //   false = 完全看不到，只存在她手机里。
@@ -5021,6 +5032,207 @@
                     return __prevCloseFinale.apply(this, arguments);
                 };
             }
+        })();
+    </script>
+
+    <script>
+        /* --- 微信 / 中国大陆 兼容 + 摇一摇兜底 + 天灯飞星空 --- */
+        (function () {
+            const isWeChat = /MicroMessenger/i.test(navigator.userAgent);
+
+            /* 1) 微信里自动解锁音频 */
+            function wechatUnlockAudio() {
+                try { if (typeof unlockAudio === 'function') unlockAudio(); } catch (e) {}
+                const fa = document.getElementById('finale-audio');
+                if (fa && !fa.dataset.primed) {
+                    fa.dataset.primed = '1';
+                    const m = fa.muted; fa.muted = true;
+                    const done = () => { try { fa.pause(); fa.currentTime = 0; } catch (e) {} fa.muted = m; };
+                    try { const p = fa.play(); if (p && p.then) p.then(done).catch(() => { fa.muted = m; }); else done(); }
+                    catch (e) { fa.muted = m; }
+                }
+            }
+            if (isWeChat) {
+                if (typeof WeixinJSBridge !== 'undefined') wechatUnlockAudio();
+                else document.addEventListener('WeixinJSBridgeReady', wechatUnlockAudio, false);
+            }
+
+            /* 2) 手势彩蛋 MediaPipe 打不开时，走无摄像头通道，不卡死 */
+            if (typeof window.initHandTracking === 'function') {
+                const __origInit = window.initHandTracking;
+                window.initHandTracking = function () {
+                    if (typeof Hands === 'undefined' || typeof Camera === 'undefined') {
+                        if (typeof unlockGalleryWithoutCamera === 'function') unlockGalleryWithoutCamera();
+                        return;
+                    }
+                    try { return __origInit.apply(this, arguments); }
+                    catch (e) { console.warn('handtracking failed:', e);
+                        if (typeof unlockGalleryWithoutCamera === 'function') unlockGalleryWithoutCamera(); }
+                };
+            }
+
+            /* 3) 摇一摇兜底：设备收不到体感事件时，在提示卡上悄悄开「轻触」入口 */
+            let motionSeen = false;
+            window.addEventListener('devicemotion', function (e) {
+                const a = e.accelerationIncludingGravity || e.acceleration;
+                if (a && (a.x != null || a.y != null || a.z != null)) motionSeen = true;
+            }, { passive: true });
+            function openFinale() { if (typeof showFinale === 'function') showFinale(); }
+            const poll = setInterval(function () {
+                const hint = document.getElementById('mystery-teaser');
+                if (!hint || hint.dataset.fallbackArmed) return;
+                hint.dataset.fallbackArmed = '1';
+                clearInterval(poll);
+                setTimeout(function () {
+                    if (motionSeen) return;
+                    hint.style.cursor = 'pointer';
+                    const add = document.createElement('div');
+                    add.style.cssText = 'margin-top:6px;font-size:11px;opacity:.75';
+                    add.innerHTML = '（摇不动的话… 就在这里轻轻碰一下 👆）';
+                    hint.appendChild(add);
+                    hint.addEventListener('click', openFinale);
+                }, 6000);
+            }, 1000);
+
+            /* 4) 天灯放飞：飘进星空的小动画 */
+            const SKY_STYLE = '#wish-sky{position:fixed;inset:0;z-index:12000;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .6s ease;overflow:hidden;background:radial-gradient(ellipse at 50% 30%,#1b2a5e 0%,#0e1533 45%,#070a1c 100%);}#wish-sky.show{opacity:1;}.ws-star{position:absolute;background:#fff;border-radius:50%;box-shadow:0 0 6px #fff;animation:wsTwinkle 2.4s ease-in-out infinite;}@keyframes wsTwinkle{0%,100%{opacity:.25;}50%{opacity:1;}}.ws-moon{position:absolute;top:12%;right:16%;font-size:44px;filter:drop-shadow(0 0 12px rgba(255,255,200,.6));}.ws-lantern{position:absolute;left:50%;bottom:-40px;transform:translateX(-50%);font-size:34px;text-align:center;filter:drop-shadow(0 0 10px #ff9f68);animation:wsRise 6s ease-in forwards;}.ws-lantern small{display:block;font-size:12px;color:#ffeaa7;margin-top:2px;max-width:70vw;}@keyframes wsRise{0%{bottom:-40px;opacity:0;transform:translateX(-50%) scale(1);}10%{opacity:1;}70%{opacity:1;}100%{bottom:88%;opacity:0;transform:translateX(-50%) scale(.5);}}.ws-caption{position:absolute;bottom:12%;left:0;right:0;text-align:center;color:#fff;font-size:15px;line-height:1.7;opacity:0;transition:opacity .8s ease;padding:0 24px;}.ws-caption.show{opacity:1;}.ws-caption b{color:var(--gold);}';
+            function escHtml(s){ return String(s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+            function releaseWishToSky(text) {
+                if (!document.getElementById('ws-style')) {
+                    const st = document.createElement('style'); st.id = 'ws-style';
+                    st.textContent = SKY_STYLE; document.head.appendChild(st);
+                }
+                const old = document.getElementById('wish-sky'); if (old) old.remove();
+                const sky = document.createElement('div'); sky.id = 'wish-sky';
+                let stars = '';
+                for (let i = 0; i < 46; i++) {
+                    const size = (1 + Math.random() * 2.4).toFixed(1);
+                    const x = (Math.random() * 100).toFixed(1), y = (Math.random() * 75).toFixed(1);
+                    const delay = (Math.random() * 2.4).toFixed(2);
+                    stars += '<span class="ws-star" style="width:' + size + 'px;height:' + size + 'px;left:' + x + '%;top:' + y + '%;animation-delay:' + delay + 's"></span>';
+                }
+                const wish = (text && text.trim()) ? text.trim() : '大碗生日快乐！';
+                sky.innerHTML = stars +
+                    '<div class="ws-moon">🌙</div>' +
+                    '<div class="ws-lantern">🏮<small>' + escHtml(wish) + '</small></div>' +
+                    '<div class="ws-caption" id="ws-cap">愿望放飞了 🌟<br><b>好了, 已经通知许愿精灵, 哆啦A梦。愿望即将慢慢实现🎈☘️☘️</b></div>';
+                document.body.appendChild(sky);
+                requestAnimationFrame(function(){ sky.classList.add('show'); });
+                // 星空配乐：放飞天灯时自动响起，先把背景音乐让开
+                const lan = document.getElementById('lantern-audio');
+                const __resumeTrack = (typeof currentTrack !== 'undefined' && currentTrack) ? currentTrack : null;
+                if (lan) {
+                    try { if (typeof pauseBGM === 'function') pauseBGM(); } catch (e) {}
+                    try { lan.currentTime = 0; lan.volume = 1; const lp = lan.play(); if (lp && lp.catch) lp.catch(function(){}); } catch (e) {}
+                }
+                try { if (typeof buzz === 'function') buzz([15, 40, 15]); } catch (e) {}
+                setTimeout(function(){ const c = document.getElementById('ws-cap'); if (c) c.classList.add('show'); }, 1200);
+                setTimeout(function(){
+                    sky.classList.remove('show');
+                    if (lan) {
+                        let vol = lan.volume;
+                        const fade = setInterval(function(){
+                            vol -= 0.1;
+                            if (vol <= 0) { clearInterval(fade); try { lan.pause(); lan.currentTime = 0; lan.volume = 1; } catch (e) {} }
+                            else { try { lan.volume = vol; } catch (e) {} }
+                        }, 60);
+                    }
+                    try { if (__resumeTrack && typeof playBGM === 'function') playBGM(__resumeTrack); } catch (e) {}
+                    setTimeout(function(){ sky.remove(); }, 600);
+                }, 6200);
+            }
+            if (typeof window.sendWishLantern === 'function') {
+                const __origSendWish = window.sendWishLantern;
+                window.sendWishLantern = function () {
+                    const el = document.getElementById('wish-input');
+                    const text = el ? el.value.trim() : '';
+                    __origSendWish.apply(this, arguments);
+                    releaseWishToSky(text);
+                };
+            }
+        })();
+    </script>
+
+    <script>
+        /* --- 结局信：卡在生日 00:00 才解锁；零点前开着页面则自动庆祝 --- */
+        (function () {
+            if (typeof BIRTHDAY_TARGET === 'undefined') return;
+            function birthdayReached() { return Date.now() >= BIRTHDAY_TARGET; }
+            let finaleCountdownTimer = null;
+            const __songShowFinale = window.showFinale;
+
+            function revealRealLetter() {
+                const fm = document.getElementById('finale-modal');
+                const fl = document.getElementById('fortune-list'); if (fl) fl.style.display = '';
+                const ft = document.getElementById('finale-title'); if (ft) ft.innerText = '🎂 生日快乐';
+                if (fm) fm.classList.remove('show');
+                setTimeout(function(){ if (typeof __songShowFinale === 'function') __songShowFinale(); }, 250);
+            }
+
+            function showFinaleWaiting() {
+                const fm = document.getElementById('finale-modal');
+                if (!fm || fm.classList.contains('show')) return;
+                const ft = document.getElementById('finale-title'); if (ft) ft.innerText = '🎂 还差一点点…';
+                const fl = document.getElementById('fortune-list'); if (fl) fl.style.display = 'none';
+                const txt = document.getElementById('finale-text');
+                function pad(n){ return String(n).padStart(2, '0'); }
+                function tick() {
+                    const left = BIRTHDAY_TARGET - Date.now();
+                    if (left <= 0) { clearInterval(finaleCountdownTimer); finaleCountdownTimer = null; revealRealLetter(); return; }
+                    const h = Math.floor(left / 3600000), m = Math.floor(left % 3600000 / 60000), s = Math.floor(left % 60000 / 1000);
+                    if (txt) txt.innerHTML =
+                        '<div style="text-align:center;line-height:1.9">嘻嘻，还没到那一刻哦 🌙<br>' +
+                        '<span style="font-size:26px;color:var(--gold);font-weight:bold;letter-spacing:1px">' +
+                        pad(h) + ':' + pad(m) + ':' + pad(s) + '</span><br>' +
+                        '<span style="font-size:12px;opacity:.8">到你的生日，再等等我 🙈😽</span></div>';
+                }
+                tick();
+                if (finaleCountdownTimer) clearInterval(finaleCountdownTimer);
+                finaleCountdownTimer = setInterval(tick, 1000);
+                fm.classList.add('show');
+                try { if (typeof buzz === 'function') buzz([20, 40, 20]); } catch (e) {}
+            }
+
+            window.showFinale = function () {
+                if (birthdayReached()) {
+                    const ft = document.getElementById('finale-title'); if (ft) ft.innerText = '🎂 生日快乐';
+                    const fl = document.getElementById('fortune-list'); if (fl) fl.style.display = '';
+                    return __songShowFinale.apply(this, arguments);
+                }
+                showFinaleWaiting();
+            };
+
+            if (typeof window.closeFinale === 'function') {
+                const __prevClose = window.closeFinale;
+                window.closeFinale = function () {
+                    if (finaleCountdownTimer) { clearInterval(finaleCountdownTimer); finaleCountdownTimer = null; }
+                    return __prevClose.apply(this, arguments);
+                };
+            }
+
+            function celebrateMidnight() {
+                try { if (typeof confetti === 'function') { confetti({ particleCount: 200, spread: 140, origin: { y: .5 } }); setTimeout(function(){ confetti({ particleCount: 160, spread: 120, origin: { y: .4 } }); }, 500); } } catch (e) {}
+                try { if (typeof buzz === 'function') buzz([40, 80, 40, 80, 160]); } catch (e) {}
+                if (document.getElementById('midnight-banner')) return;
+                const b = document.createElement('div'); b.id = 'midnight-banner';
+                b.style.cssText = 'position:fixed;left:50%;top:16%;transform:translateX(-50%);z-index:13000;background:linear-gradient(180deg,#421147,#1c0621);border:2px solid var(--gold);border-radius:16px;padding:14px 18px;color:#ffeaa7;text-align:center;font-size:14px;line-height:1.6;box-shadow:0 0 24px rgba(255,215,0,.4);max-width:86vw;';
+                b.innerHTML = '🎉 OH YEAH 终于到关键时刻了😝 · 生日快乐 🎂<br><span style="font-size:12px;opacity:.9">记得摇一摇手机😎，据说让整个世界「晃一晃」，信就会出现 🌙 🌙</span>';
+                document.body.appendChild(b);
+                b.addEventListener('click', function(){ b.remove(); });
+                setTimeout(function(){ if (b.parentNode) { b.style.transition = 'opacity .6s'; b.style.opacity = '0'; setTimeout(function(){ b.remove(); }, 600); } }, 9000);
+            }
+
+            let midnightArmed = Date.now() < BIRTHDAY_TARGET;
+            let midnightFired = false;
+            setInterval(function () {
+                if (!midnightArmed || midnightFired) return;
+                if (Date.now() >= BIRTHDAY_TARGET) {
+                    midnightFired = true;
+                    const fm = document.getElementById('finale-modal');
+                    if (fm && fm.classList.contains('show') && finaleCountdownTimer) { clearInterval(finaleCountdownTimer); finaleCountdownTimer = null; revealRealLetter(); }
+                    celebrateMidnight();
+                }
+            }, 1000);
         })();
     </script>
 
