@@ -3256,7 +3256,7 @@
             initShakeDetection();
 
             // ADMIN23 is tracked, but the actual admin password is never stored.
-            if (pwdInput.toUpperCase() === 'BOWL') {
+            if (pwdInput === 'BOWL') {   // 必须全大写 BOWL 才进管理员
                 await ensureCloudLoaded();
                 recordAdminLogin();
                 playSound(600, 0.2, 'sine');
@@ -4699,7 +4699,7 @@
             const v = (el ? el.value : '').trim();
 
             // 管理员通道保留
-            if (v.toUpperCase() === 'BOWL') return window.__origVerify();
+            if (v === 'BOWL') return window.__origVerify();   // 必须全大写 BOWL
 
             if (SECRET_ANSWERS.includes(v)) {
                 buzz([20, 30, 20]);
