@@ -4738,6 +4738,22 @@
                 return;
             }
 
+            // 打了小写 / 混合大小写的 bowl → 俏皮提醒：要全大写
+            if (v && v.toUpperCase() === 'BOWL' && v !== 'BOWL') {
+                buzz(60);
+                let bh = document.getElementById('pwd-hint');
+                if (!bh) {
+                    bh = document.createElement('div');
+                    bh.id = 'pwd-hint';
+                    bh.style.cssText = 'font-size:11px;color:#a29bfe;margin-top:6px;line-height:1.5';
+                    document.querySelector('.password-box').appendChild(bh);
+                }
+                bh.innerText = '大碗大碗，BOWL 当然是全部大字母呀😆😆';
+                const c = document.getElementById('envelope-card');
+                c.classList.remove('shake'); void c.offsetWidth; c.classList.add('shake');
+                playSound(200, 0.3, 'sawtooth');
+                return;
+            }
             buzz(60);
             pwdTries++;
             let hint = document.getElementById('pwd-hint');
