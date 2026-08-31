@@ -5164,7 +5164,7 @@
         /* --- 结局信：卡在生日 00:00 才解锁；零点前开着页面则自动庆祝 --- */
         (function () {
             if (typeof BIRTHDAY_TARGET === 'undefined') return;
-            function birthdayReached() { try { if (localStorage.getItem('dawan_bypass') === '1') return true; } catch (e) {} if (window.__birthdayBypass === true) return true; return Date.now() >= BIRTHDAY_TARGET; }
+            function birthdayReached() { return Date.now() >= BIRTHDAY_TARGET; }
             let finaleCountdownTimer = null;
             const __songShowFinale = window.showFinale;
 
@@ -5196,8 +5196,6 @@
                 const inp = document.getElementById('finale-bypass-input');
                 const v = inp ? inp.value.trim() : '';
                 if (v === '🥣') {
-                    try { localStorage.setItem('dawan_bypass', '1'); } catch (e) {}
-                    window.__birthdayBypass = true;
                     if (finaleCountdownTimer) { clearInterval(finaleCountdownTimer); finaleCountdownTimer = null; }
                     revealRealLetter();
                 } else {
@@ -5314,8 +5312,8 @@
                     '<span class="gx-tag">熟悉的玩法</span></div>' +
                 '<div class="gx-card" onclick="__chooseGame(\'blindbox\')">' +
                     '<div class="gx-ico">🎁</div><div class="gx-name">游戏二 · 神秘盲盒</div>' +
-                    '<div class="gx-desc">4 个盲盒选 1 个，拆开就是你的啦 💝</div>' +
-                    '<span class="gx-tag">4 选 1</span></div>' +
+                    '<div class="gx-desc">5 个盲盒选 1 个，拆开就是你的啦 💝</div>' +
+                    '<span class="gx-tag">5 选 1</span></div>' +
             '</div>';
         document.body.appendChild(gc);
 
