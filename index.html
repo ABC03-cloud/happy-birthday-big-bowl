@@ -4589,15 +4589,7 @@
         // 你的落款：一个 ID 就够了。
         const SIGNATURE = 'From: 阿贝贝枕头🙈';
 
-        // 名场面：每浇一次水按顺序解锁一张。photo 用同目录图片，text 改成你们真实的回忆。
-        // 想加就加、想删就删；留空 [] 就不会掉卡片。
-        const MEMORIES = [
-            { photo: 'photo4.jpeg', text: '第一次见你直播，弹幕里最不正经的那个就是我 😄（改成真实回忆）' },
-            { photo: 'photo2.jpg',  text: '那次聊到半夜，面都坨了也没舍得挂电话 🍜' },
-            { photo: 'photo5.jpeg', text: '你笑得最大声的那天，我偷偷截了图 📸' },
-            { photo: 'photo6.jpeg', text: '说好要一起去的地方，我都记着呢 ✈️' },
-            { photo: 'photo7.jpeg', text: '隔着一千多公里，还是想第一个跟你说生日快乐 💛' },
-        ];
+
 
         // 她放飞的愿望，我能不能看到？
         //   true  = 能看到。页面会明确告诉她「这条会寄给我」，她自己决定要不要按。
@@ -5290,11 +5282,11 @@
 (function () {
     // ================= 盲盒礼物：改这里（icon 图标 / name 名字 / desc 描述 / tag 小标签）=================
     const BLIND_BOXES = [
-        { icon: '🌙', name: '熬夜救星盒', desc: '抗老精华 + 眼霜 + 面膜，专治熬夜直播的疲惫肌', tag: '护肤 · 约¥1800' },
-        { icon: '🎤', name: '直播神器盒', desc: '声卡 + 电容麦 + 补光灯，直播画质音质一起升级', tag: '装备 · 约¥1800' },
-        { icon: '💆', name: '解压宠爱盒', desc: '眼部/颈部按摩仪 + 香薰，久坐直播后好好放松', tag: '放松 · 约¥1700' },
-        { icon: '🍜', name: '大碗能量盒', desc: '一整箱火鸡面 + 各国泡面零食 + 小煮锅，大碗の快乐', tag: '吃货 · 约¥1500' },
-        { icon: '🛵', name: '小小助力电动车', desc: '一台小小的代步电动车，下播再晚也能稳稳当当到家 🛵', tag: '代步 · 约¥2000' }
+        { icon: '🌙', name: '熬夜救星盒', desc: '熬夜精华 + 眼霜 + 面膜，专治熬夜党的疲惫肌', tag: '护肤 · 约¥2000' },
+        { icon: '🎤', name: '小仙女👗👖👚盒', desc: '漂亮衣服，OOTD 每天不用愁', tag: '打扮 · 约¥2000' },
+        { icon: '💆', name: '按摩解压盒', desc: '眼部/颈部按摩仪 + 香薰，久坐直播后好好放松', tag: '放松 · 约¥2000' },
+        { icon: '🍜', name: '大碗吃货能量盒', desc: '火鸡面 + 各国泡面零食 + 螺蛳粉 + 卤面 + 小煮锅，大碗の快乐', tag: '吃货 · 约¥2000' },
+        { icon: '🛵', name: '小助力代步🛵', desc: '一台小小的代步电动车，下播再晚也能稳稳当当到家 🛵', tag: '代步 · 约¥2000' }
     ];
     // ===============================================================================================
 
@@ -5322,7 +5314,7 @@
                     '<span class="gx-tag">熟悉的玩法</span></div>' +
                 '<div class="gx-card" onclick="__chooseGame(\'blindbox\')">' +
                     '<div class="gx-ico">🎁</div><div class="gx-name">游戏二 · 神秘盲盒</div>' +
-                    '<div class="gx-desc">4 个盲盒选 1 个，拆开就是你的生日礼物 💝</div>' +
+                    '<div class="gx-desc">4 个盲盒选 1 个，拆开就是你的啦 💝</div>' +
                     '<span class="gx-tag">4 选 1</span></div>' +
             '</div>';
         document.body.appendChild(gc);
@@ -5419,7 +5411,7 @@
         const res = document.getElementById('bb-result');
         if (res) {
             res.innerHTML = '🎉 你拆中的是 <b>' + b.name + '</b>！<br>' + b.desc +
-                '<br><span style="font-size:12px;opacity:.85">这个就是你的生日礼物，我会送到你手上 💛</span>';
+                '<br><span style="font-size:12px;opacity:.85">嘿嘿，这个就是你的生日礼物，你想买什么就买什么😆🤗(❁´◡`❁) </span>';
             const bar = document.createElement('div');
             bar.style.cssText = 'margin-top:14px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap';
             const replayB = document.createElement('button'); replayB.className = 'gx-gbtn'; replayB.innerText = '🔄 再玩一次';
@@ -5453,13 +5445,13 @@
         ov.appendChild(card); document.body.appendChild(ov); ov.classList.add('show');
         const linesEl = card.querySelector('#bmsg-lines');
         const LINES = [
-            { t: '寿星寿星，生日快乐，祝你 🎂', gold: true },
-            { t: '小小心意，你就收下吧。生日一年一次而已。' },
-            { t: '你知道吗？在写代码，剧情的时候，我都是在幻想你能够安心快乐的收下，' },
-            { t: '虽然我觉得你可能会觉得有点压力/不好意思/亏欠。' },
-            { t: '但是真的希望你能够安心，快乐的收下。' },
-            { t: '煽情的话就不说了。今天生日就该开心哦。' },
-            { t: '你开心轻松无压力的收下礼物，我就开心，这样礼物才会变得有意义。' },
+            { t: '寿星寿星，生日快乐呀，祝你天天开心，事事顺遂，心想事成，身体健康 🎂', gold: true },
+            { t: '小小心意，你就收下吧。生日一年一次嘛。' },
+            { t: '写代码，构思剧情的时候，一直盼着你能安心又开心地接纳这份祝福。' },
+            { t: '知道你可能会有压力/不好意思甚至过意不去，' },
+            { t: '但真的不用多想，你开心收下就是我最大的心愿。你的好心情就是这份礼物最大的意义' },
+            { t: '好啦，煽情的话就不多说了。' },
+            { t: '今天你最大，只管轻松快乐。你轻松收下、开开心心的，我就最开心啦。这样，这份礼物才变得真正有意义。' },
             { t: '生日快乐呀 💛', gold: true }
         ];
         function makeBtn(label, reply) {
@@ -5479,8 +5471,8 @@
         function nextLine() {
             if (i >= LINES.length) {
                 const box = document.createElement('div'); box.id = 'bmsg-btns';
-                box.appendChild(makeBtn('🥰 我会开心收下的', '🎉 收到啦，谢谢你 💛'));
-                box.appendChild(makeBtn('好吧，我勉强收下吧😶‍🌫️', '🤭 嘴上说勉强，其实心里开心得很吧～那就够啦'));
+                box.appendChild(makeBtn('🥰 我会开心收下的', '🎉 生日快乐 💛'));
+                box.appendChild(makeBtn('好吧，我勉强收下吧😶‍🌫️', '或许内心OS:被迫收下(●'◡'●)，但还是想对你说生日快乐呀'));
                 linesEl.appendChild(box);
                 const btns = box.querySelectorAll('button');
                 requestAnimationFrame(function () { for (let k = 0; k < btns.length; k++) btns[k].style.opacity = '1'; });
