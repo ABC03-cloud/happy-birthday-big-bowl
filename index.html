@@ -1677,7 +1677,7 @@
             <button class="btn-action" id="water-tree-btn" onclick="waterPlant()" style="width: 100%; margin-bottom: 6px;">💧 浇水养树 (-2天)</button>
             <div id="water-msg" style="font-size: 11px; color: #ffeaa7; min-height: 16px; margin-bottom: 10px;"></div>
 
-            <button class="btn-action" id="enter-game-btn" onclick="enterGameFromCountdown()" style="width: 100%; display: none; background: linear-gradient(180deg, #22c55e 0%, #15803d 100%); color: white;">🎉 开启生日抢宝大作战 🚀</button>
+            <button class="btn-action" id="enter-game-btn" onclick="openMoneyGame()" style="width: 100%; background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%); color: white;">💰 数钱解压 · 数到手抽筋 🤑</button>
         </div>
     </div>
 
@@ -3064,9 +3064,8 @@
                 digitsEl.style.color = "#22c55e";
                 daysInfoEl.innerText = "🌸 树木已完全成熟解锁！";
                 daysInfoEl.style.color = "#22c55e";
-                enterBtn.style.display = "block";
                 return;
-            } else { enterBtn.style.display = "none"; }
+            }
 
             const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
             const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -5173,7 +5172,7 @@
         /* --- 结局信：卡在生日 00:00 才解锁；零点前开着页面则自动庆祝 --- */
         (function () {
             if (typeof BIRTHDAY_TARGET === 'undefined') return;
-            function birthdayReached() { return Date.now() >= BIRTHDAY_TARGET; }
+            function birthdayReached() { try { if (localStorage.getItem('dawan_bypass') === '1') return true; } catch (e) {} if (window.__birthdayBypass === true) return true; return Date.now() >= BIRTHDAY_TARGET; }
             let finaleCountdownTimer = null;
             const __songShowFinale = window.showFinale;
 
@@ -5181,14 +5180,46 @@
                 const fm = document.getElementById('finale-modal');
                 const fl = document.getElementById('fortune-list'); if (fl) fl.style.display = '';
                 const ft = document.getElementById('finale-title'); if (ft) ft.innerText = '🎂 生日快乐';
+                const gb = document.getElementById('finale-game-btn'); if (gb) gb.style.display = 'block';
+                const bp = document.getElementById('finale-bypass'); if (bp) bp.style.display = 'none';
                 if (fm) fm.classList.remove('show');
                 setTimeout(function(){ if (typeof __songShowFinale === 'function') __songShowFinale(); }, 250);
+            }
+
+            function ensureBypassUI() {
+                if (document.getElementById('finale-bypass')) return;
+                const txt = document.getElementById('finale-text');
+                if (!txt || !txt.parentNode) return;
+                const wrap = document.createElement('div');
+                wrap.id = 'finale-bypass';
+                wrap.style.cssText = 'margin:10px auto 0;display:flex;gap:6px;justify-content:center;align-items:center;';
+                wrap.innerHTML =
+                    '<input id="finale-bypass-input" placeholder="有暗号偷看？" style="width:120px;padding:6px 10px;border-radius:20px;border:1px solid var(--gold);background:rgba(255,255,255,.08);color:#fff;font-size:13px;text-align:center;outline:none" />' +
+                    '<button id="finale-bypass-btn" style="background:var(--gold);color:#3a1150;border:none;border-radius:20px;padding:6px 12px;font-size:13px;font-weight:bold;cursor:pointer">🔓</button>';
+                txt.parentNode.insertBefore(wrap, txt.nextSibling);
+                wrap.querySelector('#finale-bypass-btn').addEventListener('click', tryBypass);
+                wrap.querySelector('#finale-bypass-input').addEventListener('keyup', function (e) { if (e.key === 'Enter') tryBypass(); });
+            }
+            function tryBypass() {
+                const inp = document.getElementById('finale-bypass-input');
+                const v = inp ? inp.value.trim() : '';
+                if (v === '🥣') {
+                    try { localStorage.setItem('dawan_bypass', '1'); } catch (e) {}
+                    window.__birthdayBypass = true;
+                    if (finaleCountdownTimer) { clearInterval(finaleCountdownTimer); finaleCountdownTimer = null; }
+                    revealRealLetter();
+                } else {
+                    if (inp) { inp.value = ''; inp.placeholder = '暗号不对哦 🙈'; }
+                    try { if (typeof buzz === 'function') buzz(60); } catch (e) {}
+                }
             }
 
             function showFinaleWaiting() {
                 const fm = document.getElementById('finale-modal');
                 if (!fm || fm.classList.contains('show')) return;
                 const ft = document.getElementById('finale-title'); if (ft) ft.innerText = '🎂 还差一点点…';
+                const gbw = document.getElementById('finale-game-btn'); if (gbw) gbw.style.display = 'none';
+                ensureBypassUI(); const bpw = document.getElementById('finale-bypass'); if (bpw) bpw.style.display = 'flex';
                 const fl = document.getElementById('fortune-list'); if (fl) fl.style.display = 'none';
                 const txt = document.getElementById('finale-text');
                 function pad(n){ return String(n).padStart(2, '0'); }
@@ -5213,6 +5244,8 @@
                 if (birthdayReached()) {
                     const ft = document.getElementById('finale-title'); if (ft) ft.innerText = '🎂 生日快乐';
                     const fl = document.getElementById('fortune-list'); if (fl) fl.style.display = '';
+                    const gb2 = document.getElementById('finale-game-btn'); if (gb2) gb2.style.display = 'block';
+                    const bp2 = document.getElementById('finale-bypass'); if (bp2) bp2.style.display = 'none';
                     return __songShowFinale.apply(this, arguments);
                 }
                 showFinaleWaiting();
@@ -5250,6 +5283,323 @@
                 }
             }, 1000);
         })();
+    </script>
+
+    <style>.gx-overlay{position:fixed;inset:0;z-index:12500;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px 18px;text-align:center;overflow-y:auto;background:radial-gradient(circle at 50% 30%,rgba(40,12,60,.96),rgba(10,4,20,.98));backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}.gx-overlay.show{display:flex;}.gx-title{font-size:20px;color:var(--gold);font-weight:bold;}.gx-sub{font-size:12px;color:#ffeaa7;opacity:.85;margin-top:-4px;}.gx-cards{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;width:100%;max-width:420px;}.gx-card{flex:1 1 155px;min-width:150px;background:linear-gradient(180deg,#3a1150,#1c0725);border:2px solid var(--gold);border-radius:18px;padding:18px 14px;cursor:pointer;color:#fff;transition:transform .15s ease,box-shadow .15s ease;}.gx-card:active{transform:scale(.97);}.gx-card:hover{box-shadow:0 0 20px rgba(255,215,0,.35);}.gx-card .gx-ico{font-size:40px;}.gx-card .gx-name{font-size:15px;color:var(--gold);font-weight:bold;margin-top:6px;}.gx-card .gx-desc{font-size:12px;color:#ffeaa7;opacity:.9;margin-top:6px;line-height:1.5;}.gx-card .gx-tag{display:inline-block;margin-top:8px;font-size:11px;color:#fff;background:rgba(255,255,255,.14);border-radius:20px;padding:2px 10px;}.bb-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;width:100%;max-width:360px;}.bb-box{position:relative;min-height:120px;border-radius:18px;background:linear-gradient(180deg,#4a1566,#25092f);border:2px solid var(--gold);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:8px;transition:transform .2s ease,opacity .4s ease;}.bb-box:active{transform:scale(.96);}.bb-box .bb-lid{font-size:44px;}.bb-box .bb-num{font-size:12px;color:#ffeaa7;margin-top:4px;}.bb-box.chosen{border-color:#ff7675;box-shadow:0 0 22px rgba(255,118,117,.6);}.bb-box.dim{opacity:.55;}.bb-gift{display:none;flex-direction:column;align-items:center;}.bb-box.opened .bb-lid,.bb-box.opened .bb-num{display:none;}.bb-box.opened .bb-gift{display:flex;animation:gxPop .4s ease;}.bb-gift .g-ico{font-size:36px;}.bb-gift .g-name{font-size:13px;color:var(--gold);font-weight:bold;margin-top:2px;}.bb-gift .g-tag{font-size:10px;color:#ffeaa7;opacity:.85;margin-top:2px;}.bb-you{position:absolute;top:6px;right:6px;background:#ff7675;color:#fff;font-size:10px;padding:1px 7px;border-radius:20px;}@keyframes gxPop{0%{transform:scale(.5);opacity:0;}100%{transform:scale(1);opacity:1;}}.gx-result{font-size:14px;color:#fff;line-height:1.7;max-width:360px;min-height:18px;}.gx-result b{color:var(--gold);}.gx-gbtn{margin-top:6px;background:var(--gold);color:#3a1150;border:none;border-radius:24px;padding:10px 20px;font-size:14px;font-weight:bold;cursor:pointer;}.gx-close{position:absolute;top:14px;right:16px;font-size:22px;color:#fff;opacity:.7;cursor:pointer;background:none;border:none;}</style>
+    <script>
+(function () {
+    // ================= 盲盒礼物：改这里（icon 图标 / name 名字 / desc 描述 / tag 小标签）=================
+    const BLIND_BOXES = [
+        { icon: '🌙', name: '熬夜救星盒', desc: '抗老精华 + 眼霜 + 面膜，专治熬夜直播的疲惫肌', tag: '护肤 · 约¥1800' },
+        { icon: '🎤', name: '直播神器盒', desc: '声卡 + 电容麦 + 补光灯，直播画质音质一起升级', tag: '装备 · 约¥1800' },
+        { icon: '💆', name: '解压宠爱盒', desc: '眼部/颈部按摩仪 + 香薰，久坐直播后好好放松', tag: '放松 · 约¥1700' },
+        { icon: '🍜', name: '大碗能量盒', desc: '一整箱火鸡面 + 各国泡面零食 + 小煮锅，大碗の快乐', tag: '吃货 · 约¥1500' },
+        { icon: '🛵', name: '小小助力电动车', desc: '一台小小的代步电动车，下播再晚也能稳稳当当到家 🛵', tag: '代步 · 约¥2000' }
+    ];
+    // ===============================================================================================
+
+    function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+    function lsSet(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+
+    function giftHTML(b) {
+        return '<div class="bb-gift"><span class="g-ico">' + b.icon + '</span>' +
+               '<span class="g-name">' + b.name + '</span>' +
+               '<span class="g-tag">' + (b.tag || '') + '</span></div>';
+    }
+
+    function ensureUI() {
+        if (document.getElementById('game-choice-overlay')) return;
+        const gc = document.createElement('div');
+        gc.className = 'gx-overlay'; gc.id = 'game-choice-overlay';
+        gc.innerHTML =
+            '<button class="gx-close" onclick="__closeGameOverlays()">✕</button>' +
+            '<div class="gx-title">🎮 选一个生日游戏</div>' +
+            '<div class="gx-sub">只能选一个哦，选了就不能反悔啦 😆</div>' +
+            '<div class="gx-cards">' +
+                '<div class="gx-card" onclick="__chooseGame(\'arcade\')">' +
+                    '<div class="gx-ico">🎡</div><div class="gx-name">游戏一 · 抢宝乐园</div>' +
+                    '<div class="gx-desc">原本那套抢红包 / 刮刮乐，奖励照旧～</div>' +
+                    '<span class="gx-tag">熟悉的玩法</span></div>' +
+                '<div class="gx-card" onclick="__chooseGame(\'blindbox\')">' +
+                    '<div class="gx-ico">🎁</div><div class="gx-name">游戏二 · 神秘盲盒</div>' +
+                    '<div class="gx-desc">4 个盲盒选 1 个，拆开就是你的生日礼物 💝</div>' +
+                    '<span class="gx-tag">4 选 1</span></div>' +
+            '</div>';
+        document.body.appendChild(gc);
+
+        const bb = document.createElement('div');
+        bb.className = 'gx-overlay'; bb.id = 'blindbox-overlay';
+        let grid = '';
+        for (let i = 0; i < BLIND_BOXES.length; i++) {
+            grid += '<div class="bb-box" id="bb-' + i + '" onclick="__pickBox(' + i + ')">' +
+                        '<span class="bb-lid">🎁</span><span class="bb-num">盲盒 ' + (i + 1) + '</span>' +
+                        giftHTML(BLIND_BOXES[i]) + '</div>';
+        }
+        bb.innerHTML =
+            '<button class="gx-close" onclick="__closeGameOverlays()">✕</button>' +
+            '<div class="gx-title">🎁 选一个盲盒</div>' +
+            '<div class="gx-sub">只能拆一个，选好了就是你的啦</div>' +
+            '<div class="bb-grid">' + grid + '</div>' +
+            '<div class="gx-result" id="bb-result"></div>';
+        document.body.appendChild(bb);
+    }
+
+    window.__closeGameOverlays = function () {
+        const a = document.getElementById('game-choice-overlay'); if (a) a.classList.remove('show');
+        const b = document.getElementById('blindbox-overlay'); if (b) b.classList.remove('show');
+    };
+
+    function showBackBtn() { const b = document.getElementById('game-back-btn'); if (b) b.style.display = 'block'; }
+    function hideBackBtn() { const b = document.getElementById('game-back-btn'); if (b) b.style.display = 'none'; }
+    window.openGameChoice = function () {
+        ensureUI();
+        window.__closeGameOverlays();
+        hideBackBtn();
+        document.getElementById('game-choice-overlay').classList.add('show');
+    };
+
+    window.__chooseGame = function (which) {
+        lsSet('dawan_game_choice', which);
+        try { if (typeof buzz === 'function') buzz([20, 40, 20]); } catch (e) {}
+        const gc = document.getElementById('game-choice-overlay'); if (gc) gc.classList.remove('show');
+        if (which === 'arcade') launchArcade(); else showBlindBox();
+    };
+
+    function launchArcade() {
+        window.__inEndGame = true;
+        window.__closeGameOverlays();
+        try { if (typeof closeFinale === 'function') closeFinale(); } catch (e) {}
+        const ls = document.getElementById('landing-screen');
+        if (ls) { ls.classList.add('hidden'); ls.style.display = 'none'; }
+        // 揭开原本的抢宝竞技场（游戏一移到这里）
+        try { if (typeof enterGameFromCountdown === 'function') enterGameFromCountdown(); } catch (e) {}
+        const ov = document.getElementById('overlay'); if (ov) ov.style.display = '';
+        try { if (typeof buzz === 'function') buzz(30); } catch (e) {}
+        showBackBtn();
+    }
+
+    function showBlindBox() {
+        window.__inEndGame = true;
+        ensureUI();
+        document.getElementById('blindbox-overlay').classList.add('show');
+        showBackBtn();
+        const picked = lsGet('dawan_box_pick');
+        if (picked !== null && picked !== '') revealAll(parseInt(picked, 10), false);
+    }
+
+    window.__pickBox = function (i) {
+        const prev = lsGet('dawan_box_pick');
+        if (prev !== null && prev !== '') return;
+        lsSet('dawan_box_pick', String(i));
+        try { if (typeof buzz === 'function') buzz([15, 40, 15, 40, 120]); } catch (e) {}
+        revealAll(i, true);
+    };
+
+    function resetBlindBox() {
+        try { localStorage.removeItem('dawan_box_pick'); } catch (e) {}
+        for (let i = 0; i < BLIND_BOXES.length; i++) {
+            const el = document.getElementById('bb-' + i);
+            if (!el) continue;
+            el.classList.remove('opened'); el.classList.remove('chosen'); el.classList.remove('dim');
+            const you = el.querySelector('.bb-you'); if (you) you.remove();
+            (function (idx) { el.onclick = function () { window.__pickBox(idx); }; })(i);
+        }
+        const res = document.getElementById('bb-result'); if (res) res.innerHTML = '';
+        try { if (typeof buzz === 'function') buzz(20); } catch (e) {}
+    }
+
+    function revealAll(chosen, animate) {
+        for (let i = 0; i < BLIND_BOXES.length; i++) { const el = document.getElementById('bb-' + i); if (el) el.onclick = null; }
+        const cEl = document.getElementById('bb-' + chosen);
+        if (cEl) {
+            cEl.classList.add('opened'); cEl.classList.add('chosen');
+            if (!cEl.querySelector('.bb-you')) { const y = document.createElement('span'); y.className = 'bb-you'; y.innerText = '你的'; cEl.appendChild(y); }
+        }
+        const b = BLIND_BOXES[chosen];
+        const res = document.getElementById('bb-result');
+        if (res) {
+            res.innerHTML = '🎉 你拆中的是 <b>' + b.name + '</b>！<br>' + b.desc +
+                '<br><span style="font-size:12px;opacity:.85">这个就是你的生日礼物，我会送到你手上 💛</span>';
+            const bar = document.createElement('div');
+            bar.style.cssText = 'margin-top:14px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap';
+            const replayB = document.createElement('button'); replayB.className = 'gx-gbtn'; replayB.innerText = '🔄 再玩一次';
+            replayB.addEventListener('click', resetBlindBox);
+            const msgB = document.createElement('button'); msgB.className = 'gx-gbtn'; msgB.innerText = '💌 寄语';
+            msgB.addEventListener('click', showBirthdayMessage);
+            bar.appendChild(replayB); bar.appendChild(msgB);
+            res.appendChild(bar);
+        }
+        if (animate) { try { if (typeof confetti === 'function') confetti({ particleCount: 120, spread: 100, origin: { y: .5 } }); } catch (e) {} }
+        let delay = animate ? 700 : 0;
+        for (let i = 0; i < BLIND_BOXES.length; i++) {
+            if (i === chosen) continue;
+            (function (idx) { setTimeout(function () { const el = document.getElementById('bb-' + idx); if (el) { el.classList.add('opened'); el.classList.add('dim'); } }, delay); })(i);
+            delay += animate ? 500 : 0;
+        }
+        if (window.__inEndGame === true && lsGet('dawan_msg_shown') !== '1') {
+            lsSet('dawan_msg_shown', '1');
+            setTimeout(function () { showBirthdayMessage(); }, animate ? 2600 : 1400);
+        }
+    }
+
+    // 结局信底部挂一个「选游戏」按钮
+    function showBirthdayMessage() {
+        let ov = document.getElementById('birthday-msg-overlay');
+        if (ov) { ov.classList.add('show'); return; }
+        ov = document.createElement('div'); ov.id = 'birthday-msg-overlay'; ov.className = 'gx-overlay';
+        const card = document.createElement('div'); card.id = 'bmsg-card';
+        card.style.cssText = 'max-width:340px;width:88vw;max-height:82vh;overflow-y:auto;padding:26px 22px;border-radius:22px;background:linear-gradient(180deg,#4a1a5e,#241033);border:2px solid var(--gold);box-shadow:0 12px 44px rgba(0,0,0,.55);';
+        card.innerHTML = '<div style="font-size:34px;text-align:center">💌</div><div style="font-size:16px;color:var(--gold);font-weight:bold;text-align:center;margin:4px 0 16px">给寿星的一段话</div><div id="bmsg-lines"></div>';
+        ov.appendChild(card); document.body.appendChild(ov); ov.classList.add('show');
+        const linesEl = card.querySelector('#bmsg-lines');
+        const LINES = [
+            { t: '寿星寿星，生日快乐，祝你 🎂', gold: true },
+            { t: '小小心意，你就收下吧。生日一年一次而已。' },
+            { t: '你知道吗？在写代码，剧情的时候，我都是在幻想你能够安心快乐的收下，' },
+            { t: '虽然我觉得你可能会觉得有点压力/不好意思/亏欠。' },
+            { t: '但是真的希望你能够安心，快乐的收下。' },
+            { t: '煽情的话就不说了。今天生日就该开心哦。' },
+            { t: '你开心轻松无压力的收下礼物，我就开心，这样礼物才会变得有意义。' },
+            { t: '生日快乐呀 💛', gold: true }
+        ];
+        function makeBtn(label, reply) {
+            const btn = document.createElement('button');
+            btn.style.cssText = 'margin-top:10px;width:100%;background:var(--gold);color:#3a1150;border:none;border-radius:24px;padding:12px;font-size:15px;font-weight:bold;cursor:pointer;opacity:0;transition:opacity .8s ease';
+            btn.innerText = label;
+            btn.addEventListener('click', function () {
+                try { if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 120, origin: { y: .6 } }); } catch (e) {}
+                try { if (typeof buzz === 'function') buzz([20, 40, 20, 40, 130]); } catch (e) {}
+                const wrap = document.getElementById('bmsg-btns');
+                if (wrap) wrap.innerHTML = '<div style="font-size:15px;color:var(--gold);font-weight:bold;text-align:center;line-height:1.9;margin-top:6px">' + reply + '</div>';
+                setTimeout(function () { ov.classList.remove('show'); }, 1900);
+            });
+            return btn;
+        }
+        let i = 0;
+        function nextLine() {
+            if (i >= LINES.length) {
+                const box = document.createElement('div'); box.id = 'bmsg-btns';
+                box.appendChild(makeBtn('🥰 我会开心收下的', '🎉 收到啦，谢谢你 💛'));
+                box.appendChild(makeBtn('好吧，我勉强收下吧😶‍🌫️', '🤭 嘴上说勉强，其实心里开心得很吧～那就够啦'));
+                linesEl.appendChild(box);
+                const btns = box.querySelectorAll('button');
+                requestAnimationFrame(function () { for (let k = 0; k < btns.length; k++) btns[k].style.opacity = '1'; });
+                return;
+            }
+            const Ln = LINES[i];
+            const d = document.createElement('div');
+            const base = 'opacity:0;transform:translateY(8px);transition:opacity .7s ease,transform .7s ease;line-height:1.95;';
+            d.style.cssText = base + (Ln.gold ? 'font-size:15px;color:var(--gold);font-weight:bold;text-align:center;margin:12px 0 4px' : 'font-size:14px;color:#fff;margin-top:8px');
+            d.textContent = Ln.t;
+            linesEl.appendChild(d);
+            requestAnimationFrame(function () { d.style.opacity = '1'; d.style.transform = 'translateY(0)'; });
+            i++; setTimeout(nextLine, 950);
+        }
+        nextLine();
+    }
+    window.showBirthdayMessage = showBirthdayMessage;
+
+    if (typeof window.revealScratchPrize === 'function') {
+        const __prevRevealScratch = window.revealScratchPrize;
+        window.revealScratchPrize = function () {
+            __prevRevealScratch.apply(this, arguments);
+            if (window.__inEndGame === true && lsGet('dawan_msg_shown') !== '1') {
+                lsSet('dawan_msg_shown', '1');
+                setTimeout(function () { showBirthdayMessage(); }, 2200);
+            }
+        };
+    }
+
+    function mountFinaleGameBtn() {
+        const card = document.querySelector('#finale-modal .addon-card');
+        if (!card || document.getElementById('finale-game-btn')) return;
+        const btn = document.createElement('button');
+        btn.id = 'finale-game-btn'; btn.className = 'gx-gbtn';
+        btn.style.cssText = 'width:100%;margin-top:10px;display:none';
+        btn.innerText = '🎮 选一个生日游戏 →';
+        btn.onclick = function () { try { if (typeof closeFinale === 'function') closeFinale(); } catch (e) {} setTimeout(function () { window.openGameChoice(); }, 300); };
+        card.appendChild(btn);
+    }
+
+    ensureUI();
+    (function ensureBackBtn(){
+        if (document.getElementById('game-back-btn')) return;
+        const b = document.createElement('button');
+        b.id = 'game-back-btn'; b.className = 'gx-gbtn';
+        b.style.cssText = 'position:fixed;top:14px;left:14px;z-index:12800;display:none;padding:8px 14px;font-size:13px';
+        b.innerText = '🔄 换个游戏';
+        b.addEventListener('click', function () { try { if (typeof resetGame === 'function') resetGame(); } catch (e) {} window.openGameChoice(); });
+        document.body.appendChild(b);
+    })();
+    document.addEventListener('DOMContentLoaded', mountFinaleGameBtn);
+    setTimeout(mountFinaleGameBtn, 1500);
+})();
+    </script>
+
+    <script>
+(function () {
+    let moneyTotal = 0;
+    let moneyMileIdx = 0;
+    const LUCKY = [66, 88, 168, 188, 666, 888];
+    const MILES = [
+        { at: 8888,   msg: '🤑 8888！数钱数到手抽筋～' },
+        { at: 66666,  msg: '😴 数钱数到自然醒…' },
+        { at: 188888, msg: '💰 大碗今年也太有钱了吧！' },
+        { at: 888888, msg: '👑 财神本神，收下大碗的膜拜' }
+    ];
+
+    function ensureMoneyUI() {
+        if (document.getElementById('money-game')) return;
+        const el = document.createElement('div');
+        el.className = 'gx-overlay'; el.id = 'money-game';
+        el.innerHTML =
+            '<button class="gx-close" id="money-close">✕</button>' +
+            '<div class="gx-title">💰 数钱数到手抽筋</div>' +
+            '<div class="gx-sub">点那叠钱，数到停不下来 🤑</div>' +
+            '<div id="money-total" style="font-size:34px;color:var(--gold);font-weight:bold;letter-spacing:1px">¥ 0</div>' +
+            '<div id="money-stack" style="font-size:96px;cursor:pointer;user-select:none;-webkit-user-select:none;line-height:1">🧧</div>' +
+            '<div id="money-toast" style="font-size:13px;color:#ffeaa7;min-height:18px"></div>';
+        document.body.appendChild(el);
+        el.querySelector('#money-close').addEventListener('click', function () { el.classList.remove('show'); });
+        const stack = el.querySelector('#money-stack');
+        stack.addEventListener('click', function (ev) { ev.preventDefault(); countMoney(stack); });
+    }
+
+    function spawnFloat(anchor, text) {
+        const f = document.createElement('div');
+        f.textContent = text;
+        f.style.cssText = 'position:fixed;z-index:12600;pointer-events:none;font-size:20px;font-weight:bold;color:#ffd166;text-shadow:0 1px 3px rgba(0,0,0,.5);transition:transform 1s ease,opacity 1s ease;';
+        const r = anchor.getBoundingClientRect();
+        f.style.left = (r.left + r.width / 2 + (Math.random() * 40 - 20)) + 'px';
+        f.style.top = r.top + 'px';
+        document.body.appendChild(f);
+        requestAnimationFrame(function () { f.style.transform = 'translateY(-70px)'; f.style.opacity = '0'; });
+        setTimeout(function () { f.remove(); }, 1000);
+    }
+
+    function countMoney(stack) {
+        const add = LUCKY[Math.floor(Math.random() * LUCKY.length)];
+        moneyTotal += add;
+        const t = document.getElementById('money-total');
+        if (t) t.innerText = '¥ ' + moneyTotal.toLocaleString();
+        stack.style.transition = 'transform .08s ease';
+        stack.style.transform = 'scale(1.18)';
+        setTimeout(function () { stack.style.transform = 'scale(1)'; }, 90);
+        spawnFloat(stack, '+¥' + add);
+        try { if (typeof playSound === 'function') playSound(880, 0.08, 'triangle'); } catch (e) {}
+        try { if (typeof buzz === 'function') buzz(12); } catch (e) {}
+        while (moneyMileIdx < MILES.length && moneyTotal >= MILES[moneyMileIdx].at) {
+            const tt = document.getElementById('money-toast'); if (tt) tt.innerText = MILES[moneyMileIdx].msg;
+            try { if (typeof confetti === 'function') confetti({ particleCount: 50, spread: 70, origin: { y: .5 } }); } catch (e) {}
+            moneyMileIdx++;
+        }
+    }
+
+    window.openMoneyGame = function () {
+        ensureMoneyUI();
+        document.getElementById('money-game').classList.add('show');
+    };
+})();
     </script>
 
 </body>
