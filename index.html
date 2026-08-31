@@ -5472,7 +5472,7 @@
             if (i >= LINES.length) {
                 const box = document.createElement('div'); box.id = 'bmsg-btns';
                 box.appendChild(makeBtn('🥰 我会开心收下的', '🎉 生日快乐 💛'));
-                box.appendChild(makeBtn('好吧，我勉强收下吧😶‍🌫️', '或许内心OS:被迫收下(●'◡'●)，但还是想对你说生日快乐呀'));
+                box.appendChild(makeBtn('好吧，我勉强收下吧😶‍🌫️', "或许内心OS:被迫收下(●'◡'●)，但还是想对你说生日快乐呀"));
                 linesEl.appendChild(box);
                 const btns = box.querySelectorAll('button');
                 requestAnimationFrame(function () { for (let k = 0; k < btns.length; k++) btns[k].style.opacity = '1'; });
@@ -5510,7 +5510,8 @@
         btn.style.cssText = 'width:100%;margin-top:10px;display:none';
         btn.innerText = '🎮 选一个生日游戏 →';
         btn.onclick = function () { try { if (typeof closeFinale === 'function') closeFinale(); } catch (e) {} setTimeout(function () { window.openGameChoice(); }, 300); };
-        card.appendChild(btn);
+        const closeBtn = card.querySelector('.btn-action');
+        if (closeBtn) card.insertBefore(btn, closeBtn); else card.appendChild(btn);
     }
 
     ensureUI();
