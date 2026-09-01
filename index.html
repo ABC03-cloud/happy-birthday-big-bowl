@@ -5281,7 +5281,7 @@
     // ================= 盲盒礼物：改这里（icon 图标 / name 名字 / desc 描述 / tag 小标签）=================
     const BLIND_BOXES = [
         { icon: '🌙', name: '熬夜救星盒', desc: '熬夜精华 + 眼霜 + 面膜，专治熬夜党的疲惫肌', tag: '护肤 · 约¥2000' },
-        { icon: '🎤', name: '小仙女👗👖👚盒', desc: '漂亮衣服，OOTD 每天不用愁', tag: '打扮 · 约¥2000' },
+        { icon: '👗', name: '小仙女穿搭盒', desc: '漂亮衣服，OOTD 每天不用愁', tag: '打扮 · 约¥2000' },
         { icon: '💆', name: '按摩解压盒', desc: '眼部/颈部按摩仪 + 香薰，久坐直播后好好放松', tag: '放松 · 约¥2000' },
         { icon: '🍜', name: '大碗吃货能量盒', desc: '火鸡面 + 各国泡面零食 + 螺蛳粉 + 卤面 + 小煮锅，大碗の快乐', tag: '吃货 · 约¥2000' },
         { icon: '🛵', name: '小助力代步🛵', desc: '一台小小的代步电动车，下播再晚也能稳稳当当到家 🛵', tag: '代步 · 约¥2000' }
@@ -5312,8 +5312,8 @@
                     '<span class="gx-tag">熟悉的玩法</span></div>' +
                 '<div class="gx-card" onclick="__chooseGame(\'blindbox\')">' +
                     '<div class="gx-ico">🎁</div><div class="gx-name">游戏二 · 神秘盲盒</div>' +
-                    '<div class="gx-desc">5 个盲盒选 1 个，拆开就是你的啦 💝</div>' +
-                    '<span class="gx-tag">5 选 1</span></div>' +
+                    '<div class="gx-desc">4 个盲盒选 1 个，拆开就是你的啦 💝</div>' +
+                    '<span class="gx-tag">4 选 1</span></div>' +
             '</div>';
         document.body.appendChild(gc);
 
@@ -5433,6 +5433,121 @@
     }
 
     // 结局信底部挂一个「选游戏」按钮
+    function launchFireworksFinale() {
+        // 烟花祝福语（顺序播放，最后一句是压轴）
+        const FW_BLESS = [
+            '喝奶茶不长胖，吃火锅不上火',
+            '想吃的那家永远不排队，还多送一份',
+            '存款只涨不跌，钱包鼓到合不上',
+            '岁岁平安，顿顿好饭',
+            '一岁一礼，一寸欢喜',
+            '喜乐长安，得偿所愿',
+            '想要的都拥有，好事对你紧追不舍',
+            '下播有人接，熬夜有人陪',
+            '今年也要闪闪发光 ✨',
+            '生日快乐 · 大碗！🎂'
+        ];
+        if (document.getElementById('fw-overlay')) return;
+        const ov = document.createElement('div'); ov.id = 'fw-overlay';
+        ov.style.cssText = 'position:fixed;inset:0;z-index:13000;background:radial-gradient(ellipse at 50% 20%,#0b1030,#05050f);opacity:0;transition:opacity .8s ease;overflow:hidden;';
+        const canvas = document.createElement('canvas'); canvas.id = 'fw-canvas';
+        canvas.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;display:block;';
+        const txtLayer = document.createElement('div'); txtLayer.id = 'fw-text';
+        txtLayer.style.cssText = 'position:absolute;inset:0;pointer-events:none;';
+        ov.appendChild(canvas); ov.appendChild(txtLayer); document.body.appendChild(ov);
+        requestAnimationFrame(function () { ov.style.opacity = '1'; });
+
+        const song = document.getElementById('finale-audio');
+        try { if (typeof pauseBGM === 'function') pauseBGM(); } catch (e) {}
+        if (song) { try { song.currentTime = 0; const sp = song.play(); if (sp && sp.catch) sp.catch(function () {}); } catch (e) {} }
+
+        const ctx = canvas.getContext('2d');
+        let W, H, DPR;
+        function resize() { DPR = Math.min(window.devicePixelRatio || 1, 2); W = canvas.width = window.innerWidth * DPR; H = canvas.height = window.innerHeight * DPR; }
+        resize(); window.addEventListener('resize', resize);
+
+        const colors = ['#ffd166', '#ff6b6b', '#4ecdc4', '#f7b7ff', '#ffe66d', '#a29bfe', '#7bed9f'];
+        let particles = [], rockets = [];
+        function burst(x, y, count) {
+            for (let i = 0; i < count; i++) {
+                const a = Math.random() * Math.PI * 2, sp = (Math.random() * 4 + 2) * DPR;
+                particles.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 1, color: colors[Math.floor(Math.random() * colors.length)], size: (Math.random() * 2 + 1) * DPR });
+            }
+        }
+        function launchRocket(ty, cb) {
+            const x = (Math.random() * 0.7 + 0.15) * W;
+            rockets.push({ x: x, y: H, ty: ty, vy: -(9 + Math.random() * 3) * DPR, cb: cb });
+        }
+        function showText(txt, yPct, big) {
+            const d = document.createElement('div');
+            d.textContent = txt;
+            d.style.cssText = 'position:absolute;left:50%;top:' + yPct + '%;transform:translate(-50%,-50%) scale(.7);color:#fff;font-weight:bold;text-align:center;max-width:88vw;opacity:0;text-shadow:0 0 12px rgba(255,215,0,.85),0 2px 6px rgba(0,0,0,.6);transition:opacity .6s ease,transform .6s ease;font-size:' + (big ? '30px' : '18px') + ';';
+            txtLayer.appendChild(d);
+            requestAnimationFrame(function () { d.style.opacity = '1'; d.style.transform = 'translate(-50%,-50%) scale(1)'; });
+            setTimeout(function () { d.style.opacity = '0'; }, big ? 5200 : 2200);
+            setTimeout(function () { if (d.parentNode) d.remove(); }, big ? 6000 : 2900);
+        }
+
+        let raf;
+        function frame() {
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.fillStyle = 'rgba(5,5,15,0.25)'; ctx.fillRect(0, 0, W, H);
+            ctx.globalCompositeOperation = 'lighter';
+            for (let i = rockets.length - 1; i >= 0; i--) {
+                const r = rockets[i]; r.y += r.vy;
+                ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(r.x, r.y, 2 * DPR, 0, 7); ctx.fill();
+                if (r.y <= r.ty) { burst(r.x, r.y, 60); if (r.cb) r.cb(); rockets.splice(i, 1); }
+            }
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i]; p.vy += 0.05 * DPR; p.x += p.vx; p.y += p.vy; p.vx *= 0.99; p.vy *= 0.99; p.life -= 0.012;
+                if (p.life <= 0) { particles.splice(i, 1); continue; }
+                ctx.globalAlpha = Math.max(p.life, 0); ctx.fillStyle = p.color;
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, 7); ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+            raf = requestAnimationFrame(frame);
+        }
+        frame();
+
+        function cleanup() {
+            cancelAnimationFrame(raf);
+            window.removeEventListener('resize', resize);
+            try { if (song) { song.pause(); song.currentTime = 0; } } catch (e) {}
+            ov.style.opacity = '0';
+            setTimeout(function () { if (ov.parentNode) ov.remove(); }, 800);
+        }
+
+        let idx = 0;
+        function next() {
+            if (idx >= FW_BLESS.length - 1) { finale(); return; }
+            const y = 26 + Math.random() * 26;
+            (function (blessing, yy) { launchRocket((yy / 100) * H, function () { showText(blessing, yy, false); }); })(FW_BLESS[idx], y);
+            idx++;
+            setTimeout(next, 2100);
+        }
+        function finale() {
+            let n = 0;
+            const bar = setInterval(function () {
+                launchRocket(((15 + Math.random() * 35) / 100) * H, null);
+                n++; if (n > 12) clearInterval(bar);
+            }, 220);
+            setTimeout(function () {
+                showText(FW_BLESS[FW_BLESS.length - 1], 44, true);
+                try { if (typeof confetti === 'function') { confetti({ particleCount: 220, spread: 160, origin: { y: .5 } }); setTimeout(function () { confetti({ particleCount: 180, spread: 140, origin: { y: .4 } }); }, 500); } } catch (e) {}
+                try { if (typeof buzz === 'function') buzz([30, 60, 30, 60, 200]); } catch (e) {}
+                setTimeout(function () {
+                    const b = document.createElement('button');
+                    b.textContent = '🎂 收下这场烟花';
+                    b.style.cssText = 'position:absolute;left:50%;bottom:12%;transform:translateX(-50%);z-index:2;background:var(--gold);color:#3a1150;border:none;border-radius:24px;padding:12px 22px;font-size:15px;font-weight:bold;cursor:pointer;opacity:0;transition:opacity .8s ease;';
+                    b.addEventListener('click', cleanup);
+                    ov.appendChild(b);
+                    requestAnimationFrame(function () { b.style.opacity = '1'; });
+                }, 1800);
+            }, 2800);
+        }
+        setTimeout(next, 900);
+    }
+
     function showBirthdayMessage() {
         let ov = document.getElementById('birthday-msg-overlay');
         if (ov) { ov.classList.add('show'); return; }
@@ -5443,14 +5558,14 @@
         ov.appendChild(card); document.body.appendChild(ov); ov.classList.add('show');
         const linesEl = card.querySelector('#bmsg-lines');
         const LINES = [
-            { t: '寿星寿星，生日快乐呀，祝你天天开心，事事顺遂，心想事成，身体健康 🎂', gold: true },
-            { t: '小小心意，你就收下吧。生日一年一次嘛。' },
-            { t: '写代码，构思剧情的时候，一直盼着你能安心又开心地接纳这份祝福。' },
-            { t: '知道你可能会有压力/不好意思甚至过意不去，' },
-            { t: '但真的不用多想，你开心收下就是我最大的心愿。你的好心情就是这份礼物最大的意义' },
-            { t: '好啦，煽情的话就不多说了。' },
-            { t: '今天你最大，只管轻松快乐。你轻松收下、开开心心的，我就最开心啦。这样，这份礼物才变得真正有意义。' },
-            { t: '生日快乐呀 💛', gold: true }
+            { t: '寿星寿星，生日快乐呀', gold: true },
+            { t: '祝你天天开心，事事顺遂，心想事成，身体健康 🎂' },
+            { t: '小小心意，你就收下吧，' },
+            { t: '当作生日专属的小惊喜，毕竟生日一年才一次嘛，不用过意不去啦' },
+            { t: '写代码和构思的过程我自己也玩得开心，希望你也玩得快乐🎈😸😝' },
+            { t: '今天你最大，只管尽情开心就好啦ヾ(≧▽≦*)o' },
+            { t: '生日快乐，新的一岁继续闪闪发亮！☘️✨' },
+            { t: 'from: 阿贝贝🙈', gold: true }
         ];
         function makeBtn(label, reply) {
             const btn = document.createElement('button');
@@ -5461,7 +5576,7 @@
                 try { if (typeof buzz === 'function') buzz([20, 40, 20, 40, 130]); } catch (e) {}
                 const wrap = document.getElementById('bmsg-btns');
                 if (wrap) wrap.innerHTML = '<div style="font-size:15px;color:var(--gold);font-weight:bold;text-align:center;line-height:1.9;margin-top:6px">' + reply + '</div>';
-                setTimeout(function () { ov.classList.remove('show'); }, 1900);
+                setTimeout(function () { ov.classList.remove('show'); setTimeout(function () { launchFireworksFinale(); }, 500); }, 1900);
             });
             return btn;
         }
@@ -5535,7 +5650,7 @@
     const MILES = [
         { at: 8888,   msg: '🤑 8888！数钱数到手抽筋～' },
         { at: 66666,  msg: '😴 数钱数到自然醒…' },
-        { at: 188888, msg: '💰 大碗今年也太有钱了吧！' },
+        { at: 188888, msg: '💰 大碗今年吃喝不愁！' },
         { at: 888888, msg: '👑 财神本神，收下大碗的膜拜' }
     ];
 
