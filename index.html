@@ -1867,6 +1867,7 @@
                 <button onclick="closeAdminPanel()" style="background:none; border:none; color:#fff; font-size:18px; cursor:pointer;">✕</button>
             </div>
             <div id="cloud-status" style="margin:6px 0; padding:7px 9px; border-radius:7px; background:rgba(0,0,0,.25); font-size:11px; line-height:1.45; color:#ffeaa7;">☁️ 云端状态：尚未测试</div>
+            <div id="cloud-size-bar" style="margin:0 0 6px; padding:6px 9px; border-radius:7px; background:rgba(0,0,0,.25); font-size:11px; line-height:1.5; color:#ffeaa7; display:none;"></div>
             <div style="display:flex; gap:6px; margin-bottom:6px;">
                 <button class="btn-action" onclick="testCloudConnection(true)" style="flex:1; padding:5px 8px; font-size:11px;">☁️ 测试云端连接</button>
                 <button class="btn-action" onclick="forceCloudRefresh()" style="flex:1; padding:5px 8px; font-size:11px;">🔄 刷新共享记录</button>
@@ -3438,6 +3439,27 @@
                 + (detail ? `<br><span style="color:#ffb3b3;">${safe(detail)}</span>` : '');
         }
 
+        // JSONBin 免费版单个 bin 上限约 100KB。这里在每次同步后估算体积，
+        // 快接近上限时提前变色提醒，避免云端悄悄卡死不再更新。
+        const CLOUD_SIZE_LIMIT_KB = 100;
+        function updateCloudSizeBar(mergedState) {
+            const bar = document.getElementById('cloud-size-bar');
+            if (!bar) return;
+            let kb = 0;
+            try { kb = new Blob([JSON.stringify(mergedState)]).size / 1024; }
+            catch (e) { kb = JSON.stringify(mergedState).length / 1024; }
+            const pct = Math.min(100, (kb / CLOUD_SIZE_LIMIT_KB) * 100);
+            const color = pct >= 90 ? '#ff6b6b' : (pct >= 70 ? '#ffd166' : '#7bed9f');
+            const warn = pct >= 90
+                ? '⚠️ 快满了！建议清空密码/游戏记录，否则云端可能停止更新'
+                : (pct >= 70 ? '快接近上限，留意一下～' : '空间充足');
+            bar.style.display = 'block';
+            bar.innerHTML =
+                `📦 云端容量：${kb.toFixed(1)}KB / ${CLOUD_SIZE_LIMIT_KB}KB（${warn}）` +
+                `<div style="margin-top:4px;height:6px;border-radius:4px;background:rgba(255,255,255,.15);overflow:hidden;">` +
+                `<div style="height:100%;width:${pct.toFixed(1)}%;background:${color};transition:width .4s ease;"></div></div>`;
+        }
+
 
         // IMPORTANT:
         // 1. All devices use the SAME JSONBin.
@@ -3506,6 +3528,10 @@
             }));
         }
 
+        // JSONBin 免费版单个 bin 上限约 100KB，超过会被静默拒绝导致云端卡住不更新。
+        // 这里限制每类记录只保留最新 N 条，防止云端体积无限增长。
+        const CLOUD_RECORD_CAP = { history: 150, wish: 80, watering: 120 };
+
         function mergeRecords(cloudArr, localArr, fallbackType = 'event') {
             const merged = new Map();
 
@@ -3518,11 +3544,14 @@
                 merged.set(item.id, item);
             });
 
-            return Array.from(merged.values()).sort((a, b) => {
+            const sorted = Array.from(merged.values()).sort((a, b) => {
                 const ta = Date.parse(a.time || '') || 0;
                 const tb = Date.parse(b.time || '') || 0;
                 return tb - ta;
             });
+
+            const cap = CLOUD_RECORD_CAP[fallbackType];
+            return (cap && sorted.length > cap) ? sorted.slice(0, cap) : sorted;
         }
 
         function getLocalHistory() {
@@ -3756,6 +3785,7 @@
                     applyCloudStateToLocal(merged);
                     await putCloudState(merged);
                     refreshAdminViews();
+                    updateCloudSizeBar(merged);
 
                     setCloudStatus('ok', `同步成功 · ${merged.records.length} 条记录 / ${merged.wishes.length} 条愿望 / ${merged.wateringHistory.length} 条浇水`);
                     console.log('☁️ Shared cloud sync successful:', merged);
@@ -5650,7 +5680,7 @@
     const MILES = [
         { at: 8888,   msg: '🤑 8888！数钱数到手抽筋～' },
         { at: 66666,  msg: '😴 数钱数到自然醒…' },
-        { at: 188888, msg: '💰 大碗今年吃喝不愁！' },
+        { at: 188888, msg: '💰 大碗今年也太有钱了吧！' },
         { at: 888888, msg: '👑 财神本神，收下大碗的膜拜' }
     ];
 
