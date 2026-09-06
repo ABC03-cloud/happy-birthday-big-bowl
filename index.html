@@ -1677,7 +1677,7 @@
             <button class="btn-action" id="water-tree-btn" onclick="waterPlant()" style="width: 100%; margin-bottom: 6px;">💧 浇水养树 (-2天)</button>
             <div id="water-msg" style="font-size: 11px; color: #ffeaa7; min-height: 16px; margin-bottom: 10px;"></div>
 
-            <button class="btn-action" id="enter-game-btn" onclick="openMoneyGame()" style="width: 100%; background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%); color: white;">💰 数钱解压 · 数到手抽筋 🤑</button>
+            <button class="btn-action" id="enter-game-btn" onclick="enterGameFromCountdown()" style="width: 100%; display: none; background: linear-gradient(180deg, #22c55e 0%, #15803d 100%); color: white;">🎉 开启生日抢宝大作战 🚀</button>
         </div>
     </div>
 
@@ -3065,8 +3065,10 @@
                 digitsEl.style.color = "#22c55e";
                 daysInfoEl.innerText = "🌸 树木已完全成熟解锁！";
                 daysInfoEl.style.color = "#22c55e";
+                if (enterBtn) enterBtn.style.display = "block";
                 return;
             }
+            if (enterBtn) enterBtn.style.display = "none";
 
             const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
             const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
@@ -5310,11 +5312,11 @@
 (function () {
     // ================= 盲盒礼物：改这里（icon 图标 / name 名字 / desc 描述 / tag 小标签）=================
     const BLIND_BOXES = [
-        { icon: '🌙', name: '熬夜救星盒', desc: '熬夜精华 + 眼霜 + 面膜，专治熬夜党的疲惫肌', tag: '护肤 · 约¥2000' },
-        { icon: '👗', name: '小仙女穿搭盒', desc: '漂亮衣服，OOTD 每天不用愁', tag: '打扮 · 约¥2000' },
-        { icon: '💆', name: '按摩解压盒', desc: '眼部/颈部按摩仪 + 香薰，久坐直播后好好放松', tag: '放松 · 约¥2000' },
-        { icon: '🍜', name: '大碗吃货能量盒', desc: '火鸡面 + 各国泡面零食 + 螺蛳粉 + 卤面 + 小煮锅，大碗の快乐', tag: '吃货 · 约¥2000' },
-        { icon: '🛵', name: '小助力代步🛵', desc: '一台小小的代步电动车，下播再晚也能稳稳当当到家 🛵', tag: '代步 · 约¥2000' }
+        { icon: '🌙', name: '熬夜救星盒', desc: '熬夜精华 + 眼霜 + 面膜，专治熬夜党的疲惫肌', tag: '护肤 · 约¥3000' },
+        { icon: '👗', name: '小仙女穿搭盒', desc: '漂亮衣服，OOTD 每天不用愁', tag: '打扮 · 约¥3000' },
+        { icon: '💆', name: '按摩解压盒', desc: '眼部/颈部按摩仪 + 香薰，久坐直播后好好放松', tag: '放松 · 约¥3000' },
+        { icon: '🍜', name: '大碗吃货能量盒', desc: '火鸡面 + 各国泡面零食 + 螺蛳粉 + 卤面 + 小煮锅，大碗の快乐', tag: '吃货 · 约¥3000' },
+        { icon: '🛵', name: '小助力代步🛵', desc: '一台小小的代步电动车，下播再晚也能稳稳当当到家 🛵', tag: '代步 · 约¥3000' }
     ];
     // ===============================================================================================
 
@@ -5669,72 +5671,6 @@
     })();
     document.addEventListener('DOMContentLoaded', mountFinaleGameBtn);
     setTimeout(mountFinaleGameBtn, 1500);
-})();
-    </script>
-
-    <script>
-(function () {
-    let moneyTotal = 0;
-    let moneyMileIdx = 0;
-    const LUCKY = [66, 88, 168, 188, 666, 888];
-    const MILES = [
-        { at: 8888,   msg: '🤑 8888！数钱数到手抽筋～' },
-        { at: 66666,  msg: '😴 数钱数到自然醒…' },
-        { at: 188888, msg: '💰 大碗今年也太有钱了吧！' },
-        { at: 888888, msg: '👑 财神本神，收下大碗的膜拜' }
-    ];
-
-    function ensureMoneyUI() {
-        if (document.getElementById('money-game')) return;
-        const el = document.createElement('div');
-        el.className = 'gx-overlay'; el.id = 'money-game';
-        el.innerHTML =
-            '<button class="gx-close" id="money-close">✕</button>' +
-            '<div class="gx-title">💰 数钱数到手抽筋</div>' +
-            '<div class="gx-sub">点那叠钱，数到停不下来 🤑</div>' +
-            '<div id="money-total" style="font-size:34px;color:var(--gold);font-weight:bold;letter-spacing:1px">¥ 0</div>' +
-            '<div id="money-stack" style="font-size:96px;cursor:pointer;user-select:none;-webkit-user-select:none;line-height:1">🧧</div>' +
-            '<div id="money-toast" style="font-size:13px;color:#ffeaa7;min-height:18px"></div>';
-        document.body.appendChild(el);
-        el.querySelector('#money-close').addEventListener('click', function () { el.classList.remove('show'); });
-        const stack = el.querySelector('#money-stack');
-        stack.addEventListener('click', function (ev) { ev.preventDefault(); countMoney(stack); });
-    }
-
-    function spawnFloat(anchor, text) {
-        const f = document.createElement('div');
-        f.textContent = text;
-        f.style.cssText = 'position:fixed;z-index:12600;pointer-events:none;font-size:20px;font-weight:bold;color:#ffd166;text-shadow:0 1px 3px rgba(0,0,0,.5);transition:transform 1s ease,opacity 1s ease;';
-        const r = anchor.getBoundingClientRect();
-        f.style.left = (r.left + r.width / 2 + (Math.random() * 40 - 20)) + 'px';
-        f.style.top = r.top + 'px';
-        document.body.appendChild(f);
-        requestAnimationFrame(function () { f.style.transform = 'translateY(-70px)'; f.style.opacity = '0'; });
-        setTimeout(function () { f.remove(); }, 1000);
-    }
-
-    function countMoney(stack) {
-        const add = LUCKY[Math.floor(Math.random() * LUCKY.length)];
-        moneyTotal += add;
-        const t = document.getElementById('money-total');
-        if (t) t.innerText = '¥ ' + moneyTotal.toLocaleString();
-        stack.style.transition = 'transform .08s ease';
-        stack.style.transform = 'scale(1.18)';
-        setTimeout(function () { stack.style.transform = 'scale(1)'; }, 90);
-        spawnFloat(stack, '+¥' + add);
-        try { if (typeof playSound === 'function') playSound(880, 0.08, 'triangle'); } catch (e) {}
-        try { if (typeof buzz === 'function') buzz(12); } catch (e) {}
-        while (moneyMileIdx < MILES.length && moneyTotal >= MILES[moneyMileIdx].at) {
-            const tt = document.getElementById('money-toast'); if (tt) tt.innerText = MILES[moneyMileIdx].msg;
-            try { if (typeof confetti === 'function') confetti({ particleCount: 50, spread: 70, origin: { y: .5 } }); } catch (e) {}
-            moneyMileIdx++;
-        }
-    }
-
-    window.openMoneyGame = function () {
-        ensureMoneyUI();
-        document.getElementById('money-game').classList.add('show');
-    };
 })();
     </script>
 
