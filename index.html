@@ -24,9 +24,9 @@
     <style>
         :root {
             --gold: #ffd700;
-            --dark-border: #1a0826;
+            --dark-border: #3d1a5b;
             --yellow-card: #ffeaa7;
-            --purple-bg: #2d103b;
+            --purple-bg: #efe4fb;
             --pink-party: #ff7675;
         }
 
@@ -167,7 +167,7 @@
         }
 
         .envelope-card {
-            background: linear-gradient(180deg, #421147 0%, #1c0621 100%);
+            background: linear-gradient(180deg, #f3e9ff 0%, #e2d3f7 100%);
             border: 4px solid var(--gold);
             border-radius: 24px;
             padding: 24px 18px;
@@ -239,14 +239,14 @@
         }
 
         .envelope-title {
-            color: var(--gold);
+            color: #6b21a8;
             font-size: 22px;
             margin: 0 0 8px;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 0.6);
         }
 
         .envelope-subtitle {
-            color: #f1f2f6;
+            color: #4c3266;
             font-size: 13px;
             line-height: 1.5;
             margin-bottom: 12px;
@@ -373,7 +373,7 @@
         .polaroid-cover {
             position: absolute;
             inset: 0;
-            background: linear-gradient(135deg, #2b1055, #6c5ce7);
+            background: linear-gradient(135deg, #f6efff, #d6c8f7);
             color: var(--gold);
             display: flex;
             flex-direction: column;
@@ -1045,7 +1045,7 @@
         }
 
         .admin-card {
-            background: #2b1055;
+            background: #f6efff;
             border: 3px solid var(--gold);
             border-radius: 20px;
             padding: 16px;
@@ -1542,7 +1542,7 @@
             height: 122px;
             object-fit: cover;
             display: block;
-            background: linear-gradient(135deg, #2b1055, #6c5ce7);
+            background: linear-gradient(135deg, #f6efff, #d6c8f7);
         }
 
         .gallery-art {
@@ -1662,20 +1662,20 @@
         <div class="envelope-card" style="max-width: 400px;">
             <div class="party-sticker">🌱 浇水加速解密</div>
             <h2 class="envelope-title" style="margin-bottom: 4px;">生日倒计时 ⏳</h2>
-            <p style="font-size: 12px; color: #ffeaa7; margin-top: 0; margin-bottom: 10px;">目标时间：2026年9月27日 (UTC+8)</p>
+            <p style="font-size: 12px; color: #6b5580; margin-top: 0; margin-bottom: 10px;">目标时间：2026年9月27日 (UTC+8)</p>
 
             <div id="tree-display" ondblclick="dropTreePicture(event)" title="双击小树雨式下照片！" style="font-size: 70px; margin: 6px 0; transition: transform 0.3s ease; filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3)); cursor: pointer;">🌱</div>
 
-            <div id="tree-stage-name" style="font-size: 13px; color: var(--gold); font-weight: bold; margin-bottom: 2px;">希望幼苗</div>
-            <div id="tree-days-info" style="font-size: 11px; color: #ffeaa7; margin-bottom: 10px;">距离树木完全解锁还剩: 计算中...</div>
+            <div id="tree-stage-name" style="font-size: 13px; color: #6b21a8; font-weight: bold; margin-bottom: 2px;">希望幼苗</div>
+            <div id="tree-days-info" style="font-size: 11px; color: #6b5580; margin-bottom: 10px;">距离树木完全解锁还剩: 计算中...</div>
 
-            <div id="countdown-timer-box" style="background: rgba(0,0,0,0.4); border: 2px solid var(--gold); border-radius: 16px; padding: 10px; margin-bottom: 10px;">
-                <div style="font-size: 11px; color: #a29bfe;">实时解锁倒计时</div>
-                <div id="countdown-digits" style="font-size: 20px; font-weight: bold; color: var(--gold); margin-top: 2px;">计算中...</div>
+            <div id="countdown-timer-box" style="background: rgba(255,255,255,0.75); border: 2px solid #b98cf0; border-radius: 16px; padding: 10px; margin-bottom: 10px;">
+                <div style="font-size: 11px; color: #7c5aa6;">实时解锁倒计时</div>
+                <div id="countdown-digits" style="font-size: 20px; font-weight: bold; color: #6b21a8; margin-top: 2px;">计算中...</div>
             </div>
 
             <button class="btn-action" id="water-tree-btn" onclick="waterPlant()" style="width: 100%; margin-bottom: 6px;">💧 浇水养树 (-2天)</button>
-            <div id="water-msg" style="font-size: 11px; color: #ffeaa7; min-height: 16px; margin-bottom: 10px;"></div>
+            <div id="water-msg" style="font-size: 11px; color: #6b5580; min-height: 16px; margin-bottom: 10px;"></div>
 
             <button class="btn-action" id="enter-game-btn" onclick="enterGameFromCountdown()" style="width: 100%; display: none; background: linear-gradient(180deg, #22c55e 0%, #15803d 100%); color: white;">🎉 开启生日抢宝大作战 🚀</button>
         </div>
@@ -4483,7 +4483,7 @@
         .addon-modal.show { display: flex; }
 
         .addon-card {
-            background: linear-gradient(180deg, #3a1550 0%, #2d103b 100%);
+            background: linear-gradient(180deg, #f2e8ff 0%, #e4d6f8 100%);
             border: 3px solid var(--gold);
             border-radius: 22px;
             padding: 20px 18px;
@@ -4496,8 +4496,8 @@
             position: relative;
         }
 
-        .addon-card h3 { color: var(--gold); margin: 0 0 8px; font-size: 19px; }
-        .addon-card p { color: #ffeaa7; font-size: 13px; line-height: 1.65; margin: 6px 0; }
+        .addon-card h3 { color: #6b21a8; margin: 0 0 8px; font-size: 19px; }
+        .addon-card p { color: #3b2350; font-size: 13px; line-height: 1.65; margin: 6px 0; }
 
         .addon-photo {
             width: 100%;
@@ -4859,7 +4859,7 @@
             if (!fm || fm.classList.contains('show')) return;
             document.getElementById('finale-text').innerHTML =
                 FINALE_LETTER +
-                '<br><br><span style="color:#a29bfe;font-size:12px">' + SIGNATURE + '</span>';
+                '<br><br><span style="color:#7c5aa6;font-size:12px">' + SIGNATURE + '</span>';
             renderFortunes(document.getElementById('fortune-list'));
             document.getElementById('finale-modal').classList.add('show');
             buzz([40, 80, 40, 80, 120]);
@@ -5251,9 +5251,9 @@
                     const h = Math.floor(left / 3600000), m = Math.floor(left % 3600000 / 60000), s = Math.floor(left % 60000 / 1000);
                     if (txt) txt.innerHTML =
                         '<div style="text-align:center;line-height:1.9">嘻嘻，还没到那一刻哦 🌙<br>' +
-                        '<span style="font-size:26px;color:var(--gold);font-weight:bold;letter-spacing:1px">' +
+                        '<span style="font-size:26px;color:#6b21a8;font-weight:bold;letter-spacing:1px">' +
                         pad(h) + ':' + pad(m) + ':' + pad(s) + '</span><br>' +
-                        '<span style="font-size:12px;opacity:.8">嘿嘿, 还没到你的生日，再等等我。生日那天再进来解锁看吧🙈😽</span></div>';
+                        '<span style="font-size:12px;color:#5b4570">嘿嘿, 还没到你的生日，再等等我。生日那天再进来解锁看吧🙈😽</span></div>';
                 }
                 tick();
                 if (finaleCountdownTimer) clearInterval(finaleCountdownTimer);
@@ -5286,7 +5286,7 @@
                 try { if (typeof buzz === 'function') buzz([40, 80, 40, 80, 160]); } catch (e) {}
                 if (document.getElementById('midnight-banner')) return;
                 const b = document.createElement('div'); b.id = 'midnight-banner';
-                b.style.cssText = 'position:fixed;left:50%;top:16%;transform:translateX(-50%);z-index:13000;background:linear-gradient(180deg,#421147,#1c0621);border:2px solid var(--gold);border-radius:16px;padding:14px 18px;color:#ffeaa7;text-align:center;font-size:14px;line-height:1.6;box-shadow:0 0 24px rgba(255,215,0,.4);max-width:86vw;';
+                b.style.cssText = 'position:fixed;left:50%;top:16%;transform:translateX(-50%);z-index:13000;background:linear-gradient(180deg,#f3e9ff,#e2d3f7);border:2px solid var(--gold);border-radius:16px;padding:14px 18px;color:#ffeaa7;text-align:center;font-size:14px;line-height:1.6;box-shadow:0 0 24px rgba(255,215,0,.4);max-width:86vw;';
                 b.innerHTML = '🎉 OH YEAH 终于到关键时刻了😝 · 生日快乐 🎂<br><span style="font-size:12px;opacity:.9">记得摇一摇手机😎，据说让整个世界「晃一晃」，信就会出现 🌙 🌙</span>';
                 document.body.appendChild(b);
                 b.addEventListener('click', function(){ b.remove(); });
@@ -5307,7 +5307,7 @@
         })();
     </script>
 
-    <style>.gx-overlay{position:fixed;inset:0;z-index:12500;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px 18px;text-align:center;overflow-y:auto;background:radial-gradient(circle at 50% 30%,rgba(40,12,60,.96),rgba(10,4,20,.98));backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}.gx-overlay.show{display:flex;}.gx-title{font-size:20px;color:var(--gold);font-weight:bold;}.gx-sub{font-size:12px;color:#ffeaa7;opacity:.85;margin-top:-4px;}.gx-cards{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;width:100%;max-width:420px;}.gx-card{flex:1 1 155px;min-width:150px;background:linear-gradient(180deg,#3a1150,#1c0725);border:2px solid var(--gold);border-radius:18px;padding:18px 14px;cursor:pointer;color:#fff;transition:transform .15s ease,box-shadow .15s ease;}.gx-card:active{transform:scale(.97);}.gx-card:hover{box-shadow:0 0 20px rgba(255,215,0,.35);}.gx-card .gx-ico{font-size:40px;}.gx-card .gx-name{font-size:15px;color:var(--gold);font-weight:bold;margin-top:6px;}.gx-card .gx-desc{font-size:12px;color:#ffeaa7;opacity:.9;margin-top:6px;line-height:1.5;}.gx-card .gx-tag{display:inline-block;margin-top:8px;font-size:11px;color:#fff;background:rgba(255,255,255,.14);border-radius:20px;padding:2px 10px;}.bb-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;width:100%;max-width:360px;}.bb-box{position:relative;min-height:120px;border-radius:18px;background:linear-gradient(180deg,#4a1566,#25092f);border:2px solid var(--gold);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:8px;transition:transform .2s ease,opacity .4s ease;}.bb-box:active{transform:scale(.96);}.bb-box .bb-lid{font-size:44px;}.bb-box .bb-num{font-size:12px;color:#ffeaa7;margin-top:4px;}.bb-box.chosen{border-color:#ff7675;box-shadow:0 0 22px rgba(255,118,117,.6);}.bb-box.dim{opacity:.55;}.bb-gift{display:none;flex-direction:column;align-items:center;}.bb-box.opened .bb-lid,.bb-box.opened .bb-num{display:none;}.bb-box.opened .bb-gift{display:flex;animation:gxPop .4s ease;}.bb-gift .g-ico{font-size:36px;}.bb-gift .g-name{font-size:13px;color:var(--gold);font-weight:bold;margin-top:2px;}.bb-gift .g-tag{font-size:10px;color:#ffeaa7;opacity:.85;margin-top:2px;}.bb-you{position:absolute;top:6px;right:6px;background:#ff7675;color:#fff;font-size:10px;padding:1px 7px;border-radius:20px;}@keyframes gxPop{0%{transform:scale(.5);opacity:0;}100%{transform:scale(1);opacity:1;}}.gx-result{font-size:14px;color:#fff;line-height:1.7;max-width:360px;min-height:18px;}.gx-result b{color:var(--gold);}.gx-gbtn{margin-top:6px;background:var(--gold);color:#3a1150;border:none;border-radius:24px;padding:10px 20px;font-size:14px;font-weight:bold;cursor:pointer;}.gx-close{position:absolute;top:14px;right:16px;font-size:22px;color:#fff;opacity:.7;cursor:pointer;background:none;border:none;}</style>
+    <style>.gx-overlay{position:fixed;inset:0;z-index:12500;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:24px 18px;text-align:center;overflow-y:auto;background:radial-gradient(circle at 50% 30%,rgba(250,246,255,.97),rgba(228,214,248,.98));backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);}.gx-overlay.show{display:flex;}.gx-title{font-size:20px;color:#6b21a8;font-weight:bold;}.gx-sub{font-size:12px;color:#7c5aa6;opacity:1;margin-top:-4px;}.gx-cards{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;width:100%;max-width:420px;}.gx-card{flex:1 1 155px;min-width:150px;background:linear-gradient(180deg,#f2e8ff,#e5d8f8);border:2px solid #b98cf0;border-radius:18px;padding:18px 14px;cursor:pointer;color:#3b2350;transition:transform .15s ease,box-shadow .15s ease;}.gx-card:active{transform:scale(.97);}.gx-card:hover{box-shadow:0 0 20px rgba(255,215,0,.35);}.gx-card .gx-ico{font-size:40px;}.gx-card .gx-name{font-size:15px;color:#6b21a8;font-weight:bold;margin-top:6px;}.gx-card .gx-desc{font-size:12px;color:#5b4570;opacity:1;margin-top:6px;line-height:1.5;}.gx-card .gx-tag{display:inline-block;margin-top:8px;font-size:11px;color:#4c3266;background:rgba(107,33,168,.12);border-radius:20px;padding:2px 10px;}.bb-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;width:100%;max-width:360px;}.bb-box{position:relative;min-height:120px;border-radius:18px;background:linear-gradient(180deg,#efe1fd,#ddcbf5);border:2px solid #b98cf0;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;padding:8px;transition:transform .2s ease,opacity .4s ease;}.bb-box:active{transform:scale(.96);}.bb-box .bb-lid{font-size:44px;}.bb-box .bb-num{font-size:12px;color:#6b5580;margin-top:4px;}.bb-box.chosen{border-color:#ff7675;box-shadow:0 0 22px rgba(255,118,117,.6);}.bb-box.dim{opacity:.55;}.bb-gift{display:none;flex-direction:column;align-items:center;}.bb-box.opened .bb-lid,.bb-box.opened .bb-num{display:none;}.bb-box.opened .bb-gift{display:flex;animation:gxPop .4s ease;}.bb-gift .g-ico{font-size:36px;}.bb-gift .g-name{font-size:13px;color:#6b21a8;font-weight:bold;margin-top:2px;}.bb-gift .g-tag{font-size:10px;color:#6b5580;opacity:1;margin-top:2px;}.bb-you{position:absolute;top:6px;right:6px;background:#ff7675;color:#fff;font-size:10px;padding:1px 7px;border-radius:20px;}@keyframes gxPop{0%{transform:scale(.5);opacity:0;}100%{transform:scale(1);opacity:1;}}.gx-result{font-size:14px;color:#3b2350;line-height:1.7;max-width:360px;min-height:18px;}.gx-result b{color:var(--gold);}.gx-gbtn{margin-top:6px;background:var(--gold);color:#3a1150;border:none;border-radius:24px;padding:10px 20px;font-size:14px;font-weight:bold;cursor:pointer;}.gx-close{position:absolute;top:14px;right:16px;font-size:22px;color:#fff;opacity:.7;cursor:pointer;background:none;border:none;}</style>
     <script>
 (function () {
     // ================= 盲盒礼物：改这里（icon 图标 / name 名字 / desc 描述 / tag 小标签）=================
@@ -5585,8 +5585,8 @@
         if (ov) { ov.classList.add('show'); return; }
         ov = document.createElement('div'); ov.id = 'birthday-msg-overlay'; ov.className = 'gx-overlay';
         const card = document.createElement('div'); card.id = 'bmsg-card';
-        card.style.cssText = 'max-width:340px;width:88vw;max-height:82vh;overflow-y:auto;padding:26px 22px;border-radius:22px;background:linear-gradient(180deg,#4a1a5e,#241033);border:2px solid var(--gold);box-shadow:0 12px 44px rgba(0,0,0,.55);';
-        card.innerHTML = '<div style="font-size:34px;text-align:center">💌</div><div style="font-size:16px;color:var(--gold);font-weight:bold;text-align:center;margin:4px 0 16px">给寿星的一段话</div><div id="bmsg-lines"></div>';
+        card.style.cssText = 'max-width:340px;width:88vw;max-height:82vh;overflow-y:auto;padding:26px 22px;border-radius:22px;background:linear-gradient(180deg,#f0e4fd,#e0d0f6);border:2px solid #b98cf0;box-shadow:0 12px 44px rgba(90,60,130,.28);';
+        card.innerHTML = '<div style="font-size:34px;text-align:center">💌</div><div style="font-size:16px;color:#6b21a8;font-weight:bold;text-align:center;margin:4px 0 16px">给寿星的一段话</div><div id="bmsg-lines"></div>';
         ov.appendChild(card); document.body.appendChild(ov); ov.classList.add('show');
         const linesEl = card.querySelector('#bmsg-lines');
         const LINES = [
@@ -5607,7 +5607,7 @@
                 try { if (typeof confetti === 'function') confetti({ particleCount: 150, spread: 120, origin: { y: .6 } }); } catch (e) {}
                 try { if (typeof buzz === 'function') buzz([20, 40, 20, 40, 130]); } catch (e) {}
                 const wrap = document.getElementById('bmsg-btns');
-                if (wrap) wrap.innerHTML = '<div style="font-size:15px;color:var(--gold);font-weight:bold;text-align:center;line-height:1.9;margin-top:6px">' + reply + '</div>';
+                if (wrap) wrap.innerHTML = '<div style="font-size:15px;color:#6b21a8;font-weight:bold;text-align:center;line-height:1.9;margin-top:6px">' + reply + '</div>';
                 setTimeout(function () { ov.classList.remove('show'); setTimeout(function () { launchFireworksFinale(); }, 500); }, 1900);
             });
             return btn;
@@ -5626,7 +5626,7 @@
             const Ln = LINES[i];
             const d = document.createElement('div');
             const base = 'opacity:0;transform:translateY(8px);transition:opacity .7s ease,transform .7s ease;line-height:1.95;';
-            d.style.cssText = base + (Ln.gold ? 'font-size:15px;color:var(--gold);font-weight:bold;text-align:center;margin:12px 0 4px' : 'font-size:14px;color:#fff;margin-top:8px');
+            d.style.cssText = base + (Ln.gold ? 'font-size:15px;color:#6b21a8;font-weight:bold;text-align:center;margin:12px 0 4px' : 'font-size:14px;color:#3b2350;margin-top:8px');
             d.textContent = Ln.t;
             linesEl.appendChild(d);
             requestAnimationFrame(function () { d.style.opacity = '1'; d.style.transform = 'translateY(0)'; });
