@@ -3016,8 +3016,8 @@
                 balloon.className = 'cartoon-balloon';
                 balloon.innerText = balloonEmojis[Math.floor(Math.random() * balloonEmojis.length)];
                 balloon.style.left = `${Math.random() * 92}%`;
-                balloon.style.animationDuration = `${6 + Math.random() * 6}s`;
-                balloon.style.animationDelay = `${Math.random() * 3}s`;
+                balloon.style.animationDuration = `${10 + Math.random() * 8}s`;
+                balloon.style.animationDelay = `${Math.random() * 5}s`;
                 balloon.style.fontSize = `${24 + Math.random() * 18}px`;
                 balloonContainer.appendChild(balloon);
             }
@@ -5755,6 +5755,14 @@
             setTimeout(function () {
                 if (ov.parentNode) ov.remove();
                 try { document.body.style.overflow = ''; } catch (e) {}
+                // 开场结束后再放一轮气球，让她真正看到上升效果
+                try {
+                    if (typeof generateBalloons === 'function') {
+                        const bc = document.getElementById('balloon-container');
+                        if (bc) bc.innerHTML = '';
+                        generateBalloons();
+                    }
+                } catch (e) {}
             }, 950);
         }
         skip.addEventListener('click', endIntro);
