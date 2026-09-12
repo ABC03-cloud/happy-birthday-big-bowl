@@ -1625,6 +1625,64 @@
 </head>
 <body id="body-root">
 
+    <!-- ===== 开场：生日快乐字幕 + hbai 视频 ===== -->
+    <style>
+        #intro-overlay {
+            position: fixed; inset: 0; z-index: 20000;
+            background: #07040d;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 1; transition: opacity .9s ease;
+        }
+        #intro-overlay.fade-out { opacity: 0; pointer-events: none; }
+        #intro-title {
+            position: absolute;
+            display: flex; gap: 2px; flex-wrap: wrap; justify-content: center;
+            padding: 0 18px; text-align: center;
+            transition: opacity 1s ease;
+        }
+        #intro-title span {
+            font-size: clamp(26px, 8vw, 52px);
+            font-weight: bold;
+            color: #ffd700;
+            text-shadow: 0 0 18px rgba(255,215,0,.65), 0 2px 6px rgba(0,0,0,.6);
+            opacity: 0;
+            transform: translateY(14px) scale(.92);
+            transition: opacity .7s ease, transform .7s ease;
+        }
+        #intro-title span.on { opacity: 1; transform: translateY(0) scale(1); }
+        #intro-title.bye { opacity: 0; }
+        #intro-video {
+            width: 100%; height: 100%; object-fit: contain;
+            display: none; background: #000;
+        }
+        #intro-video.on { display: block; }
+        #intro-skip {
+            position: absolute; right: 14px; bottom: 18px; z-index: 3;
+            background: rgba(255,255,255,.16); color: #fff;
+            border: 1px solid rgba(255,255,255,.35); border-radius: 20px;
+            padding: 7px 15px; font-size: 13px; cursor: pointer;
+            display: none; backdrop-filter: blur(4px);
+        }
+        #intro-play {
+            position: absolute; left: 50%; top: 50%; z-index: 3;
+            transform: translate(-50%,-50%);
+            background: #ffd700; color: #3a1150; border: none;
+            border-radius: 26px; padding: 13px 24px;
+            font-size: 16px; font-weight: bold; cursor: pointer;
+            display: none; box-shadow: 0 0 24px rgba(255,215,0,.5);
+        }
+    </style>
+
+    <div id="intro-overlay">
+        <div id="intro-title"></div>
+        <video id="intro-video" playsinline webkit-playsinline x5-playsinline="true"
+               x5-video-player-type="h5-page" x5-video-orientation="portrait" preload="auto">
+            <source src="hbai.mp4" type="video/mp4">
+        </video>
+        <button id="intro-play">▶️ 点我播放生日视频</button>
+        <button id="intro-skip">跳过 ⏭</button>
+    </div>
+
     <div class="balloon-container" id="balloon-container"></div>
 
     <!-- LANDING SCREEN -->
@@ -5672,6 +5730,81 @@
     document.addEventListener('DOMContentLoaded', mountFinaleGameBtn);
     setTimeout(mountFinaleGameBtn, 1500);
 })();
+    </script>
+
+    <script>
+    /* ===== 开场动画：0.2秒后逐字浮现「生日快乐 · 大碗」→ 淡出 → 自动播放 hbai.mp4 ===== */
+    (function () {
+        const ov    = document.getElementById('intro-overlay');
+        const title = document.getElementById('intro-title');
+        const vid   = document.getElementById('intro-video');
+        const skip  = document.getElementById('intro-skip');
+        const playB = document.getElementById('intro-play');
+        if (!ov) return;
+
+        let finished = false;
+
+        // 开场期间锁滚动，避免露出下面的页面
+        try { document.body.style.overflow = 'hidden'; } catch (e) {}
+
+        function endIntro() {
+            if (finished) return;
+            finished = true;
+            try { vid.pause(); } catch (e) {}
+            ov.classList.add('fade-out');
+            setTimeout(function () {
+                if (ov.parentNode) ov.remove();
+                try { document.body.style.overflow = ''; } catch (e) {}
+            }, 950);
+        }
+        skip.addEventListener('click', endIntro);
+
+        function startVideo() {
+            title.style.display = 'none';
+            vid.classList.add('on');
+            skip.style.display = 'block';
+            vid.addEventListener('ended', endIntro);
+            // 视频放不了也不能卡住开场
+            vid.addEventListener('error', function () { setTimeout(endIntro, 400); });
+
+            let p;
+            try { p = vid.play(); } catch (e) { p = null; }
+            if (p && p.catch) {
+                p.catch(function () {
+                    // 浏览器拦截了带声音的自动播放 → 先静音自动播，同时给出「点我播放」
+                    playB.style.display = 'block';
+                    vid.muted = true;
+                    const p2 = vid.play();
+                    if (p2 && p2.catch) p2.catch(function () {});
+                });
+            }
+            playB.addEventListener('click', function () {
+                playB.style.display = 'none';
+                vid.muted = false;
+                vid.currentTime = 0;
+                const p3 = vid.play();
+                if (p3 && p3.catch) p3.catch(function () {});
+            });
+            // 保险：万一 ended 没触发，视频最长播 3 分钟就收尾
+            setTimeout(endIntro, 180000);
+        }
+
+        function runTitle() {
+            const TEXT = '生日快乐 · 大碗';
+            const chars = Array.from(TEXT);
+            chars.forEach(function (ch, i) {
+                const s = document.createElement('span');
+                s.textContent = (ch === ' ') ? '\u00A0' : ch;
+                title.appendChild(s);
+                setTimeout(function () { s.classList.add('on'); }, i * 150);
+            });
+            const allIn = chars.length * 150 + 700;      // 全部浮现完
+            setTimeout(function () { title.classList.add('bye'); }, allIn + 900);   // 慢慢消失
+            setTimeout(startVideo, allIn + 2100);        // 然后播视频
+        }
+
+        setTimeout(runTitle, 200);   // 进页面 0.2 秒后开始
+    })();
     </script>
 
 </body>
