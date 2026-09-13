@@ -1625,7 +1625,7 @@
 </head>
 <body id="body-root">
 
-    <!-- ===== 开场：生日快乐字幕 + goodhbai 视频 ===== -->
+    <!-- ===== 开场：生日快乐字幕 + goodhbaii 视频 ===== -->
     <style>
         #intro-overlay {
             position: fixed; inset: 0; z-index: 20000;
@@ -1652,7 +1652,9 @@
         #intro-title span.on { opacity: 1; transform: translateY(0) scale(1); }
         #intro-title.bye { opacity: 0; }
         #intro-video {
-            width: 100%; height: 100%; object-fit: contain;
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
             display: none; background: #000;
         }
         #intro-video.on { display: block; }
@@ -1677,7 +1679,7 @@
         <div id="intro-title"></div>
         <video id="intro-video" playsinline webkit-playsinline x5-playsinline="true"
                x5-video-player-type="h5-page" x5-video-orientation="portrait" preload="auto">
-            <source src="goodhbai.mp4" type="video/mp4">
+            <source src="goodhbaii.mp4" type="video/mp4">
         </video>
         <button id="intro-play">▶️ 点我播放生日视频</button>
         <button id="intro-skip">跳过 ⏭</button>
@@ -5733,7 +5735,7 @@
     </script>
 
     <script>
-    /* ===== 开场动画：0.2秒后逐字浮现「生日快乐 · 大碗」→ 淡出 → 自动播放 goodhbai.mp4 ===== */
+    /* ===== 开场动画：0.2秒后逐字浮现「生日快乐 · 大碗」→ 淡出 → 自动播放 goodhbaii.mp4 ===== */
     (function () {
         const ov    = document.getElementById('intro-overlay');
         const title = document.getElementById('intro-title');
